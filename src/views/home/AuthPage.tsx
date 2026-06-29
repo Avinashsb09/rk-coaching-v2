@@ -86,6 +86,7 @@ export default function AuthPage() {
           email,
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}?verified=true`,
             data: {
               fullName,
               role: selectedRole,

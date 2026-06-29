@@ -37,6 +37,18 @@ function MainAppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Handle email verification redirect
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('verified') === 'true') {
+        addToast('Email verified successfully! You can now log in.', 'success');
+        setCurrentView('auth');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [addToast, setCurrentView]);
+
   // Sync breadcrumbs automatically depending on view transitions
   useEffect(() => {
     switch (currentView) {
