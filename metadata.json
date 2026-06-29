@@ -1,0 +1,6 @@
+{
+  "name": "RK Coaching",
+  "description": "A comprehensive Learning Management System (LMS) for Classes 6-12 and NEET preparation, featuring dashboards, quizzes, leaderboards, and notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

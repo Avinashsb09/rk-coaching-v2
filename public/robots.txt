@@ -1,0 +1,12 @@
+# robots.txt for RK Coaching LMS
+# https://rkcoaching.com/
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Disallow: /admin/
+Disallow: /student/dashboard
+Disallow: /teacher/dashboard
+
+# Sitemap location
+Sitemap: https://rkcoaching.com/sitemap.xml
