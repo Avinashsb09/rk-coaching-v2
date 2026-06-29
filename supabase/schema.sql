@@ -458,23 +458,60 @@ CREATE POLICY "Banners viewable by everyone" ON public.banners FOR SELECT USING 
 -- directly into public.profiles to establish instant role mapping.
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_full_name TEXT;
+    v_role TEXT;
+    v_avatar_url TEXT;
+    v_class_id TEXT;
 BEGIN
-    INSERT INTO public.profiles (id, email, "fullName", role, "avatarUrl", "dailyStreak", "totalXp")
+    -- Extract metadata with safety defaults
+    v_full_name := COALESCE(new.raw_user_meta_data->>'fullName', new.raw_user_meta_data->>'name', 'Scholar');
+    
+    v_role := COALESCE(new.raw_user_meta_data->>'role', 'student');
+    -- Verify role conforms to constraint
+    IF v_role NOT IN ('visitor', 'student', 'teacher', 'admin') THEN
+        v_role := 'student';
+    END IF;
+
+    v_avatar_url := COALESCE(new.raw_user_meta_data->>'avatarUrl', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80');
+    
+    -- Extract classId and verify it exists in classes table to avoid foreign key violations
+    v_class_id := new.raw_user_meta_data->>'classId';
+    IF v_class_id IS NOT NULL THEN
+        IF NOT EXISTS (SELECT 1 FROM public.classes WHERE id = v_class_id) THEN
+            v_class_id := NULL;
+        END IF;
+    END IF;
+
+    -- Upsert profile record cleanly to handle conflict/duplicate states gracefully
+    INSERT INTO public.profiles (id, email, "fullName", role, "avatarUrl", "classId", "dailyStreak", "totalXp")
     VALUES (
         new.id,
         new.email,
-        COALESCE(new.raw_user_meta_data->>'fullName', new.raw_user_meta_data->>'name', 'Scholar'),
-        COALESCE(new.raw_user_meta_data->>'role', 'student'),
-        COALESCE(new.raw_user_meta_data->>'avatarUrl', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'),
+        v_full_name,
+        v_role,
+        v_avatar_url,
+        v_class_id,
         1,
         0
-    );
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        "fullName" = COALESCE(EXCLUDED."fullName", public.profiles."fullName"),
+        role = COALESCE(EXCLUDED.role, public.profiles.role),
+        "avatarUrl" = COALESCE(EXCLUDED."avatarUrl", public.profiles."avatarUrl"),
+        "classId" = COALESCE(EXCLUDED."classId", public.profiles."classId");
+
     RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Trigger creation
 CREATE OR REPLACE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

@@ -44,7 +44,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error || !profile) {
         console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);
-        addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
+        
+        const err = error as any;
+        const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
+        if (isAuthErr) {
+          console.warn('Session is invalid or expired. Signing out automatically.');
+          await supabase.auth.signOut().catch(() => {});
+          try {
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+                localStorage.removeItem(key);
+              }
+            }
+          } catch (e) {}
+        } else {
+          addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
+        }
+        
         setUser(null);
         setRoleState('visitor');
         return null;

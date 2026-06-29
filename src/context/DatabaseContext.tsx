@@ -95,19 +95,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       const s = supabase as any;
       try {
         // SELECT only. NO automatic inserts or seeding writes on startup.
-        const [
-          { data: dbClasses },
-          { data: dbSubjects },
-          { data: dbCourses },
-          { data: dbChapters },
-          { data: dbLessons },
-          { data: dbVideos },
-          { data: dbNotes },
-          { data: dbAnnouncements },
-          { data: dbFaqs },
-          { data: dbProfiles },
-          { data: dbSettings }
-        ] = await Promise.all([
+        const results = await Promise.all([
           s.from('classes').select('*').order('priority', { ascending: true }),
           s.from('subjects').select('*'),
           s.from('courses').select('*'),
@@ -120,6 +108,50 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           s.from('profiles').select('*').neq('role', 'visitor'),
           s.from('admin_settings').select('*').eq('id', 'homepage_config').single()
         ]);
+
+        // Detect if any query returned a 401 Unauthorized / expired token error
+        const authError = results.find(
+          (r: any) =>
+            r.error &&
+            (r.error.status === 401 ||
+              r.error.message?.toLowerCase().includes('jwt') ||
+              r.error.message?.toLowerCase().includes('unauthorized') ||
+              r.error.code === 'PGRST301')
+        );
+
+        if (authError) {
+          console.warn('Stale or invalid authentication session detected on startup. Clearing session to restore public access:', authError.error);
+          
+          // Clear Supabase session and local storage
+          await supabase.auth.signOut().catch(() => {});
+          try {
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+                localStorage.removeItem(key);
+              }
+            }
+          } catch (e) {}
+
+          // Reset loading and retry loading the catalog cleanly as visitor
+          setLoadingCatalog(false);
+          await loadCatalogData();
+          return;
+        }
+
+        const [
+          { data: dbClasses },
+          { data: dbSubjects },
+          { data: dbCourses },
+          { data: dbChapters },
+          { data: dbLessons },
+          { data: dbVideos },
+          { data: dbNotes },
+          { data: dbAnnouncements },
+          { data: dbFaqs },
+          { data: dbProfiles },
+          { data: dbSettings }
+        ] = results;
 
         setClasses(dbClasses || []);
         setSubjects(dbSubjects || []);
