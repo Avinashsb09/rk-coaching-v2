@@ -78,6 +78,7 @@ export interface Note {
   pdfUrl: string;
   sizeBytes: number;
   isPremium: boolean;
+  price?: number | null;
 }
 
 export interface Quiz {

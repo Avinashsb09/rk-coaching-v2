@@ -50,23 +50,25 @@ export default function ContactPage() {
           <Card>
             <CardContent className="p-5 space-y-6">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                {homepageConfig.heroTitle || "RK Coaching"}
+                {homepageConfig.heroTitle || "RK Coaching"} Contact
               </h3>
               
               <div className="space-y-4">
-                <div className="flex items-start gap-3.5 text-xs text-slate-500">
-                  <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">Main Office Coordinates</p>
-                    <p className="mt-1">{homepageConfig.contactAddress || "Sector 15, Dwarka, New Delhi, India - 110075"}</p>
+                {homepageConfig.contactAddress && (
+                  <div className="flex items-start gap-3.5 text-xs text-slate-500">
+                    <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">Main Office Coordinates</p>
+                      <p className="mt-1">{homepageConfig.contactAddress}</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex items-start gap-3.5 text-xs text-slate-500">
                   <Phone className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-slate-800 dark:text-slate-200">Admissions Hotlines</p>
-                    <p className="mt-1">{homepageConfig.contactPhone || "+91 98765 43210"}</p>
+                    <p className="mt-1">{homepageConfig.contactPhone || "+91 88220 91760"}</p>
                     <p className="text-[10px] text-slate-400">Available Mon-Sat (9 AM - 6 PM)</p>
                   </div>
                 </div>
@@ -75,7 +77,7 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-slate-800 dark:text-slate-200">Support Mailboxes</p>
-                    <p className="mt-1">{homepageConfig.contactEmail || "admissions@rkcoaching.com"}</p>
+                    <p className="mt-1">{homepageConfig.contactEmail || "ravikantjnv18@gmail.com"}</p>
                   </div>
                 </div>
               </div>

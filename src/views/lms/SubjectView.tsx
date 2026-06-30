@@ -227,6 +227,20 @@ export default function SubjectView() {
                                   <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
                                     {lesson.description}
                                   </p>
+                                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 ${
+                                      lesson.isPremium 
+                                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/30' 
+                                        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/30'
+                                    }`}>
+                                      <FileText className="w-3 h-3" />
+                                      {lesson.isPremium ? 'Premium Revision Notes' : 'Free Practice Notes'}
+                                    </span>
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30 flex items-center gap-1">
+                                      <PlayCircle className="w-3 h-3" />
+                                      Chapter-wise Video Lecture
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">

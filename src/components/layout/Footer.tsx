@@ -55,7 +55,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2.5 text-sm">
               {[
-                { label: 'NEET (Biology & Chemistry) Pre-Medical', slug: 'neet-prep' },
+                { label: 'NEET (Biology & Chemistry)', slug: 'neet' },
                 { label: 'Class 12 Science', slug: 'class-12-science' },
                 { label: 'Class 11 Science', slug: 'class-11-science' },
                 { label: 'Class 10 General', slug: 'class-10' },
@@ -112,20 +112,22 @@ export function Footer() {
           {/* Physical Address contact details */}
           <div className="space-y-3.5">
             <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
-              {homepageConfig.heroTitle || "RK Coaching"} Head Office
+              {homepageConfig.heroTitle || "RK Coaching"} Contact
             </h3>
             <ul className="space-y-3 text-sm">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                <span>{homepageConfig.contactAddress || "Sector 15, Dwarka, New Delhi, India - 110075"}</span>
-              </li>
+              {homepageConfig.contactAddress && (
+                <li className="flex items-start gap-2.5">
+                  <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                  <span>{homepageConfig.contactAddress}</span>
+                </li>
+              )}
               <li className="flex items-center gap-2.5">
                 <Phone className="w-5 h-5 text-blue-500 shrink-0" />
-                <span>{homepageConfig.contactPhone || "+91 98765 43210"}</span>
+                <span>{homepageConfig.contactPhone || "+91 88220 91760"}</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-5 h-5 text-blue-500 shrink-0" />
-                <span>{homepageConfig.contactEmail || "admissions@rkcoaching.com"}</span>
+                <span>{homepageConfig.contactEmail || "ravikantjnv18@gmail.com"}</span>
               </li>
             </ul>
           </div>

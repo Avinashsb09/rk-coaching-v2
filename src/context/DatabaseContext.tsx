@@ -67,9 +67,9 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       { id: 't1', author: 'Aditya Vardhan', role: 'NEET (Biology & Chemistry) Rank 184 (2025)', quote: 'The digital revision notes and continuous chapter tests saved me hundreds of hours of preparation time!', rating: 5 },
       { id: 't2', author: 'Priya Sharma', role: 'Class 12 Board 98.4%', quote: 'Highly clean, premium platform. Tapping to unlock chapters instantly via UPI made standard studying seamless.', rating: 5 }
     ],
-    contactPhone: '+91 98765 43210',
-    contactEmail: 'admissions@rkcoaching.com',
-    contactAddress: 'RK Complex, Sector 4, Rohini, New Delhi, India',
+    contactPhone: '+91 88220 91760',
+    contactEmail: 'ravikantjnv18@gmail.com',
+    contactAddress: '',
     footerText: '© 2026 RK Coaching Institute. All Rights Reserved. Empowering students across standard board classes and national competitive exams.'
   });
 

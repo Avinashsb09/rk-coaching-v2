@@ -45,7 +45,7 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
       
       {/* 1. HERO SECTION */}
       <section className="relative px-4 text-center max-w-4xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 text-xs font-bold animate-pulse">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5" />
           <span>India's Premium Board & NEET (Biology & Chemistry) LMS Engine</span>
         </div>
@@ -81,7 +81,7 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
 
         {/* Explore CTA buttons */}
         {!showCatalog && (
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 pt-2 max-w-md mx-auto">
+          <div className="flex justify-center pt-2 max-w-md mx-auto">
             <Button 
               variant="primary" 
               size="lg" 
@@ -93,14 +93,6 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               Explore Syllabus Catalog
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              onClick={() => setCurrentView('faq')}
-              className="w-full sm:w-auto h-11 px-6 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm"
-            >
-              How It Works
             </Button>
           </div>
         )}
@@ -122,29 +114,57 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {[
                 {
-                  title: 'Class 6–8',
-                  description: 'Strengthen core foundations in Mathematics & general Science with simple, visual notes.',
+                  title: 'Class 6',
+                  description: 'Comprehensive subject notes, worksheets, and study guides for Class 6.',
                   slug: 'class-6',
                   icon: <GraduationCap className="w-5 h-5" />,
                   color: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border-blue-100 dark:border-blue-900/30'
                 },
                 {
-                  title: 'Class 9–10',
-                  description: 'Prepare early for board examinations with concise reference binders and active quizzes.',
-                  slug: 'class-10',
-                  icon: <BookOpen className="w-5 h-5" />,
+                  title: 'Class 7',
+                  description: 'Structured mathematical formulas and foundational science revisions for Class 7.',
+                  slug: 'class-7',
+                  icon: <GraduationCap className="w-5 h-5" />,
                   color: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
                 },
                 {
-                  title: 'Class 11–12 (Science)',
-                  description: 'Excel in advanced CBSE science papers with custom-curated formulas and question banks.',
-                  slug: 'class-12-science',
-                  icon: <Atom className="w-5 h-5" />,
+                  title: 'Class 8',
+                  description: 'High-relevance chapter notes, homework aids, and key textbook solutions for Class 8.',
+                  slug: 'class-8',
+                  icon: <GraduationCap className="w-5 h-5" />,
+                  color: 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400 border-violet-100 dark:border-violet-900/30'
+                },
+                {
+                  title: 'Class 9',
+                  description: 'Core CBSE board preparation strategies and essential notes for Class 9 pupils.',
+                  slug: 'class-9',
+                  icon: <GraduationCap className="w-5 h-5" />,
+                  color: 'bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400 border-teal-100 dark:border-teal-900/30'
+                },
+                {
+                  title: 'Class 10',
+                  description: 'Ace your Class 10 Board exams with handwritten revision sheets and solved keys.',
+                  slug: 'class-10',
+                  icon: <BookOpen className="w-5 h-5" />,
                   color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
                 },
                 {
+                  title: 'Class 11 (Science)',
+                  description: 'Advanced board-oriented study materials in Physics, Chemistry, and Biology.',
+                  slug: 'class-11-science',
+                  icon: <Atom className="w-5 h-5" />,
+                  color: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400 border-cyan-100 dark:border-cyan-900/30'
+                },
+                {
+                  title: 'Class 12 (Science)',
+                  description: 'Full-syllabus formula decks, boards prep questions, and final revisions.',
+                  slug: 'class-12-science',
+                  icon: <Atom className="w-5 h-5" />,
+                  color: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
+                },
+                {
                   title: 'NEET (Biology & Chemistry)',
-                  description: 'Crack high-weightage pre-medical topics with mock binders, diagrams, and previous papers.',
+                  description: 'Rank-boosting Biology & Chemistry guides, diagram sets, and previous mock keys.',
                   slug: 'neet',
                   icon: <Dna className="w-5 h-5" />,
                   color: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border-amber-100 dark:border-amber-900/30'
