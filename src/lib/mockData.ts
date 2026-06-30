@@ -12,7 +12,7 @@ export const mockClasses: AcademicClass[] = [
   { id: 'c12_sci', name: 'Class 12 Science', slug: 'class-12-science', priority: 9 },
   { id: 'c12_com', name: 'Class 12 Commerce', slug: 'class-12-commerce', priority: 10 },
   { id: 'c12_art', name: 'Class 12 Arts', slug: 'class-12-arts', priority: 11 },
-  { id: 'neet', name: 'NEET Exam Prep', slug: 'neet', priority: 12 }
+  { id: 'neet', name: 'NEET (Biology & Chemistry) Exam Prep', slug: 'neet', priority: 12 }
 ];
 
 export const mockSubjects: AcademicSubject[] = [
@@ -58,7 +58,7 @@ export const mockSubjects: AcademicSubject[] = [
   { id: 's_hist_c12', classId: 'c12_art', name: 'History', icon: 'BookOpen', description: 'Bricks, Beads and Bones, Kings and Chronicles, Rebels and the Raj.' },
 
   // NEET
-  { id: 's_phys', classId: 'neet', name: 'Physics', icon: 'Atom', description: 'Mechanics, Electrostatics, Optics, and Modern Physics for NEET.' },
+  { id: 's_phys', classId: 'neet', name: 'Physics', icon: 'Atom', description: 'Mechanics, Electrostatics, Optics, and Modern Physics for NEET (Biology & Chemistry).' },
   { id: 's_chem', classId: 'neet', name: 'Chemistry', icon: 'FlaskConical', description: 'Organic, Inorganic, and Physical Chemistry fundamentals.' },
   { id: 's_bio', classId: 'neet', name: 'Biology', icon: 'Dna', description: 'Botany & Zoology key concepts, cell cycles, and anatomy.' }
 ];
@@ -68,9 +68,9 @@ export const mockCourses: Course[] = [
     id: 'course_neet_physics',
     classId: 'neet',
     subjectId: 's_phys',
-    title: 'NEET Masterclass: Complete Electrostatics',
+    title: 'NEET (Biology & Chemistry) Masterclass: Complete Electrostatics',
     subtitle: 'Crack high-weightage Electrostatics concepts with shortcuts & problem sets.',
-    description: 'Master electric fields, potentials, Gauss Law, and capacitor circuits. Designed by senior NEET mentors with full video lectures, revision notes, and highly curated mock quizzes.',
+    description: 'Master electric fields, potentials, Gauss Law, and capacitor circuits. Designed by senior NEET (Biology & Chemistry) mentors with full video lectures, revision notes, and highly curated mock quizzes.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=500&q=80',
     isPremium: true,
     price: 1499,
@@ -80,7 +80,7 @@ export const mockCourses: Course[] = [
     id: 'course_neet_bio',
     classId: 'neet',
     subjectId: 's_bio',
-    title: 'NEET Prep: Human Physiology Masterclass',
+    title: 'NEET (Biology & Chemistry) Prep: Human Physiology Masterclass',
     subtitle: 'Cover highly scoring human anatomical processes with comprehensive diagrams.',
     description: 'An immersive module tracking digestion, breathing, blood circulation, and nervous coordination. Includes real PDF diagrams, video animations, and previous years (PYQ) quiz attempts.',
     thumbnailUrl: 'https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?auto=format&fit=crop&w=500&q=80',
@@ -287,7 +287,7 @@ export const mockAnnouncements: Announcement[] = [
   {
     id: 'ann_1',
     title: '⚡ Offline Test Schedule & Doubt Clearing Camps',
-    content: 'Dear Scholars, we are launching weekly offline doubt-clearing camp at RK Coaching Center starting this Friday. Live coaching sessions for NEET 2026 physics shortcuts will be shared. Make sure to download the formulas sheet.',
+    content: 'Dear Scholars, we are launching weekly offline doubt-clearing camp at RK Coaching Center starting this Friday. Live coaching sessions for NEET (Biology & Chemistry) 2026 physics shortcuts will be shared. Make sure to download the formulas sheet.',
     targetRoles: ['student'],
     isPinned: true,
     createdAt: new Date().toISOString()

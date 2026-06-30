@@ -10,7 +10,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { isSupabaseConfigured, getSupabase } from '../../lib/supabase';
-import { ShieldCheck, Mail, Lock, User, Sparkles, BookOpen, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, User, Sparkles, BookOpen, AlertCircle, ArrowLeft, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
   const { loginAs, addToast, setCurrentView, syncUserProfile, currentView } = useApp();
@@ -38,6 +38,10 @@ export default function AuthPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signUpError, setSignUpError] = useState('');
 
   const supabase = getSupabase();
   const configured = isSupabaseConfigured();
@@ -85,9 +89,17 @@ export default function AuthPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
-    if (!email || !password || !fullName) {
+    if (!email || !password || !confirmPassword || !fullName) {
       addToast('Please fill out all required fields', 'error');
       return;
+    }
+
+    if (password !== confirmPassword) {
+      setSignUpError('Passwords do not match');
+      addToast('Passwords do not match. Please verify.', 'error');
+      return;
+    } else {
+      setSignUpError('');
     }
 
     setIsLoading(true);
@@ -185,7 +197,7 @@ export default function AuthPage() {
       
       {/* 1. Header back button */}
       <button
-        onClick={() => setCurrentView('home')}
+        onClick={() => setCurrentView('catalog')}
         className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
@@ -255,7 +267,7 @@ export default function AuthPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    icon={<Mail className="w-4 h-4 text-slate-400" />}
+                    leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
                   />
                   <Input
                     label="Password"
@@ -264,7 +276,7 @@ export default function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    icon={<Lock className="w-4 h-4 text-slate-400" />}
+                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
                   />
 
                   {/* REMEMBER ME & FORGOT PASSWORD */}
@@ -301,7 +313,7 @@ export default function AuthPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
-                    icon={<User className="w-4 h-4 text-slate-400" />}
+                    leftIcon={<User className="w-4 h-4 text-slate-400" />}
                   />
                   <Input
                     label="Email Address *"
@@ -310,16 +322,56 @@ export default function AuthPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    icon={<Mail className="w-4 h-4 text-slate-400" />}
+                    leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
                   />
+                  
                   <Input
                     label="Password (min 6 chars) *"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (signUpError && e.target.value === confirmPassword) {
+                        setSignUpError('');
+                      }
+                    }}
                     required
-                    icon={<Lock className="w-4 h-4 text-slate-400" />}
+                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+                    rightIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer flex items-center justify-center"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    }
+                  />
+
+                  <Input
+                    label="Confirm Password *"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (signUpError && e.target.value === password) {
+                        setSignUpError('');
+                      }
+                    }}
+                    required
+                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+                    rightIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer flex items-center justify-center"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    }
+                    error={signUpError}
                   />
 
                   {/* SELECT ROLE GROUP */}
@@ -367,7 +419,7 @@ export default function AuthPage() {
                         <option value="class-6">Class 6</option>
                         <option value="class-10">Class 10</option>
                         <option value="class-12-science">Class 12 (Science)</option>
-                        <option value="neet-prep">NEET Preparation</option>
+                        <option value="neet-prep">NEET (Biology & Chemistry) Preparation</option>
                       </select>
                     </div>
                   )}
@@ -387,7 +439,7 @@ export default function AuthPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    icon={<Mail className="w-4 h-4 text-slate-400" />}
+                    leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
                   />
                   <Button variant="primary" type="submit" className="w-full" isLoading={isLoading}>
                     Send Reset Email

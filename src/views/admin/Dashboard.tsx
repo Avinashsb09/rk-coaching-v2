@@ -304,9 +304,9 @@ export default function AdminDashboard() {
   };
 
   const initialTxns = [
-    { id: 'pay_UPI849204829', orderId: 'order_NEET_01', userEmail: 'rahul.sharma@gmail.com', userFullName: 'Rahul Sharma', courseTitle: 'NEET Complete Physics Electrostatics', amount: 499, status: 'success', createdAt: '2026-06-25T11:20:00.000Z', method: 'GPay App Direct' },
+    { id: 'pay_UPI849204829', orderId: 'order_NEET_01', userEmail: 'rahul.sharma@gmail.com', userFullName: 'Rahul Sharma', courseTitle: 'NEET (Biology & Chemistry) Complete Physics Electrostatics', amount: 499, status: 'success', createdAt: '2026-06-25T11:20:00.000Z', method: 'GPay App Direct' },
     { id: 'pay_UPI729103901', orderId: 'order_CBSE_02', userEmail: 'priya.patel@yahoo.com', userFullName: 'Priya Patel', courseTitle: 'Class 10 CBSE Maths Preparation', amount: 299, status: 'success', createdAt: '2026-06-26T14:45:00.000Z', method: 'PhonePe Intent' },
-    { id: 'pay_UPI930193021', orderId: 'order_NEET_03', userEmail: 'amit.verma@outlook.com', userFullName: 'Amit Verma', courseTitle: 'NEET Mock Biology Test Binders', amount: 199, status: 'failed', createdAt: '2026-06-27T09:12:00.000Z', method: 'Paytm UPI ID' },
+    { id: 'pay_UPI930193021', orderId: 'order_NEET_03', userEmail: 'amit.verma@outlook.com', userFullName: 'Amit Verma', courseTitle: 'NEET (Biology & Chemistry) Mock Biology Test Binders', amount: 199, status: 'failed', createdAt: '2026-06-27T09:12:00.000Z', method: 'Paytm UPI ID' },
     { id: 'pay_UPI110492819', orderId: 'order_CBSE_04', userEmail: 'neha.singh@gmail.com', userFullName: 'Neha Singh', courseTitle: 'Class 12 CBSE Board Physics Bundle', amount: 399, status: 'success', createdAt: '2026-06-28T16:05:00.000Z', method: 'BHIM UPI app' }
   ];
 
@@ -519,7 +519,7 @@ export default function AdminDashboard() {
               <form onSubmit={handlePostAnnouncement} className="space-y-4">
                 <Input
                   label="Announcement Title"
-                  placeholder="e.g., Extended NEET Practice Mock Quiz Session live on Sunday!"
+                  placeholder="e.g., Extended NEET (Biology & Chemistry) Practice Mock Quiz Session live on Sunday!"
                   value={announcementTitle}
                   onChange={(e) => setAnnouncementTitle(e.target.value)}
                   required
@@ -569,7 +569,7 @@ export default function AdminDashboard() {
 
               <div className="space-y-3">
                 {[
-                  { name: 'Kunal Verma', course: 'NEET Complete Physics Electrostatics', amount: '₹499', rzpId: 'pay_RZP983271892', status: 'Pending Manual Review' },
+                  { name: 'Kunal Verma', course: 'NEET (Biology & Chemistry) Complete Physics Electrostatics', amount: '₹499', rzpId: 'pay_RZP983271892', status: 'Pending Manual Review' },
                   { name: 'Divya Shah', course: 'Class 10 CBSE Maths Preparation', amount: '₹299', rzpId: 'pay_RZP748231908', status: 'Pending Manual Review' }
                 ].map((order, idx) => (
                   <div key={idx} className="p-4 border border-slate-150 dark:border-slate-800/80 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">

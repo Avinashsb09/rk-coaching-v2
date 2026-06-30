@@ -61,10 +61,10 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
 
   const [homepageConfig, setHomepageConfigState] = useState({
     heroTitle: 'RK coaching institute',
-    heroSubtitle: 'Transforming Academic Potential into Top Ranks. Comprehensive syllabus coverage, digital study binders, and interactive assessments for Class 6–12 & NEET Aspirants.',
+    heroSubtitle: 'Transforming Academic Potential into Top Ranks. Comprehensive syllabus coverage, digital study binders, and interactive assessments for Class 6–12 & NEET (Biology & Chemistry) Aspirants.',
     featuredCourseIds: ['course_cbse_math', 'course_neet_bio'],
     testimonials: [
-      { id: 't1', author: 'Aditya Vardhan', role: 'NEET Rank 184 (2025)', quote: 'The digital revision notes and continuous chapter tests saved me hundreds of hours of preparation time!', rating: 5 },
+      { id: 't1', author: 'Aditya Vardhan', role: 'NEET (Biology & Chemistry) Rank 184 (2025)', quote: 'The digital revision notes and continuous chapter tests saved me hundreds of hours of preparation time!', rating: 5 },
       { id: 't2', author: 'Priya Sharma', role: 'Class 12 Board 98.4%', quote: 'Highly clean, premium platform. Tapping to unlock chapters instantly via UPI made standard studying seamless.', rating: 5 }
     ],
     contactPhone: '+91 98765 43210',
@@ -187,7 +187,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           id: 'faq_1',
           category: 'admission',
           question: 'Which classes are supported by RK Coaching?',
-          answer: 'We provide comprehensive courses for Class 6 to Class 12 and NEET pre-medical preparation modules.',
+          answer: 'We provide comprehensive courses for Class 6 to Class 12 and NEET (Biology & Chemistry) pre-medical preparation modules.',
           orderIndex: 1
         },
         {

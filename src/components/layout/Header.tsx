@@ -41,7 +41,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
 
   const handleClassSelect = (slug: string, className: string) => {
     addToast(`Filtering catalog by ${className}`, 'info');
-    setCurrentView('home');
+    setCurrentView('catalog');
     setGlobalSearch(slug);
     setClassDropdownOpen(false);
   };
@@ -309,11 +309,11 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             </p>
             <button
               onClick={() => {
-                setCurrentView('home');
+                setCurrentView('catalog');
                 setMobileMenuOpen(false);
               }}
               className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
-                currentView === 'home'
+                currentView === 'catalog'
                   ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold'
                   : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
               }`}

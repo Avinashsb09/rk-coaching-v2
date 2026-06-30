@@ -70,7 +70,7 @@ export default function PurchasesInvoices() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setCurrentView('home')}
+          onClick={() => setCurrentView('catalog')}
           leftIcon={<Compass className="w-4 h-4" />}
           className="self-start md:self-center text-xs font-bold"
         >
@@ -225,7 +225,7 @@ export default function PurchasesInvoices() {
                     <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">No Courses Purchased Yet</h3>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Explore standard curriculum chapters, mock quizzes, and lecture videos to start enrolling.</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentView('home')} className="mt-2 text-xs">
+                  <Button variant="outline" size="sm" onClick={() => setCurrentView('catalog')} className="mt-2 text-xs">
                     Browse Standard Courses
                   </Button>
                 </div>

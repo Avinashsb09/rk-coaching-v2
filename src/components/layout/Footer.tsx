@@ -33,7 +33,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
-              India's premium serverless LMS for CBSE Classes 6-12 and NEET competitive coaching. Secure your rank with elite notes and quizzes.
+              India's premium serverless LMS for CBSE Classes 6-12 and NEET (Biology & Chemistry) competitive coaching. Secure your rank with elite notes and quizzes.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="p-2 rounded-xl bg-slate-850 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
@@ -55,7 +55,7 @@ export function Footer() {
             </h3>
             <ul className="space-y-2.5 text-sm">
               {[
-                { label: 'NEET Pre-Medical', slug: 'neet-prep' },
+                { label: 'NEET (Biology & Chemistry) Pre-Medical', slug: 'neet-prep' },
                 { label: 'Class 12 Science', slug: 'class-12-science' },
                 { label: 'Class 11 Science', slug: 'class-11-science' },
                 { label: 'Class 10 General', slug: 'class-10' },

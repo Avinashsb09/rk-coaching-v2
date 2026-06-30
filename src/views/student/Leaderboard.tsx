@@ -31,7 +31,7 @@ export default function Leaderboard() {
               Global Ranks
             </Badge>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              NEET & Boards Leaderboard
+              NEET (Biology & Chemistry) & Boards Leaderboard
             </h1>
             <p className="text-sm text-slate-300 max-w-md leading-relaxed">
               Earn XP points by attending lecture modules, passing relational quizzes, and retaining daily study streaks!

@@ -38,7 +38,7 @@ export default function StudentDashboard() {
               variant="secondary"
               size="sm"
               onClick={() => {
-                setCurrentView('home');
+                setCurrentView('catalog');
               }}
               rightIcon={<Compass className="w-4 h-4" />}
             >
@@ -116,7 +116,7 @@ export default function StudentDashboard() {
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
               Recently Viewed & Active Courses
             </h2>
-            <span className="text-xs font-semibold text-slate-500 cursor-pointer hover:underline" onClick={() => setCurrentView('home')}>
+            <span className="text-xs font-semibold text-slate-500 cursor-pointer hover:underline" onClick={() => setCurrentView('catalog')}>
               View all
             </span>
           </div>

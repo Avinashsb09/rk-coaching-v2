@@ -89,7 +89,7 @@ export default function SubjectView() {
   useEffect(() => {
     if (subjectObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'home' },
+        { label: 'Syllabus Catalog', view: 'catalog' },
         { label: subjectObj.name }
       ]);
     }
@@ -113,7 +113,7 @@ export default function SubjectView() {
   // Simulated professional subject teacher
   const teacher = {
     name: 'Dr. Anand Ramanujan, PhD',
-    role: 'Senior Academic Expert & NEET Author',
+    role: 'Senior Academic Expert & NEET (Biology & Chemistry) Author',
     avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&h=150&q=80',
     experience: '18+ Years coaching boards & competitive streams.'
   };
@@ -124,7 +124,7 @@ export default function SubjectView() {
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={() => setCurrentView('home')} 
+        onClick={() => setCurrentView('catalog')} 
         leftIcon={<ArrowLeft className="w-4 h-4" />}
         className="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
       >

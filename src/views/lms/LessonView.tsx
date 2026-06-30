@@ -102,7 +102,7 @@ export default function LessonView() {
   useEffect(() => {
     if (lessonObj && courseObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'home' },
+        { label: 'Syllabus Catalog', view: 'catalog' },
         { label: courseObj.title, view: 'course-view' },
         { label: lessonObj.title }
       ]);

@@ -60,7 +60,10 @@ function MainAppShell() {
   useEffect(() => {
     switch (currentView) {
       case 'home':
-        setBreadcrumbs([{ label: 'Syllabus Catalog', view: 'home' }]);
+        setBreadcrumbs([]);
+        break;
+      case 'catalog':
+        setBreadcrumbs([{ label: 'Syllabus Catalog', view: 'catalog' }]);
         break;
       case 'student-dashboard':
         setBreadcrumbs([
@@ -110,7 +113,7 @@ function MainAppShell() {
         break;
       case 'advanced-search':
         setBreadcrumbs([
-          { label: 'Syllabus Catalog', view: 'home' },
+          { label: 'Syllabus Catalog', view: 'catalog' },
           { label: 'Advanced Search' }
         ]);
         break;
@@ -134,7 +137,10 @@ function MainAppShell() {
   const renderActiveView = () => {
     switch (currentView) {
       case 'home':
-        return <LandingPage />;
+        return <LandingPage showCatalog={false} />;
+      
+      case 'catalog':
+        return <LandingPage showCatalog={true} />;
       
       case 'student-dashboard':
         if (role !== 'student' && role !== 'admin') {

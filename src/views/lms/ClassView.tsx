@@ -48,7 +48,7 @@ export default function ClassView() {
   useEffect(() => {
     if (classObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'home' },
+        { label: 'Syllabus Catalog', view: 'catalog' },
         { label: classObj.name }
       ]);
     }
@@ -78,7 +78,7 @@ export default function ClassView() {
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={() => setCurrentView('home')} 
+        onClick={() => setCurrentView('catalog')} 
         leftIcon={<ArrowLeft className="w-4 h-4" />}
         className="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
       >

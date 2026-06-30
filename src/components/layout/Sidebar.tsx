@@ -43,7 +43,7 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
             icon: <LayoutDashboard className="w-5 h-5" />
           },
           {
-            id: 'home',
+            id: 'catalog',
             label: 'All Courses',
             icon: <BookOpen className="w-5 h-5" />
           },
@@ -81,7 +81,7 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
             icon: <PlusSquare className="w-5 h-5" />
           },
           {
-            id: 'home',
+            id: 'catalog',
             label: 'Browse Library',
             icon: <BookOpen className="w-5 h-5" />
           },

@@ -573,7 +573,7 @@ export default function TeacherDashboard() {
                 {[
                   { text: 'Aditya Sen completed "Intro to Coulomb\'s Law" video lecture', time: '10 mins ago', type: 'video' },
                   { text: 'Ananya Sen downloaded "Gauss Law CBSE Questions Pack.pdf"', time: '2 hours ago', type: 'note' },
-                  { text: 'Prof. Rajesh Khanna created NEET Mock Chapter 2', time: '5 hours ago', type: 'system' },
+                  { text: 'Prof. Rajesh Khanna created NEET (Biology & Chemistry) Mock Chapter 2', time: '5 hours ago', type: 'system' },
                   { text: 'Student Aarav Sharma unlocked CBSE 12 Premium level', time: '1 day ago', type: 'premium' }
                 ].map((act, i) => (
                   <div key={i} className="flex gap-3 items-start text-xs border-b border-slate-50 dark:border-slate-900/40 pb-3 last:border-0 last:pb-0">
