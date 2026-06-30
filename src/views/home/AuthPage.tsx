@@ -13,10 +13,20 @@ import { isSupabaseConfigured, getSupabase } from '../../lib/supabase';
 import { ShieldCheck, Mail, Lock, User, Sparkles, BookOpen, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 
 export default function AuthPage() {
-  const { loginAs, addToast, setCurrentView, syncUserProfile } = useApp();
+  const { loginAs, addToast, setCurrentView, syncUserProfile, currentView } = useApp();
   
   // Tab states: 'login' | 'signup' | 'forgot' | 'reset'
-  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'forgot' | 'reset'>(() => {
+    return currentView === 'auth-signup' ? 'signup' : 'login';
+  });
+
+  React.useEffect(() => {
+    if (currentView === 'auth-signup') {
+      setActiveTab('signup');
+    } else if (currentView === 'auth') {
+      setActiveTab('login');
+    }
+  }, [currentView]);
   
   // Form states
   const [email, setEmail] = useState('');

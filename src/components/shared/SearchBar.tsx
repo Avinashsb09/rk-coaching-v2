@@ -17,6 +17,20 @@ export function SearchBar({
   className = ''
 }: SearchBarProps) {
   const { globalSearch, setGlobalSearch, addToast } = useApp();
+  const [placeholderText, setPlaceholderText] = React.useState('Search...');
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setPlaceholderText('Search courses, notes...');
+      } else {
+        setPlaceholderText(placeholder);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [placeholder]);
 
   const handleClear = () => {
     setGlobalSearch('');
@@ -38,7 +52,7 @@ export function SearchBar({
         value={globalSearch}
         onChange={(e) => setGlobalSearch(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={placeholderText}
         className="
           block w-full pl-11 pr-10 py-2.5 h-11 text-sm rounded-2xl border
           border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80

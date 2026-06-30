@@ -43,11 +43,11 @@ export default function LandingPage() {
           <span>India's Premium Board & NEET LMS Engine</span>
         </div>
         
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight px-2 sm:px-0">
           {homepageConfig.heroTitle || "Achieve Top Rank in Boards & NEET Exams"}
         </h1>
         
-        <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed px-1">
           {homepageConfig.heroSubtitle || "Access high-yield handwritten PDF Notes, interactive conceptual quizzes, video lectures, and real-time gamified student leaderboards."}
         </p>
 
@@ -57,18 +57,18 @@ export default function LandingPage() {
         </div>
 
         {/* Rapid stats overview */}
-        <div className="grid grid-cols-3 gap-4 pt-6 max-w-xl mx-auto text-center border-t border-slate-100 dark:border-slate-800/80">
-          <div>
-            <p className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">Class 6-12</p>
-            <p className="text-xs text-slate-500 font-semibold uppercase">Supported</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-6 max-w-xl mx-auto text-center border-t border-slate-100 dark:border-slate-800/80">
+          <div className="px-1">
+            <p className="text-lg sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400 leading-none mb-1">Class 6-12</p>
+            <p className="text-[9px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Supported</p>
           </div>
-          <div className="border-x border-slate-100 dark:border-slate-800">
-            <p className="text-2xl font-extrabold text-emerald-500">Handwritten</p>
-            <p className="text-xs text-slate-500 font-semibold uppercase">Revision Notes</p>
+          <div className="border-x border-slate-100 dark:border-slate-800 px-1">
+            <p className="text-lg sm:text-2xl font-extrabold text-emerald-500 leading-none mb-1">Handwritten</p>
+            <p className="text-[9px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Revision Notes</p>
           </div>
-          <div>
-            <p className="text-2xl font-extrabold text-amber-500">NEET Prep</p>
-            <p className="text-xs text-slate-500 font-semibold uppercase">Curriculum</p>
+          <div className="px-1">
+            <p className="text-lg sm:text-2xl font-extrabold text-amber-500 leading-none mb-1">NEET Prep</p>
+            <p className="text-[9px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider leading-tight">Curriculum</p>
           </div>
         </div>
       </section>
@@ -84,17 +84,17 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {classes.map((c) => (
             <button
               key={c.id}
               onClick={() => selectClass(c.slug)}
-              className="p-4 border border-slate-200 hover:border-blue-500/55 dark:border-slate-800 dark:hover:border-blue-500 rounded-2xl bg-white dark:bg-slate-950 text-center transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer group"
+              className="p-3.5 sm:p-4 border border-slate-200 hover:border-blue-500/55 dark:border-slate-800 dark:hover:border-blue-500 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-950 text-center transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer group"
             >
-              <div className="mx-auto w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 mb-2.5 group-hover:scale-105 transition-transform">
-                <BookOpen className="w-4.5 h-4.5" />
+              <div className="mx-auto w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 mb-2 group-hover:scale-105 transition-transform">
+                <BookOpen className="w-4 h-4" />
               </div>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <p className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
                 {c.name}
               </p>
             </button>

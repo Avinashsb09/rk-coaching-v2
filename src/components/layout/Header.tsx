@@ -283,7 +283,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
               <Button variant="outline" size="sm" onClick={() => setCurrentView('auth')}>
                 Login
               </Button>
-              <Button variant="primary" size="sm" onClick={() => setCurrentView('auth')}>
+              <Button variant="primary" size="sm" onClick={() => setCurrentView('auth-signup')}>
                 Register
               </Button>
             </div>
@@ -385,7 +385,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
               <Button variant="outline" onClick={() => { setCurrentView('auth'); setMobileMenuOpen(false); }}>
                 Login
               </Button>
-              <Button variant="primary" onClick={() => { setCurrentView('auth'); setMobileMenuOpen(false); }}>
+              <Button variant="primary" onClick={() => { setCurrentView('auth-signup'); setMobileMenuOpen(false); }}>
                 Register
               </Button>
             </div>

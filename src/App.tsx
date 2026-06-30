@@ -49,6 +49,13 @@ function MainAppShell() {
     }
   }, [addToast, setCurrentView]);
 
+  // Scroll to top on view changes (restoration/navigation)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
+  }, [currentView]);
+
   // Sync breadcrumbs automatically depending on view transitions
   useEffect(() => {
     switch (currentView) {
@@ -92,6 +99,7 @@ function MainAppShell() {
         setBreadcrumbs([{ label: 'Support Contact Ticket', view: 'contact' }]);
         break;
       case 'auth':
+      case 'auth-signup':
         setBreadcrumbs([{ label: 'Authentication Suite', view: 'auth' }]);
         break;
       case 'leaderboard':
@@ -173,6 +181,7 @@ function MainAppShell() {
         return <ContactPage />;
 
       case 'auth':
+      case 'auth-signup':
         return <AuthPage />;
       
       case 'class-view':
