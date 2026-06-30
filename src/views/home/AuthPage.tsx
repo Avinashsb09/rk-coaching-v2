@@ -74,6 +74,7 @@ export default function AuthPage() {
   // 2. SIGN UP ACTION
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!email || !password || !fullName) {
       addToast('Please fill out all required fields', 'error');
       return;

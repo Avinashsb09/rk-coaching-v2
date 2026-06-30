@@ -469,11 +469,18 @@ DECLARE
     v_avatar_url TEXT;
     v_class_id TEXT;
 BEGIN
-    -- Extract metadata with safety defaults
+    -- 1. Cleansing orphaned profile rows with the same email address but different auth IDs.
+    -- Since auth.users enforces absolute email uniqueness, any profile that has the same email
+    -- but a different user ID is an orphaned/stale record. Removing it prevents unique key violations.
+    IF EXISTS (SELECT 1 FROM public.profiles WHERE email = new.email AND id <> new.id) THEN
+        DELETE FROM public.profiles WHERE email = new.email AND id <> new.id;
+    END IF;
+
+    -- 2. Extract metadata with safety defaults
     v_full_name := COALESCE(new.raw_user_meta_data->>'fullName', new.raw_user_meta_data->>'name', 'Scholar');
     
     v_role := COALESCE(new.raw_user_meta_data->>'role', 'student');
-    -- Verify role conforms to constraint
+    -- Verify role conforms to constraints
     IF v_role NOT IN ('visitor', 'student', 'teacher', 'admin') THEN
         v_role := 'student';
     END IF;
@@ -488,30 +495,58 @@ BEGIN
         END IF;
     END IF;
 
-    -- Upsert profile record cleanly to handle conflict/duplicate states gracefully
-    INSERT INTO public.profiles (id, email, "fullName", role, "avatarUrl", "classId", "dailyStreak", "totalXp")
-    VALUES (
-        new.id,
-        new.email,
-        v_full_name,
-        v_role,
-        v_avatar_url,
-        v_class_id,
-        1,
-        0
-    )
-    ON CONFLICT (id) DO UPDATE SET
-        email = EXCLUDED.email,
-        "fullName" = COALESCE(EXCLUDED."fullName", public.profiles."fullName"),
-        role = COALESCE(EXCLUDED.role, public.profiles.role),
-        "avatarUrl" = COALESCE(EXCLUDED."avatarUrl", public.profiles."avatarUrl"),
-        "classId" = COALESCE(EXCLUDED."classId", public.profiles."classId");
+    -- 3. Perform idempotent Insert/Update with Exception handling to guarantee zero failures
+    BEGIN
+        INSERT INTO public.profiles (id, email, "fullName", role, "avatarUrl", "classId", "dailyStreak", "totalXp")
+        VALUES (
+            new.id,
+            new.email,
+            v_full_name,
+            v_role,
+            v_avatar_url,
+            v_class_id,
+            1,
+            0
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            email = EXCLUDED.email,
+            "fullName" = COALESCE(EXCLUDED."fullName", public.profiles."fullName"),
+            role = COALESCE(EXCLUDED.role, public.profiles.role),
+            "avatarUrl" = COALESCE(EXCLUDED."avatarUrl", public.profiles."avatarUrl"),
+            "classId" = COALESCE(EXCLUDED."classId", public.profiles."classId");
+    EXCEPTION
+        WHEN unique_violation THEN
+            -- In the highly unlikely event of a concurrent race condition violating profiles_email_key:
+            -- Force-delete the conflicting email record and insert the correct profile.
+            DELETE FROM public.profiles WHERE email = new.email AND id <> new.id;
+            
+            INSERT INTO public.profiles (id, email, "fullName", role, "avatarUrl", "classId", "dailyStreak", "totalXp")
+            VALUES (
+                new.id,
+                new.email,
+                v_full_name,
+                v_role,
+                v_avatar_url,
+                v_class_id,
+                1,
+                0
+            )
+            ON CONFLICT (id) DO UPDATE SET
+                email = EXCLUDED.email,
+                "fullName" = COALESCE(EXCLUDED."fullName", public.profiles."fullName"),
+                role = COALESCE(EXCLUDED.role, public.profiles.role),
+                "avatarUrl" = COALESCE(EXCLUDED."avatarUrl", public.profiles."avatarUrl"),
+                "classId" = COALESCE(EXCLUDED."classId", public.profiles."classId");
+    END;
 
     RETURN new;
 END;
 $$;
 
+-- Ensure trigger is dropped before creating to avoid redundancy
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
 -- Trigger creation
-CREATE OR REPLACE TRIGGER on_auth_user_created
+CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
