@@ -46,47 +46,63 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const isUuid = (val: string | undefined): boolean => {
+    return !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+  };
+
   const loadNotifications = async (userId: string) => {
-    if (isSupabaseConfigured() && getSupabase()) {
+    if (isSupabaseConfigured() && getSupabase() && isUuid(userId)) {
       const supabase = getSupabase()!;
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('notifications')
           .select('*')
           .eq('userId', userId)
           .order('createdAt', { ascending: false });
+        
+        if (error) {
+          console.warn('Failed to load notifications from DB:', error.message);
+          fallbackToLocal(userId);
+          return;
+        }
+
         if (data) {
           setNotifications(data as any);
         }
       } catch (err) {
-        console.error('Failed to load notifications:', err);
+        console.warn('Failed to load notifications:', err);
+        fallbackToLocal(userId);
       }
     } else {
-      const saved = localStorage.getItem(`rk_notifications_${userId}`);
-      if (saved) {
-        setNotifications(JSON.parse(saved));
-      } else {
-        const defaults: Notification[] = [
-          {
-            id: 'not_1',
-            userId,
-            title: 'Welcome to RK Coaching Platform!',
-            message: 'Unlock highly professional Class 6-12 syllabus standard revision binders, practice test series, and top rank lecture videos.',
-            isRead: false,
-            createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-          },
-          {
-            id: 'not_2',
-            userId,
-            title: 'New Chemistry Handout Uploaded',
-            message: 'Prof. Rajesh Khanna published handwritten notes for Chemistry - Organic Reactions under Chapter 2. Download standard PDFs now!',
-            isRead: false,
-            createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
-          }
-        ];
-        setNotifications(defaults);
-        localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(defaults));
-      }
+      fallbackToLocal(userId);
+    }
+  };
+
+  const fallbackToLocal = (userId: string) => {
+    const saved = localStorage.getItem(`rk_notifications_${userId}`);
+    if (saved) {
+      setNotifications(JSON.parse(saved));
+    } else {
+      const defaults: Notification[] = [
+        {
+          id: 'not_1',
+          userId,
+          title: 'Welcome to RK Coaching Platform!',
+          message: 'Unlock highly professional Class 6-12 syllabus standard revision binders, practice test series, and top rank lecture videos.',
+          isRead: false,
+          createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+        },
+        {
+          id: 'not_2',
+          userId,
+          title: 'New Chemistry Handout Uploaded',
+          message: 'Prof. Rajesh Khanna published handwritten notes for Chemistry - Organic Reactions under Chapter 2. Download standard PDFs now!',
+          isRead: false,
+          createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
+        }
+      ];
+      setNotifications(defaults);
+      localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(defaults));
     }
   };
 
@@ -94,93 +110,118 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const addNotification = async (title: string, message: string, userId: string | undefined) => {
     if (!userId) return;
-    if (isSupabaseConfigured() && getSupabase()) {
+    if (isSupabaseConfigured() && getSupabase() && isUuid(userId)) {
       const supabase = getSupabase()!;
       try {
-        await (supabase.from('notifications') as any).insert({
+        const { error } = await (supabase.from('notifications') as any).insert({
           userId,
           title,
           message,
           isRead: false
         });
+        if (error) {
+          console.warn('Failed to insert notification in DB:', error.message);
+          fallbackAddLocal(title, message, userId);
+          return;
+        }
         await loadNotifications(userId);
       } catch (err) {
-        console.error(err);
+        console.warn(err);
+        fallbackAddLocal(title, message, userId);
       }
     } else {
-      const newNotif: Notification = {
-        id: 'not_' + Math.random().toString(36).substring(2, 9),
-        userId,
-        title,
-        message,
-        isRead: false,
-        createdAt: new Date().toISOString()
-      };
-      setNotifications((prev) => {
-        const updated = [newNotif, ...prev];
-        localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
-        return updated;
-      });
+      fallbackAddLocal(title, message, userId);
     }
+  };
+
+  const fallbackAddLocal = (title: string, message: string, userId: string) => {
+    const newNotif: Notification = {
+      id: 'not_' + Math.random().toString(36).substring(2, 9),
+      userId,
+      title,
+      message,
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+    setNotifications((prev) => {
+      const updated = [newNotif, ...prev];
+      localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const markNotificationRead = async (id: string, userId: string | undefined) => {
     if (!userId) return;
-    if (isSupabaseConfigured() && getSupabase()) {
+    if (isSupabaseConfigured() && getSupabase() && isUuid(userId) && id.includes('-')) {
       const supabase = getSupabase()!;
       try {
         await (supabase.from('notifications') as any).update({ isRead: true }).eq('id', id);
         await loadNotifications(userId);
       } catch (err) {
-        console.error(err);
+        console.warn(err);
+        fallbackMarkReadLocal(id, userId);
       }
     } else {
-      setNotifications((prev) => {
-        const updated = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
-        localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
-        return updated;
-      });
+      fallbackMarkReadLocal(id, userId);
     }
+  };
+
+  const fallbackMarkReadLocal = (id: string, userId: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+      localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const markAllNotificationsRead = async (userId: string | undefined) => {
     if (!userId) return;
-    if (isSupabaseConfigured() && getSupabase()) {
+    if (isSupabaseConfigured() && getSupabase() && isUuid(userId)) {
       const supabase = getSupabase()!;
       try {
         await (supabase.from('notifications') as any).update({ isRead: true }).eq('userId', userId);
         await loadNotifications(userId);
       } catch (err) {
-        console.error(err);
+        console.warn(err);
+        fallbackMarkAllReadLocal(userId);
       }
     } else {
-      setNotifications((prev) => {
-        const updated = prev.map((n) => ({ ...n, isRead: true }));
-        localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
-        return updated;
-      });
+      fallbackMarkAllReadLocal(userId);
     }
     addToast('All notifications marked as read', 'success');
   };
 
+  const fallbackMarkAllReadLocal = (userId: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, isRead: true }));
+      localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const deleteNotification = async (id: string, userId: string | undefined) => {
     if (!userId) return;
-    if (isSupabaseConfigured() && getSupabase()) {
+    if (isSupabaseConfigured() && getSupabase() && isUuid(userId) && id.includes('-')) {
       const supabase = getSupabase()!;
       try {
         await supabase.from('notifications').delete().eq('id', id);
         await loadNotifications(userId);
       } catch (err) {
-        console.error(err);
+        console.warn(err);
+        fallbackDeleteLocal(id, userId);
       }
     } else {
-      setNotifications((prev) => {
-        const updated = prev.filter((n) => n.id !== id);
-        localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
-        return updated;
-      });
+      fallbackDeleteLocal(id, userId);
     }
     addToast('Notification dismissed', 'info');
+  };
+
+  const fallbackDeleteLocal = (id: string, userId: string) => {
+    setNotifications((prev) => {
+      const updated = prev.filter((n) => n.id !== id);
+      localStorage.setItem(`rk_notifications_${userId}`, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (

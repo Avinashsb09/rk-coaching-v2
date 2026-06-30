@@ -22,26 +22,12 @@ export function BookmarkProvider({ children }: { children: ReactNode }) {
   const [bookmarksList, setBookmarksList] = useState<Bookmark[]>([]);
 
   const loadBookmarks = async (userId: string) => {
-    if (isSupabaseConfigured() && getSupabase()) {
-      const supabase = getSupabase()!;
-      try {
-        const { data } = await supabase
-          .from('bookmarks')
-          .select('*')
-          .eq('userId', userId);
-        if (data) {
-          setBookmarksList(data as any);
-        }
-      } catch (err) {
-        console.error('Failed to load bookmarks:', err);
-      }
+    // Gracefully bypass Supabase query since bookmarks table is not yet implemented in the user's active database
+    const saved = localStorage.getItem(`rk_bookmarks_${userId}`);
+    if (saved) {
+      setBookmarksList(JSON.parse(saved));
     } else {
-      const saved = localStorage.getItem(`rk_bookmarks_${userId}`);
-      if (saved) {
-        setBookmarksList(JSON.parse(saved));
-      } else {
-        setBookmarksList([]);
-      }
+      setBookmarksList([]);
     }
   };
 
@@ -62,31 +48,11 @@ export function BookmarkProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString()
     };
 
-    if (isSupabaseConfigured() && getSupabase() && userId) {
-      const supabase = getSupabase()!;
-      try {
-        const { error } = await (supabase.from('bookmarks') as any).upsert(
-          {
-            userId,
-            targetType,
-            targetId,
-            title
-          },
-          { onConflict: 'userId,targetType,targetId' }
-        );
-        if (!error) {
-          await loadBookmarks(userId);
-        }
-      } catch (err) {
-        console.error('Error saving bookmark:', err);
-      }
-    } else {
-      setBookmarksList((prev) => {
-        const updated = [...prev, newB];
-        localStorage.setItem(`rk_bookmarks_${idVal}`, JSON.stringify(updated));
-        return updated;
-      });
-    }
+    setBookmarksList((prev) => {
+      const updated = [...prev, newB];
+      localStorage.setItem(`rk_bookmarks_${idVal}`, JSON.stringify(updated));
+      return updated;
+    });
     addToast(`Bookmarked ${targetType} successfully!`, 'success');
   };
 
@@ -97,26 +63,11 @@ export function BookmarkProvider({ children }: { children: ReactNode }) {
     addToast: any
   ) => {
     const idVal = userId || 'guest';
-    if (isSupabaseConfigured() && getSupabase() && userId) {
-      const supabase = getSupabase()!;
-      try {
-        await supabase
-          .from('bookmarks')
-          .delete()
-          .eq('userId', userId)
-          .eq('targetType', targetType)
-          .eq('targetId', targetId);
-        await loadBookmarks(userId);
-      } catch (err) {
-        console.error('Error deleting bookmark:', err);
-      }
-    } else {
-      setBookmarksList((prev) => {
-        const updated = prev.filter((b) => !(b.targetType === targetType && b.targetId === targetId));
-        localStorage.setItem(`rk_bookmarks_${idVal}`, JSON.stringify(updated));
-        return updated;
-      });
-    }
+    setBookmarksList((prev) => {
+      const updated = prev.filter((b) => !(b.targetType === targetType && b.targetId === targetId));
+      localStorage.setItem(`rk_bookmarks_${idVal}`, JSON.stringify(updated));
+      return updated;
+    });
     addToast('Removed bookmark', 'info');
   };
 

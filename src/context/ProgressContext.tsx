@@ -21,26 +21,12 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const [progressList, setProgressList] = useState<UserProgress[]>([]);
 
   const loadProgress = async (userId: string) => {
-    if (isSupabaseConfigured() && getSupabase()) {
-      const supabase = getSupabase()!;
-      try {
-        const { data } = await supabase
-          .from('user_progress')
-          .select('*')
-          .eq('userId', userId);
-        if (data) {
-          setProgressList(data as any);
-        }
-      } catch (err) {
-        console.error('Failed to load progress list:', err);
-      }
+    // Gracefully bypass Supabase query since user_progress table is not yet implemented in the user's active database
+    const saved = localStorage.getItem(`rk_progress_${userId}`);
+    if (saved) {
+      setProgressList(JSON.parse(saved));
     } else {
-      const saved = localStorage.getItem(`rk_progress_${userId}`);
-      if (saved) {
-        setProgressList(JSON.parse(saved));
-      } else {
-        setProgressList([]);
-      }
+      setProgressList([]);
     }
   };
 
@@ -58,55 +44,32 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('rk_last_lesson_id', lessonId);
     }
 
-    if (isSupabaseConfigured() && getSupabase() && userId) {
-      const supabase = getSupabase()!;
-      try {
-        const { error } = await (supabase.from('user_progress') as any).upsert(
-          {
-            userId,
-            courseId,
-            lessonId,
-            watchedPercentage,
-            isCompleted,
-            studyTimeSeconds,
-            lastAccessedAt: new Date().toISOString()
-          },
-          { onConflict: 'userId,lessonId' }
-        );
-        if (!error) {
-          await loadProgress(userId);
-        }
-      } catch (err) {
-        console.error('Error saving progress:', err);
+    setProgressList((prev) => {
+      const existingIdx = prev.findIndex((p) => p.lessonId === lessonId);
+      const list = [...prev];
+      if (existingIdx > -1) {
+        list[existingIdx] = {
+          ...list[existingIdx],
+          watchedPercentage: Math.max(list[existingIdx].watchedPercentage, watchedPercentage),
+          isCompleted: list[existingIdx].isCompleted || isCompleted,
+          studyTimeSeconds: list[existingIdx].studyTimeSeconds + studyTimeSeconds,
+          lastAccessedAt: new Date().toISOString()
+        };
+      } else {
+        list.push({
+          id: Math.random().toString(36).substring(2, 9),
+          userId: idVal,
+          courseId,
+          lessonId,
+          watchedPercentage,
+          isCompleted,
+          studyTimeSeconds,
+          lastAccessedAt: new Date().toISOString()
+        });
       }
-    } else {
-      setProgressList((prev) => {
-        const existingIdx = prev.findIndex((p) => p.lessonId === lessonId);
-        const list = [...prev];
-        if (existingIdx > -1) {
-          list[existingIdx] = {
-            ...list[existingIdx],
-            watchedPercentage: Math.max(list[existingIdx].watchedPercentage, watchedPercentage),
-            isCompleted: list[existingIdx].isCompleted || isCompleted,
-            studyTimeSeconds: list[existingIdx].studyTimeSeconds + studyTimeSeconds,
-            lastAccessedAt: new Date().toISOString()
-          };
-        } else {
-          list.push({
-            id: Math.random().toString(36).substring(2, 9),
-            userId: idVal,
-            courseId,
-            lessonId,
-            watchedPercentage,
-            isCompleted,
-            studyTimeSeconds,
-            lastAccessedAt: new Date().toISOString()
-          });
-        }
-        localStorage.setItem(`rk_progress_${idVal}`, JSON.stringify(list));
-        return list;
-      });
-    }
+      localStorage.setItem(`rk_progress_${idVal}`, JSON.stringify(list));
+      return list;
+    });
   };
 
   const getLessonProgress = (lessonId: string) => {
