@@ -39,7 +39,6 @@ export default function StudentDashboard() {
               size="sm"
               onClick={() => {
                 setCurrentView('home');
-                addToast('Browsing full standard catalog', 'info');
               }}
               rightIcon={<Compass className="w-4 h-4" />}
             >

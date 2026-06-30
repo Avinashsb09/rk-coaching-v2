@@ -194,11 +194,40 @@ function AppSyncController({
 
 export function AppProvider({ children }: { children: ReactNode }) {
   // Navigation Routing States
-  const [currentView, setCurrentView] = useState<string>('home');
+  const [currentView, setCurrentView] = useState<string>(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.substring(1);
+      if (hash) return hash;
+    }
+    return 'home';
+  });
   const [breadcrumbs, setBreadcrumbs] = useState<{ label: string; view?: string }[]>([
     { label: 'Home', view: 'home' }
   ]);
   const [globalSearch, setGlobalSearch] = useState<string>('');
+
+  // Synchronize state changes to URL hash
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentHash = window.location.hash.substring(1);
+      if (currentView && currentView !== currentHash) {
+        window.location.hash = currentView;
+      }
+    }
+  }, [currentView]);
+
+  // Synchronize URL hash changes to state (back/forward browser buttons)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      if (hash && hash !== currentView) {
+        setCurrentView(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [currentView]);
 
   return (
     <ThemeProvider>

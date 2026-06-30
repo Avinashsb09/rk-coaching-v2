@@ -146,7 +146,6 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
               key={link.id}
               onClick={() => {
                 setCurrentView(link.id);
-                addToast(`Redirecting to ${link.label}`, 'info');
               }}
               className={`
                 w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200 cursor-pointer

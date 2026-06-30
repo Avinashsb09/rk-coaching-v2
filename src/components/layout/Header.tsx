@@ -22,6 +22,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
     logout,
     darkMode,
     setDarkMode,
+    currentView,
     setCurrentView,
     classes,
     globalSearch,
@@ -112,14 +113,22 @@ export function Header({ onToggleSidebar }: HeaderProps) {
 
           <button
             onClick={() => setCurrentView('faq')}
-            className="text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100 cursor-pointer"
+            className={`text-sm font-semibold transition-colors cursor-pointer ${
+              currentView === 'faq'
+                ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100'
+            }`}
           >
             FAQs
           </button>
 
           <button
             onClick={() => setCurrentView('advanced-search')}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer flex items-center gap-1"
+            className={`text-sm font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+              currentView === 'advanced-search'
+                ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100'
+            }`}
           >
             <Search className="w-4 h-4" />
             <span>Advanced Search</span>
@@ -127,7 +136,11 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           
           <button
             onClick={() => setCurrentView('contact')}
-            className="text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100 cursor-pointer"
+            className={`text-sm font-semibold transition-colors cursor-pointer ${
+              currentView === 'contact'
+                ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100'
+            }`}
           >
             Contact Support
           </button>
@@ -299,7 +312,11 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 setCurrentView('home');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm font-semibold rounded-xl text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-all"
+              className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
+                currentView === 'home'
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold'
+                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
             >
               Course Directory
             </button>
@@ -308,16 +325,37 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 setCurrentView('faq');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm font-semibold rounded-xl text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-all"
+              className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
+                currentView === 'faq'
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold'
+                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
             >
               FAQs
+            </button>
+            <button
+              onClick={() => {
+                setCurrentView('advanced-search');
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
+                currentView === 'advanced-search'
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold'
+                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
+            >
+              Advanced Search
             </button>
             <button
               onClick={() => {
                 setCurrentView('contact');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-sm font-semibold rounded-xl text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 transition-all"
+              className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
+                currentView === 'contact'
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold'
+                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
             >
               Contact Support
             </button>

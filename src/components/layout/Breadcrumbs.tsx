@@ -7,12 +7,11 @@ import { ChevronRight, Home } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export function Breadcrumbs() {
-  const { breadcrumbs, setCurrentView, addToast } = useApp();
+  const { breadcrumbs, setCurrentView } = useApp();
 
   const handleCrumbsClick = (view?: string, index?: number) => {
     if (view) {
       setCurrentView(view);
-      addToast(`Navigating back in workspace...`, 'info');
     }
   };
 

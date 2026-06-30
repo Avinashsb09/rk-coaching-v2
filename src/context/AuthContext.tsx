@@ -82,13 +82,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userProfile);
       setRoleState(userProfile.role);
 
-      // Transition router safely
-      if (userProfile.role === 'student') {
-        setCurrentView('student-dashboard');
-      } else if (userProfile.role === 'teacher') {
-        setCurrentView('teacher-dashboard');
-      } else if (userProfile.role === 'admin') {
-        setCurrentView('admin-dashboard');
+      // Transition router safely if not already on a deep link or specific view
+      const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+      const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+
+      if (isOnDefaultPage) {
+        if (userProfile.role === 'student') {
+          setCurrentView('student-dashboard');
+        } else if (userProfile.role === 'teacher') {
+          setCurrentView('teacher-dashboard');
+        } else if (userProfile.role === 'admin') {
+          setCurrentView('admin-dashboard');
+        }
+      } else {
+        // Keeps user exactly on their current deep-linked view
+        setCurrentView(currentHash);
       }
 
       return userProfile;
