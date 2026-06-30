@@ -40,7 +40,7 @@ const scienceSubjects = [
 
 const neetSubjects = [
   { name: 'Biology', icon: 'Dna', desc: 'High-yield Zoology and Botany concepts, cell cycles, and anatomy.' },
-  { name: 'Chemistry', icon: 'FlaskConical', desc: 'Inorganic, Organic, and Physical Chemistry modules optimized for NEET.' }
+  { name: 'Chemistry', icon: 'FlaskConical', desc: 'Inorganic, Organic, and Physical Chemistry modules optimized for NEET (Biology & Chemistry).' }
 ];
 
 mockClasses.forEach((cls) => {

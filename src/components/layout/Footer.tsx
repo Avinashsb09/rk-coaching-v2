@@ -112,22 +112,16 @@ export function Footer() {
           {/* Physical Address contact details */}
           <div className="space-y-3.5">
             <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
-              {homepageConfig.heroTitle || "RK Coaching"} Contact
+              RK Coaching Contact
             </h3>
             <ul className="space-y-3 text-sm">
-              {homepageConfig.contactAddress && (
-                <li className="flex items-start gap-2.5">
-                  <MapPin className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                  <span>{homepageConfig.contactAddress}</span>
-                </li>
-              )}
               <li className="flex items-center gap-2.5">
                 <Phone className="w-5 h-5 text-blue-500 shrink-0" />
-                <span>{homepageConfig.contactPhone || "+91 88220 91760"}</span>
+                <span>+91 88220 91760</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-5 h-5 text-blue-500 shrink-0" />
-                <span>{homepageConfig.contactEmail || "ravikantjnv18@gmail.com"}</span>
+                <span>ravikantjnv18@gmail.com</span>
               </li>
             </ul>
           </div>

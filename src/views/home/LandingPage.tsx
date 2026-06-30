@@ -45,10 +45,6 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
       
       {/* 1. HERO SECTION */}
       <section className="relative px-4 text-center max-w-4xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 text-xs font-bold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>India's Premium Board & NEET (Biology & Chemistry) LMS Engine</span>
-        </div>
         
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight px-2 sm:px-0">
           {homepageConfig.heroTitle || "Achieve Top Rank in Boards & NEET (Biology & Chemistry) Exams"}
