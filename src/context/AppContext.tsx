@@ -128,6 +128,18 @@ interface AppContextType {
   unlockedSubjectNoteIds: string[];
   unlockSubjectNotes: (subjectId: string, rzpId?: string, rzpOrderId?: string) => Promise<void>;
   hasSubjectNotesAccess: (subjectId: string) => boolean;
+
+  // Quiz Module states
+  quizzes: Quiz[];
+  setQuizzes: React.Dispatch<React.SetStateAction<Quiz[]>>;
+  quizQuestions: QuizQuestion[];
+  setQuizQuestions: React.Dispatch<React.SetStateAction<QuizQuestion[]>>;
+  quizOptions: QuizOption[];
+  setQuizOptions: React.Dispatch<React.SetStateAction<QuizOption[]>>;
+  quizAttempts: QuizAttempt[];
+  setQuizAttempts: React.Dispatch<React.SetStateAction<QuizAttempt[]>>;
+  leaderboardEntries: LeaderboardEntry[];
+  setLeaderboardEntries: React.Dispatch<React.SetStateAction<LeaderboardEntry[]>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -284,7 +296,15 @@ function AppContextInjector({
 }) {
   const { darkMode, setDarkMode } = useTheme();
   const { toasts, addToast, dismissToast, notifications, setNotifications, unreadNotificationsCount, addNotification, markNotificationRead, markAllNotificationsRead, deleteNotification } = useNotifications();
-  const { classes, setClasses, subjects, setSubjects, courses, setCourses, chapters, setChapters, lessons, setLessons, videos, setVideos, notes, setNotes, announcements, setAnnouncements, faqs, setFaqs, users, setUsers, homepageConfig, setHomepageConfig } = useDatabase();
+  const { 
+    classes, setClasses, subjects, setSubjects, courses, setCourses, 
+    chapters, setChapters, lessons, setLessons, videos, setVideos, 
+    notes, setNotes, announcements, setAnnouncements, faqs, setFaqs, 
+    users, setUsers, homepageConfig, setHomepageConfig,
+    quizzes, setQuizzes, quizQuestions, setQuizQuestions, 
+    quizOptions, setQuizOptions, quizAttempts, setQuizAttempts, 
+    leaderboardEntries, setLeaderboardEntries 
+  } = useDatabase();
   const { bookmarksList, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const { progressList, saveProgress, getLessonProgress } = useProgress();
   const { 
@@ -444,7 +464,17 @@ function AppContextInjector({
     getEnrolledCourses: handleGetEnrolledCourses,
     unlockedSubjectNoteIds,
     unlockSubjectNotes: handleUnlockSubjectNotes,
-    hasSubjectNotesAccess: handleHasSubjectNotesAccess
+    hasSubjectNotesAccess: handleHasSubjectNotesAccess,
+    quizzes,
+    setQuizzes,
+    quizQuestions,
+    setQuizQuestions,
+    quizOptions,
+    setQuizOptions,
+    quizAttempts,
+    setQuizAttempts,
+    leaderboardEntries,
+    setLeaderboardEntries
   };
 
   return (

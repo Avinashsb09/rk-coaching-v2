@@ -50,7 +50,7 @@ export function RazorpayGatewayModal({
 }: RazorpayGatewayModalProps) {
   const { paymentSettings, addToast, user } = useApp();
   
-  const [step, setStep] = useState<'method' | 'processing' | 'success' | 'failure'>('method');
+  const [step, setStep] = useState<'warning' | 'method' | 'processing' | 'success' | 'failure'>('warning');
   const [upiTab, setUpiTab] = useState<'intent' | 'vpa' | 'qr'>('intent');
   const [upiId, setUpiId] = useState('');
   const [simulatedPaymentId, setSimulatedPaymentId] = useState('');
@@ -58,6 +58,12 @@ export function RazorpayGatewayModal({
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(300); // 5 minute countdown for QR Code / Intent
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep('warning');
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     loadRazorpayScript().then(loaded => {
@@ -367,6 +373,39 @@ export function RazorpayGatewayModal({
 
         {/* Step Content */}
         <div className="p-5">
+          {step === 'warning' && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center gap-2 text-red-500 dark:text-red-400 font-extrabold text-xs uppercase tracking-wider">
+                <AlertCircle className="w-4.5 h-4.5 text-red-500 dark:text-red-400 shrink-0" />
+                Payment Confirmation
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                You are purchasing premium study material. Please verify your selection carefully. All successful payments are NON-REFUNDABLE. Refunds will not be provided after successful payment.
+              </p>
+              <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <Button
+                  onClick={() => {
+                    onCancel();
+                    onClose();
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs font-bold border-slate-200 dark:border-slate-800 dark:text-slate-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => setStep('method')}
+                  variant="primary"
+                  size="sm"
+                  className="w-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
+                >
+                  Proceed to Payment
+                </Button>
+              </div>
+            </div>
+          )}
+
           {step === 'method' && (
             <div className="space-y-5 text-left">
               {/* UPI Options Tabs */}

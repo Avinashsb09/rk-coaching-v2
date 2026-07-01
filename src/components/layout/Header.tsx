@@ -47,7 +47,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/40 bg-white/70 dark:border-slate-800/40 dark:bg-slate-950/70 backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* Left segment - Logo */}

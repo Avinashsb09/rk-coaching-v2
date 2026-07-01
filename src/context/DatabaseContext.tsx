@@ -1,12 +1,16 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AcademicClass, AcademicSubject, Course, AcademicChapter, Lesson, Video, Note, Announcement, FaqItem, UserProfile } from '../types';
+import { 
+  AcademicClass, AcademicSubject, Course, AcademicChapter, Lesson, Video, Note, 
+  Announcement, FaqItem, UserProfile, Quiz, QuizQuestion, QuizOption, QuizAttempt, LeaderboardEntry 
+} from '../types';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
-import { mockClasses, mockSubjects, mockCourses, mockChapters, mockLessons, mockVideos, mockNotes, mockAnnouncements } from '../lib/mockData';
+import { 
+  mockClasses, mockSubjects, mockCourses, mockChapters, mockLessons, 
+  mockVideos, mockNotes, mockAnnouncements 
+} from '../lib/mockData';
+import { 
+  initialQuizzes, initialQuestions, initialOptions, initialAttempts, initialLeaderboards 
+} from '../lib/quizMockData';
 
 export interface DatabaseContextType {
   classes: AcademicClass[];
@@ -42,6 +46,18 @@ export interface DatabaseContextType {
   setHomepageConfig: React.Dispatch<React.SetStateAction<any>>;
   loadingCatalog: boolean;
   loadCatalogData: () => Promise<void>;
+
+  // Quiz Module states
+  quizzes: Quiz[];
+  setQuizzes: React.Dispatch<React.SetStateAction<Quiz[]>>;
+  quizQuestions: QuizQuestion[];
+  setQuizQuestions: React.Dispatch<React.SetStateAction<QuizQuestion[]>>;
+  quizOptions: QuizOption[];
+  setQuizOptions: React.Dispatch<React.SetStateAction<QuizOption[]>>;
+  quizAttempts: QuizAttempt[];
+  setQuizAttempts: React.Dispatch<React.SetStateAction<QuizAttempt[]>>;
+  leaderboardEntries: LeaderboardEntry[];
+  setLeaderboardEntries: React.Dispatch<React.SetStateAction<LeaderboardEntry[]>>;
 }
 
 export const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
@@ -58,6 +74,49 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+
+  // Quiz States
+  const [quizzes, setQuizzes] = useState<Quiz[]>(() => {
+    const saved = localStorage.getItem('rk_quizzes');
+    return saved ? JSON.parse(saved) : initialQuizzes;
+  });
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>(() => {
+    const saved = localStorage.getItem('rk_quiz_questions');
+    return saved ? JSON.parse(saved) : initialQuestions;
+  });
+  const [quizOptions, setQuizOptions] = useState<QuizOption[]>(() => {
+    const saved = localStorage.getItem('rk_quiz_options');
+    return saved ? JSON.parse(saved) : initialOptions;
+  });
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>(() => {
+    const saved = localStorage.getItem('rk_quiz_attempts');
+    return saved ? JSON.parse(saved) : initialAttempts;
+  });
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>(() => {
+    const saved = localStorage.getItem('rk_leaderboards');
+    return saved ? JSON.parse(saved) : initialLeaderboards;
+  });
+
+  // Local Storage synchronizers
+  useEffect(() => {
+    localStorage.setItem('rk_quizzes', JSON.stringify(quizzes));
+  }, [quizzes]);
+
+  useEffect(() => {
+    localStorage.setItem('rk_quiz_questions', JSON.stringify(quizQuestions));
+  }, [quizQuestions]);
+
+  useEffect(() => {
+    localStorage.setItem('rk_quiz_options', JSON.stringify(quizOptions));
+  }, [quizOptions]);
+
+  useEffect(() => {
+    localStorage.setItem('rk_quiz_attempts', JSON.stringify(quizAttempts));
+  }, [quizAttempts]);
+
+  useEffect(() => {
+    localStorage.setItem('rk_leaderboards', JSON.stringify(leaderboardEntries));
+  }, [leaderboardEntries]);
 
   const [homepageConfig, setHomepageConfigState] = useState({
     heroTitle: 'RK coaching institute',
@@ -94,7 +153,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       setLoadingCatalog(true);
       const s = supabase as any;
       try {
-        // SELECT only. NO automatic inserts or seeding writes on startup.
         const results = await Promise.all([
           s.from('classes').select('*').order('priority', { ascending: true }),
           s.from('subjects').select('*'),
@@ -106,11 +164,17 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           s.from('announcements').select('*'),
           s.from('faq').select('*').order('orderIndex', { ascending: true }),
           s.from('profiles').select('*').neq('role', 'visitor'),
-          s.from('admin_settings').select('*').eq('id', 'homepage_config').single()
+          s.from('admin_settings').select('*').eq('id', 'homepage_config').single(),
+          
+          // Quiz fallbacks
+          s.from('quizzes').select('*').catch(() => ({ data: null })),
+          s.from('quiz_questions').select('*').catch(() => ({ data: null })),
+          s.from('quiz_options').select('*').catch(() => ({ data: null })),
+          s.from('quiz_attempts').select('*').catch(() => ({ data: null })),
+          s.from('leaderboards').select('*').catch(() => ({ data: null }))
         ]);
 
-        // Detect if any query returned a 401 Unauthorized / expired token error
-        const authError = results.find(
+        const authError = results.slice(0, 11).find(
           (r: any) =>
             r.error &&
             (r.error.status === 401 ||
@@ -121,8 +185,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
 
         if (authError) {
           console.warn('Stale or invalid authentication session detected on startup. Clearing session to restore public access:', authError.error);
-          
-          // Clear Supabase session and local storage
           await supabase.auth.signOut().catch(() => {});
           try {
             for (let i = 0; i < localStorage.length; i++) {
@@ -133,7 +195,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
             }
           } catch (e) {}
 
-          // Reset loading and retry loading the catalog cleanly as visitor
           setLoadingCatalog(false);
           await loadCatalogData();
           return;
@@ -150,7 +211,13 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           { data: dbAnnouncements },
           { data: dbFaqs },
           { data: dbProfiles },
-          { data: dbSettings }
+          { data: dbSettings },
+          
+          dbQuizzesRes,
+          dbQuestionsRes,
+          dbOptionsRes,
+          dbAttemptsRes,
+          dbLeaderboardsRes
         ] = results;
 
         if (dbClasses && dbClasses.length > 0) {
@@ -162,7 +229,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           setVideos(dbVideos || []);
           setNotes(dbNotes || []);
         } else {
-          console.warn('Supabase is configured but tables are empty. Falling back to local mock data to ensure full interactivity.');
+          console.warn('Supabase is configured but tables are empty. Falling back to local mock data.');
           setClasses(mockClasses);
           setSubjects(mockSubjects);
           setCourses(mockCourses);
@@ -200,13 +267,20 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         if (dbSettings && dbSettings.value) {
           setHomepageConfigState(dbSettings.value);
         }
+
+        // Apply fallback checks for quizzes
+        if (dbQuizzesRes && dbQuizzesRes.data && dbQuizzesRes.data.length > 0) setQuizzes(dbQuizzesRes.data);
+        if (dbQuestionsRes && dbQuestionsRes.data && dbQuestionsRes.data.length > 0) setQuizQuestions(dbQuestionsRes.data);
+        if (dbOptionsRes && dbOptionsRes.data && dbOptionsRes.data.length > 0) setQuizOptions(dbOptionsRes.data);
+        if (dbAttemptsRes && dbAttemptsRes.data && dbAttemptsRes.data.length > 0) setQuizAttempts(dbAttemptsRes.data);
+        if (dbLeaderboardsRes && dbLeaderboardsRes.data && dbLeaderboardsRes.data.length > 0) setLeaderboardEntries(dbLeaderboardsRes.data);
+
       } catch (err) {
         console.error('Failed to load catalog data from Supabase:', err);
       } finally {
         setLoadingCatalog(false);
       }
     } else {
-      // Supabase is not configured, load in-memory fallback mock arrays so the interface is fully interactive
       setClasses(mockClasses);
       setSubjects(mockSubjects);
       setCourses(mockCourses);
@@ -303,7 +377,19 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         homepageConfig,
         setHomepageConfig,
         loadingCatalog,
-        loadCatalogData
+        loadCatalogData,
+
+        // Quiz State Exports
+        quizzes,
+        setQuizzes,
+        quizQuestions,
+        setQuizQuestions,
+        quizOptions,
+        setQuizOptions,
+        quizAttempts,
+        setQuizAttempts,
+        leaderboardEntries,
+        setLeaderboardEntries
       }}
     >
       {children}

@@ -30,6 +30,9 @@ import LessonView from './views/lms/LessonView';
 import AdvancedSearch from './views/lms/AdvancedSearch';
 import PurchasesInvoices from './views/student/PurchasesInvoices';
 import PyqView from './views/lms/PyqView';
+import QuizDashboard from './views/student/QuizDashboard';
+import QuizPlay from './views/student/QuizPlay';
+import QuizResult from './views/student/QuizResult';
 
 function MainAppShell() {
   const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast } = useApp();
@@ -110,6 +113,24 @@ function MainAppShell() {
         setBreadcrumbs([
           { label: 'Gamified Center', view: 'student-dashboard' },
           { label: 'Leaderboard Rankings' }
+        ]);
+        break;
+      case 'quiz-dashboard':
+        setBreadcrumbs([
+          { label: 'Gamified Center', view: 'student-dashboard' },
+          { label: 'Quiz Arena' }
+        ]);
+        break;
+      case 'quiz-play':
+        setBreadcrumbs([
+          { label: 'Quiz Arena', view: 'quiz-dashboard' },
+          { label: 'CBT Live Test' }
+        ]);
+        break;
+      case 'quiz-result':
+        setBreadcrumbs([
+          { label: 'Quiz Arena', view: 'quiz-dashboard' },
+          { label: 'Quiz Result Scorecard' }
         ]);
         break;
       case 'advanced-search':
@@ -199,6 +220,15 @@ function MainAppShell() {
       
       case 'pyq-view':
         return <PyqView />;
+      
+      case 'quiz-dashboard':
+        return <QuizDashboard />;
+      
+      case 'quiz-play':
+        return <QuizPlay />;
+      
+      case 'quiz-result':
+        return <QuizResult />;
       
       case 'course-view':
         return <CourseView />;

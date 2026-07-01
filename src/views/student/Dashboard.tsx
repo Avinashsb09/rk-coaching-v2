@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 
 export default function StudentDashboard() {
-  const { user, courses, setCurrentView, setSelectedCourseId, addToast } = useApp();
+  const { user, courses, setCurrentView, setSelectedCourseId, addToast, quizAttempts } = useApp();
 
   const handleResumeCourse = (courseId: string, title: string) => {
     setSelectedCourseId(courseId);
@@ -195,6 +195,77 @@ export default function StudentDashboard() {
           </Card>
         </div>
 
+      </section>
+
+      {/* Attempted Quiz History Section */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+          Attempted Quiz History
+        </h2>
+        
+        {quizAttempts.filter(a => a.userId === (user?.id || 'usr_student')).length === 0 ? (
+          <Card className="p-6 text-center border-dashed border-2 bg-slate-50/20 dark:bg-slate-900/10">
+            <p className="text-slate-500 text-sm font-semibold">You haven't attempted any quizzes yet. Head over to the Quiz Arena to test your concepts!</p>
+          </Card>
+        ) : (
+          <Card className="overflow-x-auto border-slate-200/50 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/50 backdrop-blur-lg">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="bg-slate-100/55 dark:bg-slate-900/60 text-slate-400 font-bold uppercase tracking-wider text-[9px] border-b border-slate-200 dark:border-slate-800">
+                  <th className="px-5 py-3">Quiz Name</th>
+                  <th className="px-5 py-3 text-center">Attempt Date</th>
+                  <th className="px-5 py-3 text-center">Score</th>
+                  <th className="px-5 py-3 text-center">Correct / Wrong</th>
+                  <th className="px-5 py-3 text-center">Accuracy</th>
+                  <th className="px-5 py-3 text-center">Status</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {quizAttempts.filter(a => a.userId === (user?.id || 'usr_student')).map((attempt) => (
+                  <tr key={attempt.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/25 transition-all">
+                    <td className="px-5 py-4 font-bold text-slate-800 dark:text-slate-200">{attempt.quizTitle || 'Practice Quiz'}</td>
+                    <td className="px-5 py-4 text-center font-semibold text-slate-500">
+                      {new Date(attempt.attemptedAt).toLocaleDateString('en-IN')}
+                    </td>
+                    <td className="px-5 py-4 text-center font-extrabold text-blue-600 dark:text-blue-400">
+                      {attempt.scoreObtained} / {attempt.totalQuestions * 3}
+                    </td>
+                    <td className="px-5 py-4 text-center font-semibold text-slate-600 dark:text-slate-400">
+                      <span className="text-emerald-500">{attempt.correctCount || 0} Right</span>
+                      <span className="mx-1">/</span>
+                      <span className="text-red-500">{attempt.wrongCount || 0} Wrong</span>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <Badge variant={attempt.accuracy >= 60 ? 'success' : 'secondary'} className="font-bold">
+                        {attempt.accuracy}%
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <Badge variant={attempt.isPassed ? 'success' : 'danger'} className="font-bold uppercase text-[8px]">
+                        {attempt.isPassed ? 'Passed' : 'Failed'}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Button
+                        onClick={() => {
+                          sessionStorage.setItem('last_quiz_attempt', JSON.stringify(attempt));
+                          sessionStorage.setItem('active_quiz_id', attempt.quizId);
+                          setCurrentView('quiz-result');
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs font-black text-indigo-600 dark:text-indigo-400"
+                      >
+                        View Result
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
       </section>
     </div>
   );

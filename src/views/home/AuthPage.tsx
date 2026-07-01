@@ -204,24 +204,7 @@ export default function AuthPage() {
         <span>Back to Course Syllabus</span>
       </button>
 
-      {/* Supabase connection status indicator */}
-      <div className={`p-3.5 rounded-2xl border flex items-center gap-3 ${
-        configured 
-          ? 'bg-emerald-50 border-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-400'
-          : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400'
-      }`}>
-        <div className={`h-2.5 w-2.5 rounded-full ${configured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-pulse'}`} />
-        <div className="flex-1 text-xs">
-          <p className="font-bold">
-            {configured ? 'Supabase Database Connected' : 'Running in Local Demo Mode'}
-          </p>
-          <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-            {configured 
-              ? 'Users, course catalogs, and leaderboard XP are sync’d directly with Supabase.' 
-              : 'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to environment secrets to sync real users.'}
-          </p>
-        </div>
-      </div>
+
 
       <Card className="p-6" glassmorphism>
         <CardContent className="p-0 space-y-5">

@@ -1,19 +1,17 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { BookOpen, Facebook, Twitter, Youtube, Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
+import { BookOpen, Facebook, Instagram, Youtube, Mail, Phone } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export function Footer() {
-  const { setCurrentView, setGlobalSearch, addToast, homepageConfig } = useApp();
+  const { setCurrentView, setSelectedClassSlug, homepageConfig } = useApp();
 
-  const handleLinkClick = (view: string, searchTag?: string) => {
+  const handleStreamClick = (slug: string) => {
+    setSelectedClassSlug(slug);
+    setCurrentView('class-view');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLinkClick = (view: string) => {
     setCurrentView(view);
-    if (searchTag) {
-      setGlobalSearch(searchTag);
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -32,15 +30,12 @@ export function Footer() {
                 {homepageConfig.heroTitle || "RK Coaching"}
               </span>
             </div>
-            <p className="text-sm leading-relaxed text-slate-400">
-              India's premium serverless LMS for CBSE Classes 6-12 and NEET (Biology & Chemistry) competitive coaching. Secure your rank with elite notes and quizzes.
-            </p>
             <div className="flex space-x-4">
               <a href="#" className="p-2 rounded-xl bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
                 <Facebook className="w-4 h-4" />
               </a>
               <a href="#" className="p-2 rounded-xl bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
-                <Twitter className="w-4 h-4" />
+                <Instagram className="w-4 h-4" />
               </a>
               <a href="#" className="p-2 rounded-xl bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
                 <Youtube className="w-4 h-4" />
@@ -53,21 +48,20 @@ export function Footer() {
             <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-4">
               Explore Streams
             </h3>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2.5 text-sm text-left">
               {[
-                { label: 'NEET (Biology & Chemistry)', slug: 'neet' },
-                { label: 'Class 12 Science', slug: 'class-12-science' },
-                { label: 'Class 11 Science', slug: 'class-11-science' },
-                { label: 'Class 10 General', slug: 'class-10' },
-                { label: 'Class 6-9 Foundations', slug: 'class-6' }
+                { label: 'NEET Dashboard', slug: 'neet' },
+                { label: 'Class 12', slug: 'class-12-science' },
+                { label: 'Class 11', slug: 'class-11-science' },
+                { label: 'Class 10', slug: 'class-10' },
+                { label: 'Open Class Selector', slug: 'class-6-9' }
               ].map((link) => (
                 <li key={link.slug}>
                   <button
-                    onClick={() => handleLinkClick('home', link.slug)}
-                    className="hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                    onClick={() => handleStreamClick(link.slug)}
+                    className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                   >
-                    <span>{link.label}</span>
-                    <ExternalLink className="w-3 h-3 opacity-50" />
+                    {link.label}
                   </button>
                 </li>
               ))}
@@ -79,32 +73,22 @@ export function Footer() {
             <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-4">
               Support Channels
             </h3>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2.5 text-sm text-left">
               <li>
                 <button
                   onClick={() => handleLinkClick('faq')}
-                  className="hover:text-white transition-colors cursor-pointer"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
-                  Frequently Asked Questions
+                  FAQs
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => handleLinkClick('contact')}
-                  className="hover:text-white transition-colors cursor-pointer"
+                  className="hover:text-white transition-colors cursor-pointer text-left font-medium"
                 >
-                  Contact Helpdesk
+                  Contact Support
                 </button>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition-colors">
-                  Refund Policy (Razorpay)
-                </a>
               </li>
             </ul>
           </div>
@@ -114,7 +98,7 @@ export function Footer() {
             <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
               RK Coaching Contact
             </h3>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-3 text-sm text-left">
               <li className="flex items-center gap-2.5">
                 <Phone className="w-5 h-5 text-blue-500 shrink-0" />
                 <span>+91 88220 91760</span>

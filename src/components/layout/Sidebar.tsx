@@ -43,6 +43,11 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
             icon: <LayoutDashboard className="w-5 h-5" />
           },
           {
+            id: 'quiz-dashboard',
+            label: 'Quiz Arena',
+            icon: <Sparkles className="w-5 h-5 text-indigo-500" />
+          },
+          {
             id: 'catalog',
             label: 'All Courses',
             icon: <BookOpen className="w-5 h-5" />
@@ -121,7 +126,7 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
   return (
     <aside
       className={`
-        fixed inset-y-16 left-0 z-35 flex flex-col border-r border-slate-200/40 bg-white/70 dark:border-slate-800/40 dark:bg-slate-900/75 backdrop-blur-lg
+        fixed inset-y-16 left-0 z-35 flex flex-col border-r border-slate-200/40 bg-white/70 dark:border-slate-800/40 dark:bg-slate-950/70 backdrop-blur-lg
         transition-all duration-300 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isCollapsed ? 'w-20' : 'w-64'}

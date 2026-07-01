@@ -75,6 +75,24 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
           </div>
         </div>
 
+        {/* Quiz Arena Card */}
+        <div className="max-w-md mx-auto mb-6 p-5 border border-indigo-500/25 rounded-3xl bg-slate-900/60 dark:bg-slate-950/40 backdrop-blur-lg flex items-center justify-between shadow-xl cursor-pointer hover:border-indigo-500/40 transition-all hover:scale-[1.02] text-left"
+             onClick={() => setCurrentView('quiz-dashboard')}>
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30 shadow-inner">
+              <Sparkles className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                Live Quiz Arena
+                <span className="text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-md bg-indigo-600 text-white">CBT ACTIVE</span>
+              </h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">Challenge yourself, practice PYQs, and climb the student leaderboards!</p>
+            </div>
+          </div>
+          <ArrowRight className="w-5 h-5 text-indigo-400 shrink-0" />
+        </div>
+
         {/* Explore CTA buttons */}
         {!showCatalog && (
           <div className="flex justify-center pt-2 max-w-md mx-auto">
@@ -161,64 +179,6 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
                     <ArrowRight className="w-3.5 h-3.5" />
                   </div>
                 </button>
-              ))}
-            </div>
-          </section>
-
-          {/* 3. FEATURED COURSES DIRECTORY */}
-          <section className="space-y-6 px-4 max-w-7xl mx-auto text-left">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Trending Preparation Modules
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Handpicked courses featuring handwritten revisions, sample board templates, and expert mock tests.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setCurrentView('catalog')} rightIcon={<ArrowRight className="w-4 h-4" />}>
-                View Full Catalog
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {courses.map((course) => (
-                <Card key={course.id} hoverEffect>
-                  <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
-                    <img src={course.thumbnailUrl} alt={course.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                    <div className="absolute top-3 right-3">
-                      <Badge variant={course.isPremium ? 'warning' : 'success'}>
-                        {course.isPremium ? 'PREMIUM (RZP)' : '100% FREE'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="space-y-3.5">
-                    <span className="text-[10px] uppercase font-extrabold tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-md">
-                      {course.classId === 'neet' ? 'NEET (Biology & Chemistry) Specialty' : 'CBSE Boards'}
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-1">
-                      {course.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                      {course.subtitle}
-                    </p>
-                    <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 pt-3.5">
-                      <div>
-                        {course.isPremium ? (
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-sm font-extrabold text-slate-900 dark:text-white">₹{course.discountPrice}</span>
-                            <span className="text-[10px] text-slate-400 line-through">₹{course.price}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">FREE NOTEBOOK</span>
-                        )}
-                      </div>
-                      <Button variant="primary" size="sm" onClick={() => handleExploreCourse(course.id)}>
-                        Explore Course
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               ))}
             </div>
           </section>
