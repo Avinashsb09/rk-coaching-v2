@@ -45,11 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return null;
 
       try {
-        const { data: profile, error } = await supabase
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Profile sync timed out')), 3500)
+        );
+
+        const fetchPromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
+
+        const { data: profile, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
         if (error || !profile) {
           console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);

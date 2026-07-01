@@ -170,6 +170,11 @@ function AppSyncController({
       return;
     }
 
+    const safetyTimeout = setTimeout(() => {
+      console.warn('Authentication session sync timed out. Forcing fallback initialization.');
+      setInitializing(false);
+    }, 3000);
+
     const initSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -181,10 +186,13 @@ function AppSyncController({
         console.error('Session initialization failed:', err);
       } finally {
         setInitializing(false);
+        clearTimeout(safetyTimeout);
       }
     };
 
     initSession();
+
+    let authTimeout: NodeJS.Timeout | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -192,10 +200,17 @@ function AppSyncController({
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
             setInitializing(true);
+            
+            if (authTimeout) clearTimeout(authTimeout);
+            authTimeout = setTimeout(() => {
+              setInitializing(false);
+            }, 3000);
+
             try {
               await syncUserProfile(session.user.id, addToast, setCurrentView);
             } finally {
               setInitializing(false);
+              if (authTimeout) clearTimeout(authTimeout);
             }
           }
         } else if (event === 'SIGNED_OUT') {
@@ -203,12 +218,15 @@ function AppSyncController({
           setUser(null);
           setCurrentView('home');
           setInitializing(false);
+          if (authTimeout) clearTimeout(authTimeout);
         }
       }
     );
 
     return () => {
       subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
+      if (authTimeout) clearTimeout(authTimeout);
     };
   }, []);
 
