@@ -220,24 +220,13 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           dbLeaderboardsRes
         ] = results;
 
-        if (dbClasses && dbClasses.length > 0) {
-          setClasses(dbClasses);
-          setSubjects(dbSubjects || []);
-          setCourses(dbCourses || []);
-          setChapters(dbChapters || []);
-          setLessons(dbLessons || []);
-          setVideos(dbVideos || []);
-          setNotes(dbNotes || []);
-        } else {
-          console.warn('Supabase is configured but tables are empty. Falling back to local mock data.');
-          setClasses(mockClasses);
-          setSubjects(mockSubjects);
-          setCourses(mockCourses);
-          setChapters(mockChapters);
-          setLessons(mockLessons);
-          setVideos(mockVideos);
-          setNotes(mockNotes);
-        }
+        setClasses(dbClasses && dbClasses.length > 0 ? dbClasses : mockClasses);
+        setSubjects(dbSubjects && dbSubjects.length > 0 ? dbSubjects : mockSubjects);
+        setCourses(dbCourses && dbCourses.length > 0 ? dbCourses : mockCourses);
+        setChapters(dbChapters && dbChapters.length > 0 ? dbChapters : mockChapters);
+        setLessons(dbLessons && dbLessons.length > 0 ? dbLessons : mockLessons);
+        setVideos(dbVideos && dbVideos.length > 0 ? dbVideos : mockVideos);
+        setNotes(dbNotes && dbNotes.length > 0 ? dbNotes : mockNotes);
         setAnnouncements(dbAnnouncements && dbAnnouncements.length > 0 ? dbAnnouncements : mockAnnouncements);
         setFaqs(dbFaqs && dbFaqs.length > 0 ? dbFaqs : [
           {
@@ -269,14 +258,27 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         }
 
         // Apply fallback checks for quizzes
-        if (dbQuizzesRes && dbQuizzesRes.data && dbQuizzesRes.data.length > 0) setQuizzes(dbQuizzesRes.data);
-        if (dbQuestionsRes && dbQuestionsRes.data && dbQuestionsRes.data.length > 0) setQuizQuestions(dbQuestionsRes.data);
-        if (dbOptionsRes && dbOptionsRes.data && dbOptionsRes.data.length > 0) setQuizOptions(dbOptionsRes.data);
-        if (dbAttemptsRes && dbAttemptsRes.data && dbAttemptsRes.data.length > 0) setQuizAttempts(dbAttemptsRes.data);
-        if (dbLeaderboardsRes && dbLeaderboardsRes.data && dbLeaderboardsRes.data.length > 0) setLeaderboardEntries(dbLeaderboardsRes.data);
+        setQuizzes(dbQuizzesRes && dbQuizzesRes.data && dbQuizzesRes.data.length > 0 ? dbQuizzesRes.data : initialQuizzes);
+        setQuizQuestions(dbQuestionsRes && dbQuestionsRes.data && dbQuestionsRes.data.length > 0 ? dbQuestionsRes.data : initialQuestions);
+        setQuizOptions(dbOptionsRes && dbOptionsRes.data && dbOptionsRes.data.length > 0 ? dbOptionsRes.data : initialOptions);
+        setQuizAttempts(dbAttemptsRes && dbAttemptsRes.data && dbAttemptsRes.data.length > 0 ? dbAttemptsRes.data : initialAttempts);
+        setLeaderboardEntries(dbLeaderboardsRes && dbLeaderboardsRes.data && dbLeaderboardsRes.data.length > 0 ? dbLeaderboardsRes.data : initialLeaderboards);
 
       } catch (err) {
-        console.error('Failed to load catalog data from Supabase:', err);
+        console.error('Failed to load catalog data from Supabase, falling back to mock data:', err);
+        setClasses(mockClasses);
+        setSubjects(mockSubjects);
+        setCourses(mockCourses);
+        setChapters(mockChapters);
+        setLessons(mockLessons);
+        setVideos(mockVideos);
+        setNotes(mockNotes);
+        setAnnouncements(mockAnnouncements);
+        setQuizzes(initialQuizzes);
+        setQuizQuestions(initialQuestions);
+        setQuizOptions(initialOptions);
+        setQuizAttempts(initialAttempts);
+        setLeaderboardEntries(initialLeaderboards);
       } finally {
         setLoadingCatalog(false);
       }
