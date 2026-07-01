@@ -36,6 +36,7 @@ import QuizResult from './views/student/QuizResult';
 import PyqDashboard from './views/student/PyqDashboard';
 import PyqPlay from './views/student/PyqPlay';
 import PyqResult from './views/student/PyqResult';
+import UpdateProfile from './views/student/UpdateProfile';
 
 function MainAppShell() {
   const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast } = useApp();
@@ -148,6 +149,12 @@ function MainAppShell() {
           { label: 'Purchases & Invoices' }
         ]);
         break;
+      case 'update-profile':
+        setBreadcrumbs([
+          { label: 'Student Dashboard', view: 'student-dashboard' },
+          { label: 'Update Profile' }
+        ]);
+        break;
       default:
         setBreadcrumbs([{ label: 'Home', view: 'home' }]);
     }
@@ -178,6 +185,18 @@ function MainAppShell() {
           );
         }
         return <StudentDashboard />;
+      
+      case 'update-profile':
+        if (role !== 'student' && role !== 'admin') {
+          return (
+            <ErrorState
+              title="Access Refused - Student Restricted"
+              description="This student console segments course histories and reward badges. Please switch your active role to STUDENT via the top-right simulation toolbar to test."
+              code="AUTH_403_STUDENT"
+            />
+          );
+        }
+        return <UpdateProfile />;
       
       case 'teacher-dashboard':
       case 'teacher-content':

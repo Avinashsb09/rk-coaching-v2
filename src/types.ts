@@ -14,6 +14,12 @@ export interface UserProfile {
   dailyStreak: number;
   totalXp: number;
   badges: string[];
+  classId?: string | null;
+  phone?: string | null;
+  schoolName?: string | null;
+  address?: string | null;
+  state?: string | null;
+  district?: string | null;
 }
 
 export interface AcademicClass {

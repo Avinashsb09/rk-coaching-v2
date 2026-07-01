@@ -22,6 +22,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<UserRole>('visitor');
   const [user, setUser] = useState<UserProfile | null>(null);
+  const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
 
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);
@@ -32,134 +33,159 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     addToast: any,
     setCurrentView: any
   ): Promise<UserProfile | null> => {
-    const supabase = getSupabase();
-    if (!supabase) return null;
+    if (syncPromisesRef.current[userId]) {
+      return syncPromisesRef.current[userId];
+    }
 
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    const syncPromise = (async () => {
+      const supabase = getSupabase();
+      if (!supabase) return null;
 
-      if (error || !profile) {
-        console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);
-        
-        // Try to auto-create the profile row dynamically as a fallback!
-        try {
-          const { data: { user: authUser } } = await supabase.auth.getUser();
-          if (authUser) {
-            console.log('Missing profile row detected. Attempting automatic sync/creation fallback...');
-            const newProfile = {
-              id: authUser.id,
-              email: authUser.email!,
-              fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
-              role: authUser.user_metadata?.role || 'student',
-              avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
-              classId: authUser.user_metadata?.classId || null,
-              dailyStreak: 1,
-              totalXp: 0
-            };
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-            const { data: insertedProfile, error: insertError } = await (supabase
-              .from('profiles') as any)
-              .insert(newProfile)
-              .select('*')
-              .single();
-
-            if (!insertError && insertedProfile) {
-              console.log('Successfully auto-created user profile fallback:', insertedProfile);
-              const profileData = insertedProfile as any;
-              const userProfile: UserProfile = {
-                id: profileData.id,
-                email: profileData.email,
-                fullName: profileData.fullName || 'Scholar',
-                role: (profileData.role as any) || 'student',
-                avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
-                dailyStreak: profileData.dailyStreak || 1,
-                totalXp: profileData.totalXp || 0,
-                badges: ['streak_1']
-              };
-              setUser(userProfile);
-              setRoleState(userProfile.role);
-              
-              // Redirect
-              const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-              const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
-              if (isOnDefaultPage) {
-                if (userProfile.role === 'student') setCurrentView('student-dashboard');
-                else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
-                else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
-              } else {
-                setCurrentView(currentHash);
-              }
-              return userProfile;
-            } else {
-              console.error('Insert query failed during auto-creation:', insertError);
-            }
-          }
-        } catch (e) {
-          console.error('Exception during profile auto-creation fallback:', e);
-        }
-
-        const err = error as any;
-        const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
-        if (isAuthErr) {
-          console.warn('Session is invalid or expired. Signing out automatically.');
-          await supabase.auth.signOut().catch(() => {});
+        if (error || !profile) {
+          console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);
+          
+          // Try to auto-create the profile row dynamically as a fallback!
           try {
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
-                localStorage.removeItem(key);
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (authUser) {
+              console.log('Missing profile row detected. Attempting automatic sync/creation fallback...');
+              const newProfile = {
+                id: authUser.id,
+                email: authUser.email!,
+                fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
+                role: authUser.user_metadata?.role || 'student',
+                avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
+                classId: authUser.user_metadata?.classId || null,
+                dailyStreak: 1,
+                totalXp: 0
+              };
+
+              const { data: insertedProfile, error: insertError } = await (supabase
+                .from('profiles') as any)
+                .insert(newProfile)
+                .select('*')
+                .single();
+
+              if (!insertError && insertedProfile) {
+                console.log('Successfully auto-created user profile fallback:', insertedProfile);
+                const profileData = insertedProfile as any;
+                const userProfile: UserProfile = {
+                  id: profileData.id,
+                  email: profileData.email,
+                  fullName: profileData.fullName || 'Scholar',
+                  role: (profileData.role as any) || 'student',
+                  avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
+                  dailyStreak: profileData.dailyStreak || 1,
+                  totalXp: profileData.totalXp || 0,
+                  badges: ['streak_1'],
+                  classId: profileData.classId || null,
+                  phone: profileData.phone || null,
+                  schoolName: profileData.schoolName || null,
+                  address: profileData.address || null,
+                  state: profileData.state || null,
+                  district: profileData.district || null
+                };
+                setUser(userProfile);
+                setRoleState(userProfile.role);
+                
+                // Redirect
+                const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+                const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+                if (isOnDefaultPage) {
+                  if (userProfile.role === 'student') setCurrentView('student-dashboard');
+                  else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
+                  else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+                } else {
+                  setCurrentView(currentHash);
+                }
+                return userProfile;
+              } else {
+                console.error('Insert query failed during auto-creation:', insertError);
               }
             }
-          } catch (e) {}
-        } else {
-          addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
+          } catch (e) {
+            console.error('Exception during profile auto-creation fallback:', e);
+          }
+
+          const err = error as any;
+          const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
+          if (isAuthErr) {
+            console.warn('Session is invalid or expired. Signing out automatically.');
+            await supabase.auth.signOut().catch(() => {});
+            try {
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+                  localStorage.removeItem(key);
+                }
+              }
+            } catch (e) {}
+          } else {
+            addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
+          }
+          
+          setUser(null);
+          setRoleState('visitor');
+          return null;
         }
-        
-        setUser(null);
-        setRoleState('visitor');
+
+        const profileData = profile as any;
+        const userProfile: UserProfile = {
+          id: profileData.id,
+          email: profileData.email,
+          fullName: profileData.fullName || 'Scholar',
+          role: (profileData.role as any) || 'student',
+          avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
+          dailyStreak: profileData.dailyStreak || 1,
+          totalXp: profileData.totalXp || 0,
+          badges: ['streak_1'],
+          classId: profileData.classId || null,
+          phone: profileData.phone || null,
+          schoolName: profileData.schoolName || null,
+          address: profileData.address || null,
+          state: profileData.state || null,
+          district: profileData.district || null
+        };
+
+        setUser(userProfile);
+        setRoleState(userProfile.role);
+
+        // Transition router safely if not already on a deep link or specific view
+        const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+        const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+
+        if (isOnDefaultPage) {
+          if (userProfile.role === 'student') {
+            setCurrentView('student-dashboard');
+          } else if (userProfile.role === 'teacher') {
+            setCurrentView('teacher-dashboard');
+          } else if (userProfile.role === 'admin') {
+            setCurrentView('admin-dashboard');
+          }
+        } else {
+          // Keeps user exactly on their current deep-linked view
+          setCurrentView(currentHash);
+        }
+
+        return userProfile;
+      } catch (err) {
+        console.error('Failed to synchronize user profile:', err);
         return null;
       }
+    })();
 
-      const profileData = profile as any;
-      const userProfile: UserProfile = {
-        id: profileData.id,
-        email: profileData.email,
-        fullName: profileData.fullName || 'Scholar',
-        role: (profileData.role as any) || 'student',
-        avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
-        dailyStreak: profileData.dailyStreak || 1,
-        totalXp: profileData.totalXp || 0,
-        badges: ['streak_1']
-      };
-
-      setUser(userProfile);
-      setRoleState(userProfile.role);
-
-      // Transition router safely if not already on a deep link or specific view
-      const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-      const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
-
-      if (isOnDefaultPage) {
-        if (userProfile.role === 'student') {
-          setCurrentView('student-dashboard');
-        } else if (userProfile.role === 'teacher') {
-          setCurrentView('teacher-dashboard');
-        } else if (userProfile.role === 'admin') {
-          setCurrentView('admin-dashboard');
-        }
-      } else {
-        // Keeps user exactly on their current deep-linked view
-        setCurrentView(currentHash);
-      }
-
-      return userProfile;
-    } catch (err) {
-      console.error('Failed to synchronize user profile:', err);
-      return null;
+    syncPromisesRef.current[userId] = syncPromise;
+    try {
+      return await syncPromise;
+    } finally {
+      delete syncPromisesRef.current[userId];
     }
   };
 

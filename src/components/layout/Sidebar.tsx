@@ -13,6 +13,7 @@ import {
   FolderOpen,
   PlusSquare,
   Users,
+  User,
   CreditCard,
   MessageSquare,
   ChevronLeft,
@@ -41,6 +42,11 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
             id: 'student-dashboard',
             label: 'My Dashboard',
             icon: <LayoutDashboard className="w-5 h-5" />
+          },
+          {
+            id: 'update-profile',
+            label: 'Update Profile',
+            icon: <User className="w-5 h-5 text-emerald-500" />
           },
           {
             id: 'quiz-dashboard',
