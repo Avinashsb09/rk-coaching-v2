@@ -33,7 +33,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedClass, setSelectedClass] = useState('neet-biology');
+  const [selectedClass, setSelectedClass] = useState('neet');
   const [selectedRole, setSelectedRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -406,8 +406,7 @@ export default function AuthPage() {
                         <option value="c10">Class 10</option>
                         <option value="c11_sci">Class 11 Science</option>
                         <option value="c12_sci">Class 12 Science</option>
-                        <option value="neet-biology">NEET Biology</option>
-                        <option value="neet-chemistry">NEET Chemistry</option>
+                        <option value="neet">NEET (Biology & Chemistry)</option>
                       </select>
                     </div>
                   )}

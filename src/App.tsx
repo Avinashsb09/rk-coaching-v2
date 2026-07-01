@@ -11,6 +11,7 @@ import { Footer } from './components/layout/Footer';
 import { Breadcrumbs } from './components/layout/Breadcrumbs';
 import { ToastContainer } from './components/shared/ToastContainer';
 import { ErrorState } from './components/shared/ErrorState';
+import { RefreshCw } from 'lucide-react';
 
 // Secondary views imported dynamically or direct for compiling speed
 import LandingPage from './views/home/LandingPage';
@@ -39,7 +40,7 @@ import PyqResult from './views/student/PyqResult';
 import UpdateProfile from './views/student/UpdateProfile';
 
 function MainAppShell() {
-  const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast } = useApp();
+  const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast, initializing } = useApp();
   
   // Dashboard drawer states
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -340,6 +341,24 @@ function MainAppShell() {
   };
 
   const isSidebarVisible = role !== 'visitor';
+
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="relative p-8 rounded-3xl border border-slate-800 bg-slate-950/40 backdrop-blur-xl flex flex-col items-center gap-4 text-center max-w-sm shadow-2xl">
+          <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-inner">
+            <RefreshCw className="w-6 h-6 animate-spin" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-200">RK Coaching LMS</h3>
+            <p className="text-[10px] text-slate-500 font-semibold">Synchronizing secure student session...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors duration-200">

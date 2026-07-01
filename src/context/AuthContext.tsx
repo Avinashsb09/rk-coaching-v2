@@ -15,6 +15,8 @@ export interface AuthContextType {
   loginAs: (role: UserRole, addToast: any, setCurrentView: any) => void;
   logout: (addToast: any, setCurrentView: any, setBreadcrumbs: any) => Promise<void>;
   syncUserProfile: (userId: string, addToast: any, setCurrentView: any) => Promise<UserProfile | null>;
+  initializing: boolean;
+  setInitializing: (initializing: boolean) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +24,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<UserRole>('visitor');
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [initializing, setInitializing] = useState(true);
   const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
 
   const setRole = (newRole: UserRole) => {
@@ -254,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     addToast('Logged out successfully', 'success');
   };
 
-  return (
+    return (
     <AuthContext.Provider
       value={{
         role,
@@ -263,7 +266,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole,
         loginAs,
         logout,
-        syncUserProfile
+        syncUserProfile,
+        initializing,
+        setInitializing
       }}
     >
       {children}

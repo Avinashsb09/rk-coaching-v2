@@ -274,7 +274,7 @@ export default function PyqDashboard() {
             className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-355 outline-none text-xs font-bold"
           >
             <option value="">-- Choose Standard --</option>
-            {classes.filter(c => c.id !== 'neet').map(c => (
+            {classes.filter(c => c.id !== 'neet-biology' && c.id !== 'neet-chemistry').map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>

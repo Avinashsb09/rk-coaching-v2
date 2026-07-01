@@ -10,7 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { getSupabase } from '../../lib/supabase';
-import { User, Phone, Mail, BookOpen, Key, Landmark, MapPin, CheckCircle, AlertTriangle } from 'lucide-react';
+import { User, Phone, Mail, BookOpen, Key, Landmark, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const avatarPresets = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80',
@@ -29,9 +29,6 @@ export default function UpdateProfile() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [classId, setClassId] = useState(user?.classId || 'c10');
   const [schoolName, setSchoolName] = useState(user?.schoolName || '');
-  const [address, setAddress] = useState(user?.address || '');
-  const [state, setState] = useState(user?.state || '');
-  const [district, setDistrict] = useState(user?.district || '');
 
   // Password fields state
   const [newPassword, setNewPassword] = useState('');
@@ -40,6 +37,58 @@ export default function UpdateProfile() {
   // Loading states
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      addToast('Image must be under 2MB', 'error');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      if (supabase && user?.id) {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `avatars/${user.id}-${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        setAvatarUrl(publicUrl);
+        addToast('Avatar uploaded successfully!', 'success');
+      } else {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setAvatarUrl(reader.result);
+            addToast('Avatar loaded (local simulation)', 'info');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err: any) {
+      console.warn('Storage upload failed, using local FileReader simulation:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAvatarUrl(reader.result);
+          addToast('Avatar loaded (local simulation fallback)', 'info');
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,10 +104,7 @@ export default function UpdateProfile() {
         avatarUrl,
         phone,
         classId,
-        schoolName,
-        address,
-        state,
-        district
+        schoolName
       };
 
       if (supabase && user?.id) {
@@ -180,7 +226,20 @@ export default function UpdateProfile() {
                 ))}
               </div>
               
-              <div className="w-full text-center space-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-800/60">
+              <div className="flex flex-col items-center gap-2 pt-2">
+                <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-750 text-white text-[10px] font-black px-3 py-1.5 rounded-xl transition-all shadow-md">
+                  Upload Custom Image
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleAvatarUpload} 
+                    className="hidden" 
+                  />
+                </label>
+                <p className="text-[8px] text-slate-400">Max size: 2MB</p>
+              </div>
+              
+              <div className="w-full text-center space-y-1.5 pt-3 border-t border-slate-101 dark:border-slate-800/60">
                 <p className="text-xs font-black text-slate-900 dark:text-white">{user?.fullName || 'Scholar'}</p>
                 <p className="text-[10px] text-slate-500 font-semibold">{user?.email}</p>
                 <Badge variant="info" className="text-[8px] uppercase tracking-wider font-extrabold mt-1">
@@ -227,7 +286,7 @@ export default function UpdateProfile() {
                     onChange={e => setClassId(e.target.value)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
                   >
-                    {classes.map(c => (
+                    {classes.filter(c => c.id !== 'neet-biology' && c.id !== 'neet-chemistry').map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
@@ -242,33 +301,7 @@ export default function UpdateProfile() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <Input
-                  label="Full Address"
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
-                  placeholder="Apartment, Street Name, Basti..."
-                  leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
-                />
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="District"
-                  value={district}
-                  onChange={e => setDistrict(e.target.value)}
-                  placeholder="Kamrup Metropolitan"
-                  leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
-                />
-                
-                <Input
-                  label="State"
-                  value={state}
-                  onChange={e => setState(e.target.value)}
-                  placeholder="Assam"
-                  leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
-                />
-              </div>
 
               <div className="flex justify-end pt-3">
                 <Button 

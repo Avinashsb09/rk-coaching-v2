@@ -24,6 +24,7 @@ interface AppContextType {
   loginAs: (role: UserRole) => void;
   logout: () => void;
   syncUserProfile: (userId: string) => Promise<void>;
+  initializing: boolean;
 
   // View Routing (Simulated SPA App Router)
   currentView: string;
@@ -151,7 +152,7 @@ function AppSyncController({
   currentView: string;
   setCurrentView: (view: string) => void;
 }) {
-  const { user, setUser, syncUserProfile } = useAuth();
+  const { user, setUser, syncUserProfile, setInitializing } = useAuth();
   const { loadBookmarks, setBookmarksList } = useBookmarks();
   const { loadProgress, setProgressList } = useProgress();
   const { loadNotifications, setNotifications } = useNotifications();
@@ -164,26 +165,44 @@ function AppSyncController({
   // Listen to Auth sessions reactively
   useEffect(() => {
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase) {
+      setInitializing(false);
+      return;
+    }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && syncedUserIdRef.current !== session.user.id) {
-        syncedUserIdRef.current = session.user.id;
-        syncUserProfile(session.user.id, addToast, setCurrentView);
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && syncedUserIdRef.current !== session.user.id) {
+          syncedUserIdRef.current = session.user.id;
+          await syncUserProfile(session.user.id, addToast, setCurrentView);
+        }
+      } catch (err) {
+        console.error('Session initialization failed:', err);
+      } finally {
+        setInitializing(false);
       }
-    });
+    };
+
+    initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
-            await syncUserProfile(session.user.id, addToast, setCurrentView);
+            setInitializing(true);
+            try {
+              await syncUserProfile(session.user.id, addToast, setCurrentView);
+            } finally {
+              setInitializing(false);
+            }
           }
         } else if (event === 'SIGNED_OUT') {
           syncedUserIdRef.current = null;
           setUser(null);
           setCurrentView('home');
+          setInitializing(false);
         }
       }
     );
@@ -335,7 +354,7 @@ function AppContextInjector({
     loadSubjectNotesPurchases
   } = useCourses();
   const { orders, setOrders, payments, setPayments, paymentSettings, setPaymentSettings } = usePayments();
-  const { role, user, setRole, loginAs, logout, syncUserProfile } = useAuth();
+  const { role, user, setRole, loginAs, logout, syncUserProfile, initializing } = useAuth();
 
   const handleSyncUserProfile = async (userId: string) => {
     await syncUserProfile(userId, addToast, setCurrentView);
@@ -404,6 +423,7 @@ function AppContextInjector({
     loginAs: handleLoginAs,
     logout: handleLogout,
     syncUserProfile: handleSyncUserProfile,
+    initializing,
     currentView,
     setCurrentView,
     breadcrumbs,
