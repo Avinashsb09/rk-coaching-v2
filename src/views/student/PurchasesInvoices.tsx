@@ -220,9 +220,9 @@ export default function PurchasesInvoices() {
             <div className="space-y-4">
               {enrolledCourses.length === 0 ? (
                 <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
-                  <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto animate-bounce" />
+                  <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">No Courses Purchased Yet</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-400">No Courses Purchased Yet</h3>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Explore standard curriculum chapters, mock quizzes, and lecture videos to start enrolling.</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setCurrentView('catalog')} className="mt-2 text-xs">
@@ -250,7 +250,7 @@ export default function PurchasesInvoices() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewCourseSyllabus(course.id)}
-                            className="h-7 text-xs font-bold text-blue-600 dark:text-blue-450 p-0 hover:bg-transparent"
+                            className="h-7 text-xs font-bold text-blue-600 dark:text-blue-400 p-0 hover:bg-transparent"
                             rightIcon={<ChevronRight className="w-4 h-4" />}
                           >
                             Resume Studying
@@ -270,7 +270,7 @@ export default function PurchasesInvoices() {
                 <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
                   <FileText className="w-10 h-10 text-slate-300 mx-auto" />
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">No Order Records Found</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-400">No Order Records Found</h3>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">All standard payments and completed course enrollments will be listed here with receipts.</p>
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export default function PurchasesInvoices() {
                 <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
                   <Receipt className="w-10 h-10 text-slate-300 mx-auto" />
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">No Verified Transactions</h3>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-400">No Verified Transactions</h3>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Receipts and verified bank settlement transaction logs will be listed here.</p>
                   </div>
                 </div>
@@ -351,7 +351,7 @@ export default function PurchasesInvoices() {
                             <td className="px-5 py-3.5 font-mono text-[10px] text-slate-500">{p.id}</td>
                             <td className="px-5 py-3.5 font-mono text-blue-600 text-[10px]">{p.orderId}</td>
                             <td className="px-5 py-3.5 font-black text-slate-900 dark:text-slate-100">₹{p.amount}</td>
-                            <td className="px-5 py-3.5 font-bold text-slate-650 dark:text-slate-300">{p.method || 'Razorpay Gateway'}</td>
+                            <td className="px-5 py-3.5 font-bold text-slate-600 dark:text-slate-300">{p.method || 'Razorpay Gateway'}</td>
                             <td className="px-5 py-3.5 text-right">
                               <span className="text-xs font-extrabold text-emerald-600 flex items-center justify-end gap-1">
                                 <ShieldCheck className="w-4 h-4" /> Settlement Success

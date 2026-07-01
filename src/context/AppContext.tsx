@@ -125,6 +125,9 @@ interface AppContextType {
   enrollInCourse: (courseId: string, isPaid?: boolean, rzpId?: string, rzpOrderId?: string) => Promise<void>;
   hasCourseAccess: (courseId: string) => boolean;
   getEnrolledCourses: () => Course[];
+  unlockedSubjectNoteIds: string[];
+  unlockSubjectNotes: (subjectId: string, rzpId?: string, rzpOrderId?: string) => Promise<void>;
+  hasSubjectNotesAccess: (subjectId: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -141,7 +144,7 @@ function AppSyncController({
   const { loadProgress, setProgressList } = useProgress();
   const { loadNotifications, setNotifications } = useNotifications();
   const { loadPaymentData, setOrders, setPayments } = usePayments();
-  const { loadEnrollments, setEnrolledCourseIds } = useCourses();
+  const { loadEnrollments, setEnrolledCourseIds, loadSubjectNotesPurchases, setUnlockedSubjectNoteIds } = useCourses();
   const { addToast } = useNotifications();
 
   // Listen to Auth sessions reactively
@@ -179,6 +182,7 @@ function AppSyncController({
       loadNotifications(user.id);
       loadPaymentData(user.id);
       loadEnrollments(user.id);
+      loadSubjectNotesPurchases(user.id);
     } else {
       setBookmarksList([]);
       setProgressList([]);
@@ -186,6 +190,7 @@ function AppSyncController({
       setOrders([]);
       setPayments([]);
       setEnrolledCourseIds([]);
+      setUnlockedSubjectNoteIds([]);
     }
   }, [user]);
 
@@ -282,7 +287,26 @@ function AppContextInjector({
   const { classes, setClasses, subjects, setSubjects, courses, setCourses, chapters, setChapters, lessons, setLessons, videos, setVideos, notes, setNotes, announcements, setAnnouncements, faqs, setFaqs, users, setUsers, homepageConfig, setHomepageConfig } = useDatabase();
   const { bookmarksList, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const { progressList, saveProgress, getLessonProgress } = useProgress();
-  const { selectedClassSlug, setSelectedClassSlug, selectedSubjectId, setSelectedSubjectId, selectedCourseId, setSelectedCourseId, selectedLessonId, setSelectedLessonId, enrolledCourseIds, setEnrolledCourseIds, enrollInCourse, hasCourseAccess, getEnrolledCourses } = useCourses();
+  const { 
+    selectedClassSlug, 
+    setSelectedClassSlug, 
+    selectedSubjectId, 
+    setSelectedSubjectId, 
+    selectedCourseId, 
+    setSelectedCourseId, 
+    selectedLessonId, 
+    setSelectedLessonId, 
+    enrolledCourseIds, 
+    setEnrolledCourseIds, 
+    enrollInCourse, 
+    hasCourseAccess, 
+    getEnrolledCourses,
+    unlockedSubjectNoteIds,
+    setUnlockedSubjectNoteIds,
+    unlockSubjectNotes,
+    hasSubjectNotesAccess,
+    loadSubjectNotesPurchases
+  } = useCourses();
   const { orders, setOrders, payments, setPayments, paymentSettings, setPaymentSettings } = usePayments();
   const { role, user, setRole, loginAs, logout, syncUserProfile } = useAuth();
 
@@ -316,6 +340,14 @@ function AppContextInjector({
 
   const handleHasCourseAccess = (courseId: string) => {
     return hasCourseAccess(courseId, role, courses);
+  };
+
+  const handleUnlockSubjectNotes = async (subjectId: string, rzpId?: string, rzpOrderId?: string) => {
+    await unlockSubjectNotes(subjectId, rzpId, rzpOrderId, user?.id, courses, addToast, handleAddNotification);
+  };
+
+  const handleHasSubjectNotesAccess = (subjectId: string) => {
+    return hasSubjectNotesAccess(subjectId, role);
   };
 
   const handleGetEnrolledCourses = () => {
@@ -409,7 +441,10 @@ function AppContextInjector({
     deleteNotification: handleDeleteNotification,
     enrollInCourse: handleSaveProgress ? handleEnrollInCourse : async () => {},
     hasCourseAccess: handleHasCourseAccess,
-    getEnrolledCourses: handleGetEnrolledCourses
+    getEnrolledCourses: handleGetEnrolledCourses,
+    unlockedSubjectNoteIds,
+    unlockSubjectNotes: handleUnlockSubjectNotes,
+    hasSubjectNotesAccess: handleHasSubjectNotesAccess
   };
 
   return (

@@ -121,7 +121,7 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
   return (
     <aside
       className={`
-        fixed inset-y-16 left-0 z-35 flex flex-col border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 backdrop-blur-md
+        fixed inset-y-16 left-0 z-35 flex flex-col border-r border-slate-200/40 bg-white/70 dark:border-slate-800/40 dark:bg-slate-900/75 backdrop-blur-lg
         transition-all duration-300 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isCollapsed ? 'w-20' : 'w-64'}
@@ -151,7 +151,7 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
                 w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200 cursor-pointer
                 ${isActive
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'text-slate-600 dark:text-slate-350 hover:bg-slate-200/55 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/55 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-100'
                 }
                 ${isCollapsed ? 'justify-center px-2' : ''}
               `}
@@ -166,10 +166,10 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
 
       {/* Sidebar Footer details (Streak / Streak details) */}
       {!isCollapsed && user && role === 'student' && (
-        <div className="p-4 m-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-950 dark:to-slate-900 border border-blue-100/60 dark:border-slate-800/80 rounded-2xl">
+        <div className="p-4 m-4 bg-white/40 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400">
-              <Flame className="w-4.5 h-4.5 animate-bounce" />
+              <Flame className="w-4.5 h-4.5" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-800 dark:text-slate-200">

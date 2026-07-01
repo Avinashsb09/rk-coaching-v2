@@ -10,21 +10,23 @@ import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 
 export default function StudentDashboard() {
-  const { user, courses, setCurrentView, addToast } = useApp();
+  const { user, courses, setCurrentView, setSelectedCourseId, addToast } = useApp();
 
-  const handleResumeCourse = (title: string) => {
-    addToast(`Loading video playlist & note attachments for ${title}`, 'success');
+  const handleResumeCourse = (courseId: string, title: string) => {
+    setSelectedCourseId(courseId);
+    setCurrentView('course-view');
+    addToast(`Resuming: ${title}`, 'success');
   };
 
   return (
     <div className="space-y-8 py-4 text-left">
       {/* Welcome Board */}
-      <section className="bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
+      <section className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border border-slate-200/50 dark:border-slate-800/50 rounded-3xl p-6 sm:p-8 text-slate-900 dark:text-white relative overflow-hidden shadow-sm">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-2xl" />
         
         <div className="relative space-y-4">
-          <Badge variant="info" className="bg-white/10 text-white border-white/20">
+          <Badge variant="info" className="bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/30">
             Student Academic Suite
           </Badge>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -35,7 +37,7 @@ export default function StudentDashboard() {
           </p>
           <div className="pt-2 flex flex-wrap gap-3">
             <Button
-              variant="secondary"
+              variant="primary"
               size="sm"
               onClick={() => {
                 setCurrentView('catalog');
@@ -47,7 +49,6 @@ export default function StudentDashboard() {
             <Button
               variant="outline"
               size="sm"
-              className="border-white/20 text-white hover:bg-white/10"
               onClick={() => setCurrentView('leaderboard')}
             >
               See Leaderboard Rank
@@ -58,10 +59,10 @@ export default function StudentDashboard() {
 
       {/* Overview Analytics Widgets */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card hoverEffect>
+        <Card hoverEffect glassmorphism>
           <CardContent className="p-5 flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-              <Flame className="w-6 h-6 animate-pulse" />
+              <Flame className="w-6 h-6" />
             </div>
             <div>
               <p className="text-xs font-bold text-slate-500 uppercase">Daily Streak</p>
@@ -70,7 +71,7 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card hoverEffect>
+        <Card hoverEffect glassmorphism>
           <CardContent className="p-5 flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Star className="w-6 h-6" />
@@ -82,7 +83,7 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card hoverEffect>
+        <Card hoverEffect glassmorphism>
           <CardContent className="p-5 flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
               <Award className="w-6 h-6" />
@@ -94,7 +95,7 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card hoverEffect>
+        <Card hoverEffect glassmorphism>
           <CardContent className="p-5 flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle className="w-6 h-6" />
@@ -146,7 +147,7 @@ export default function StudentDashboard() {
                     </span>
                   </div>
                   <div className="flex justify-end pt-1">
-                    <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-blue-600" onClick={() => handleResumeCourse(course.title)} rightIcon={<ChevronRight className="w-4 h-4" />}>
+                    <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-blue-600" onClick={() => handleResumeCourse(course.id, course.title)} rightIcon={<ChevronRight className="w-4 h-4" />}>
                       Resume lesson video
                     </Button>
                   </div>

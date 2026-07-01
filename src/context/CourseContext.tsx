@@ -23,6 +23,12 @@ export interface CourseContextType {
   hasCourseAccess: (courseId: string, role: string, courses: Course[]) => boolean;
   getEnrolledCourses: (role: string, courses: Course[]) => Course[];
   loadEnrollments: (userId: string) => Promise<void>;
+
+  unlockedSubjectNoteIds: string[];
+  setUnlockedSubjectNoteIds: React.Dispatch<React.SetStateAction<string[]>>;
+  unlockSubjectNotes: (subjectId: string, rzpId: string | undefined, rzpOrderId: string | undefined, userId: string | undefined, courses: Course[], addToast: any, addNotification: any) => Promise<void>;
+  hasSubjectNotesAccess: (subjectId: string, role: string) => boolean;
+  loadSubjectNotesPurchases: (userId: string) => Promise<void>;
 }
 
 export const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -33,6 +39,104 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+  const [unlockedSubjectNoteIds, setUnlockedSubjectNoteIds] = useState<string[]>([]);
+
+  const loadSubjectNotesPurchases = async (userId: string) => {
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase()!;
+      try {
+        const { data } = await supabase
+          .from('subject_notes_purchases')
+          .select('subjectId')
+          .eq('userId', userId);
+        if (data) {
+          setUnlockedSubjectNoteIds(data.map((e: any) => e.subjectId));
+        }
+      } catch (err) {
+        console.error('Failed to load subject notes purchases:', err);
+      }
+    } else {
+      const saved = localStorage.getItem(`rk_subject_notes_${userId}`);
+      if (saved) {
+        setUnlockedSubjectNoteIds(JSON.parse(saved));
+      } else {
+        setUnlockedSubjectNoteIds([]);
+      }
+    }
+  };
+
+  const unlockSubjectNotes = async (
+    subjectId: string,
+    rzpId = '',
+    rzpOrderId = '',
+    userId: string | undefined,
+    courses: Course[],
+    addToast: any,
+    addNotification: any
+  ) => {
+    if (!userId) {
+      addToast('Please login to purchase premium notes', 'error');
+      return;
+    }
+
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase()!;
+      try {
+        await (supabase.from('subject_notes_purchases') as any).upsert(
+          {
+            userId,
+            subjectId
+          },
+          { onConflict: 'userId,subjectId' }
+        );
+
+        const matchedCourse = courses.find((c) => c.subjectId === subjectId);
+        if (matchedCourse) {
+          const orderId = rzpOrderId || 'order_' + Math.random().toString(36).substring(2, 9);
+          const paymentId = rzpId || 'pay_' + Math.random().toString(36).substring(2, 9);
+
+          await (supabase.from('orders') as any).insert({
+            id: orderId,
+            userId,
+            courseId: matchedCourse.id,
+            amount: 30,
+            status: 'completed'
+          });
+
+          await (supabase.from('payments') as any).insert({
+            id: paymentId,
+            orderId,
+            userId,
+            amount: 30,
+            method: 'Razorpay Checkout (Notes)',
+            status: 'success'
+          });
+        }
+
+        await loadSubjectNotesPurchases(userId);
+      } catch (err) {
+        console.error('Failed to save subject notes purchase on Supabase:', err);
+      }
+    } else {
+      setUnlockedSubjectNoteIds((prev) => {
+        const updated = Array.from(new Set([...prev, subjectId]));
+        localStorage.setItem(`rk_subject_notes_${userId}`, JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    await addNotification(
+      'Premium Notes Unlocked',
+      `Subject notes purchased and unlocked successfully! You now have permanent access.`,
+      userId
+    );
+    addToast('Premium Notes Unlocked!', 'success');
+  };
+
+  const hasSubjectNotesAccess = (subjectId: string, role: string): boolean => {
+    if (role === 'admin' || role === 'teacher') return true;
+    return unlockedSubjectNoteIds.includes(subjectId);
+  };
 
   const loadEnrollments = async (userId: string) => {
     if (isSupabaseConfigured() && getSupabase()) {
@@ -158,7 +262,12 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         enrollInCourse,
         hasCourseAccess,
         getEnrolledCourses,
-        loadEnrollments
+        loadEnrollments,
+        unlockedSubjectNoteIds,
+        setUnlockedSubjectNoteIds,
+        unlockSubjectNotes,
+        hasSubjectNotesAccess,
+        loadSubjectNotesPurchases
       }}
     >
       {children}

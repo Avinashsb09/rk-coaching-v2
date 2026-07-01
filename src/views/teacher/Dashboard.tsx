@@ -776,7 +776,7 @@ export default function TeacherDashboard() {
               return (
                 <Card key={course.id} className="overflow-hidden flex flex-col justify-between">
                   <div>
-                    <div className="h-40 w-full overflow-hidden bg-slate-150 relative">
+                    <div className="h-40 w-full overflow-hidden bg-slate-200 relative">
                       <img 
                         src={course.thumbnailUrl} 
                         alt={course.title}
@@ -1239,7 +1239,7 @@ export default function TeacherDashboard() {
 
                           {/* Interactive preview pane for added content */}
                           {(associatedVideo || associatedNote) && (
-                            <div className="p-2 border border-dashed border-slate-150 dark:border-slate-800 rounded-xl flex justify-between items-center bg-indigo-50/10 dark:bg-indigo-950/5">
+                            <div className="p-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl flex justify-between items-center bg-indigo-50/10 dark:bg-indigo-950/5">
                               <span className="text-[10px] font-bold text-slate-400">Attached Media Verification Panel</span>
                               <div className="flex gap-2">
                                 {associatedVideo && (

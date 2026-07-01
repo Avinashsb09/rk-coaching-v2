@@ -20,6 +20,7 @@ import {
   Sparkles,
   UserCheck
 } from 'lucide-react';
+import { RazorpayGatewayModal } from '../../components/commerce/RazorpayGatewayModal';
 
 export default function SubjectView() {
   const { 
@@ -32,8 +33,23 @@ export default function SubjectView() {
     setBreadcrumbs,
     addToast,
     chapters,
-    lessons
+    lessons,
+    notes,
+    unlockSubjectNotes,
+    hasSubjectNotesAccess,
+    user
   } = useApp();
+
+  const [checkoutNotesOpen, setCheckoutNotesOpen] = useState(false);
+
+  const handleBuyNotes = () => {
+    if (!user) {
+      addToast('Please log in to purchase premium notes.', 'warning');
+      setCurrentView('auth');
+      return;
+    }
+    setCheckoutNotesOpen(true);
+  };
 
   const [chaptersList, setChaptersList] = useState<AcademicChapter[]>(chapters);
   const [lessonsList, setLessonsList] = useState<Lesson[]>(lessons);
@@ -152,6 +168,80 @@ export default function SubjectView() {
         
         {/* Chapters Section (Left column, spanning 2 grids) */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Premium Subject Notes Card */}
+          <Card glassmorphism className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-amber-200/40 dark:border-amber-900/30">
+            <div className="space-y-2 text-left">
+              <Badge variant="warning" className="bg-amber-500/15 text-amber-500 border-amber-500/20 font-black">
+                PREMIUM REVISION NOTES
+              </Badge>
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Lock className="w-4.5 h-4.5 text-amber-500" />
+                {subjectObj.name} Premium Notes Package
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
+                Unlock lifetime download access to high-yield handwritten revisions, formulas, and chapter exam papers compiled specifically for {subjectObj.name}.
+              </p>
+              
+              {/* Notes list preview */}
+              {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).length > 0 && (
+                <div className="pt-2 flex flex-wrap gap-2">
+                  {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).map(n => (
+                    <span key={n.id} className="text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50 font-bold flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" />
+                      {n.title}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center shrink-0 w-full sm:w-44 gap-3">
+              {hasSubjectNotesAccess(subjectObj.id) ? (
+                <>
+                  <div className="h-9 w-9 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center shadow-inner">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase">UNLOCKED</p>
+                  
+                  {/* Download links for unlocked premium notes */}
+                  {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).length > 0 ? (
+                    <div className="flex flex-col gap-1.5 w-full">
+                      {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).map(n => (
+                        <a 
+                          key={n.id}
+                          href={n.pdfUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="w-full text-center py-1 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold border border-emerald-200/50 dark:border-emerald-900/30 truncate"
+                        >
+                          Save Notes
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-[9px] text-slate-400 font-semibold leading-tight">All materials ready to download.</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-black text-slate-900 dark:text-white">₹30</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">LIFETIME</span>
+                  </div>
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-[10px] font-black py-2 shadow-md shadow-amber-500/20"
+                    onClick={handleBuyNotes}
+                  >
+                    Unlock Notes
+                  </Button>
+                  <span className="text-[9px] text-slate-400 font-semibold leading-tight">Razorpay Verification</span>
+                </>
+              )}
+            </div>
+          </Card>
+
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <Layers className="w-5 h-5 text-indigo-500" />
@@ -325,6 +415,30 @@ export default function SubjectView() {
         </div>
 
       </div>
+
+      <RazorpayGatewayModal
+        isOpen={checkoutNotesOpen}
+        onClose={() => setCheckoutNotesOpen(false)}
+        courseTitle={`${subjectObj.name} Premium Notes Package`}
+        courseId={`notes_${subjectObj.id}`}
+        amount={30}
+        onSuccess={async (paymentId, orderId) => {
+          try {
+            await unlockSubjectNotes(subjectObj.id, paymentId, orderId);
+            setCheckoutNotesOpen(false);
+          } catch (err: any) {
+            addToast(err.message || 'Payment notes unlock failed', 'error');
+          }
+        }}
+        onFailure={(reason) => {
+          addToast(`Razorpay payment failed: ${reason}`, 'error');
+        }}
+        onCancel={() => {
+          addToast('Payment checkout cancelled.', 'info');
+        }}
+        userEmail={user?.email || undefined}
+        userFullName={user?.fullName || undefined}
+      />
     </div>
   );
 }

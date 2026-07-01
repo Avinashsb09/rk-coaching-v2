@@ -36,13 +36,13 @@ export function Footer() {
               India's premium serverless LMS for CBSE Classes 6-12 and NEET (Biology & Chemistry) competitive coaching. Secure your rank with elite notes and quizzes.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="p-2 rounded-xl bg-slate-850 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
+              <a href="#" className="p-2 rounded-xl bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 rounded-xl bg-slate-850 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
+              <a href="#" className="p-2 rounded-xl bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
                 <Twitter className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 rounded-xl bg-slate-850 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
+              <a href="#" className="p-2 rounded-xl bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-400 transition-all">
                 <Youtube className="w-4 h-4" />
               </a>
             </div>

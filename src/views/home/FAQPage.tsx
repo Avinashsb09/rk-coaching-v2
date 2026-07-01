@@ -55,7 +55,7 @@ export default function FAQPage() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2, ease: 'easeInOut' }}
                   >
-                    <div className="px-5 pb-5 pt-1 text-xs text-slate-500 dark:text-slate-450 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/20">
+                    <div className="px-5 pb-5 pt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/20">
                       {faq.answer}
                     </div>
                   </motion.div>

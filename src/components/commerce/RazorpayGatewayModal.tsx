@@ -308,7 +308,7 @@ export function RazorpayGatewayModal({
         role="dialog"
         aria-labelledby="payment-modal-title"
         aria-modal="true"
-        className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 dark:bg-slate-900 text-slate-800 dark:text-slate-100"
+        className="w-full max-w-md rounded-3xl bg-white/80 shadow-2xl overflow-hidden border border-slate-200/50 dark:border-slate-800/50 dark:bg-slate-900/80 text-slate-800 dark:text-slate-100 backdrop-blur-lg"
       >
         {/* Header bar */}
         <div className="bg-blue-600 text-white p-5 flex items-center justify-between">
@@ -343,7 +343,7 @@ export function RazorpayGatewayModal({
         </div>
 
         {/* Pricing Summary */}
-        <div className="bg-slate-50 dark:bg-slate-850 px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-left">
+        <div className="bg-slate-50/50 dark:bg-slate-800/50 px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-left">
           <div className="space-y-0.5">
             <p className="text-[9px] font-extrabold uppercase tracking-wide text-slate-400">Course Syllabus Package</p>
             <h3 className="text-xs font-bold text-slate-950 dark:text-white truncate max-w-[200px]">{courseTitle}</h3>
@@ -567,7 +567,7 @@ export function RazorpayGatewayModal({
               </div>
 
               {/* Invoice receipt summary layout */}
-              <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-left text-xs space-y-3.5 border border-slate-150 dark:border-slate-850">
+              <div className="bg-slate-50/50 dark:bg-slate-950/45 p-4 rounded-2xl text-left text-xs space-y-3.5 border border-slate-200 dark:border-slate-800">
                 <div className="flex justify-between font-black pb-2 border-b border-slate-200 dark:border-slate-800">
                   <span className="text-slate-900 dark:text-white uppercase font-extrabold tracking-wide text-[9px]">RK Coaching Invoice</span>
                   <span className="text-blue-600 font-bold">{simulatedOrderId}</span>

@@ -16,7 +16,9 @@ import {
   FlaskConical,
   Dna,
   Briefcase,
-  CreditCard
+  CreditCard,
+  Download,
+  FileText
 } from 'lucide-react';
 
 // Map icons dynamically
@@ -40,7 +42,8 @@ export default function ClassView() {
     setCurrentView, 
     setSelectedSubjectId, 
     setSelectedCourseId,
-    setBreadcrumbs
+    setBreadcrumbs,
+    notes
   } = useApp();
 
   const classObj = classes.find(c => c.slug === selectedClassSlug);
@@ -116,7 +119,57 @@ export default function ClassView() {
         </div>
       </section>
 
-      {/* 1. SUBJECTS SECTION */}
+      {/* 1. FREE HANDWRITTEN NOTES SECTION */}
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-600" />
+            Free Handwritten Notes
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Completely free unit-wise formulas, board revision notes, and exam important questions.
+          </p>
+        </div>
+        
+        {notes.filter(n => n.classId === classObj.id).length === 0 ? (
+          <Card className="p-6 text-center border-dashed border-2 bg-slate-50/30 dark:bg-slate-900/10">
+            <p className="text-slate-500 text-sm">No class-level notes published yet. Check back shortly!</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {notes.filter(n => n.classId === classObj.id).map((note) => (
+              <Card key={note.id} hoverEffect glassmorphism className="border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                <CardContent className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2 text-left">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <FileText className="w-4.5 h-4.5" />
+                    </div>
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                      {note.title}
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                      Size: {(note.sizeBytes / 1000).toFixed(0)} KB
+                    </p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                    <a 
+                      href={note.pdfUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-extrabold transition-all dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1" />
+                      Download PDF
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 2. SUBJECTS SECTION */}
       <section className="space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -172,7 +225,7 @@ export default function ClassView() {
         )}
       </section>
 
-      {/* 2. COURSE MODULES SECTION */}
+      {/* 3. COURSE MODULES SECTION */}
       <section className="space-y-6">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">

@@ -49,10 +49,10 @@ export default function AdvancedSearch() {
         course.description.toLowerCase().includes(keyword.toLowerCase()) ||
         course.teacherName?.toLowerCase().includes(keyword.toLowerCase()) ||
         // chapters match
-        chapters.some(ch => ch.courseId === course.id && ch.title.toLowerCase().includes(keyword.toLowerCase())) ||
+        chapters.some(ch => ch.subjectId === course.subjectId && ch.name.toLowerCase().includes(keyword.toLowerCase())) ||
         // lessons match
         lessons.some(l => {
-          const courseChapters = chapters.filter(ch => ch.courseId === course.id).map(ch => ch.id);
+          const courseChapters = chapters.filter(ch => ch.subjectId === course.subjectId).map(ch => ch.id);
           return courseChapters.includes(l.chapterId) && l.title.toLowerCase().includes(keyword.toLowerCase());
         })
       );
@@ -238,7 +238,7 @@ export default function AdvancedSearch() {
         <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
           <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
           <div>
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-350">No Courses Match Filters</h3>
+            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-400">No Courses Match Filters</h3>
             <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Try typing a different chapter name or resetting the class selectors to explore the standard LMS catalog.</p>
           </div>
           <Button variant="outline" size="sm" onClick={handleClearFilters} className="mt-2 text-xs">

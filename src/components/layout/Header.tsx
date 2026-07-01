@@ -73,7 +73,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             </div>
             <div>
               <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-                RK <span className="text-blue-600 dark:text-blue-450">Coaching</span>
+                RK <span className="text-blue-600 dark:text-blue-400">Coaching</span>
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 LMS
@@ -88,7 +88,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <button
               onClick={() => setClassDropdownOpen(!classDropdownOpen)}
               onBlur={() => setTimeout(() => setClassDropdownOpen(false), 200)}
-              className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100 cursor-pointer"
+              className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 cursor-pointer"
             >
               <span>Explore Classes</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${classDropdownOpen ? 'rotate-180' : ''}`} />
@@ -116,7 +116,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             className={`text-sm font-semibold transition-colors cursor-pointer ${
               currentView === 'faq'
                 ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
             }`}
           >
             FAQs
@@ -127,7 +127,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             className={`text-sm font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
               currentView === 'advanced-search'
                 ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
             }`}
           >
             <Search className="w-4 h-4" />
@@ -139,7 +139,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             className={`text-sm font-semibold transition-colors cursor-pointer ${
               currentView === 'contact'
                 ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-350 dark:hover:text-slate-100'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
             }`}
           >
             Contact Support
@@ -167,10 +167,10 @@ export function Header({ onToggleSidebar }: HeaderProps) {
 
               {notificationsDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 z-50 w-80 rounded-2xl border border-slate-150 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950 text-left overflow-hidden"
+                  className="absolute right-0 mt-2 z-50 w-80 rounded-2xl border border-slate-200/50 bg-white/80 shadow-2xl dark:border-slate-800/50 dark:bg-slate-950/80 text-left overflow-hidden backdrop-blur-lg"
                   onMouseLeave={() => setNotificationsDropdownOpen(false)}
                 >
-                  <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-150 dark:border-slate-800 flex items-center justify-between">
+                  <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                       <Bell className="w-3.5 h-3.5 text-blue-600" />
                       Notifications ({notifications.length})

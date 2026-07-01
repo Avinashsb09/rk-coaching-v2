@@ -74,7 +74,7 @@ export function Tabs({
               className={`
                 flex items-center gap-2 py-3 px-1 border-b-2 font-semibold text-sm whitespace-nowrap transition-all duration-200 cursor-pointer
                 ${isActive
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-450'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300'
                 }
               `}

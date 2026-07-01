@@ -208,7 +208,7 @@ export default function AuthPage() {
       <div className={`p-3.5 rounded-2xl border flex items-center gap-3 ${
         configured 
           ? 'bg-emerald-50 border-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-400'
-          : 'bg-amber-50 border-amber-150 text-amber-850 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400'
+          : 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400'
       }`}>
         <div className={`h-2.5 w-2.5 rounded-full ${configured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-pulse'}`} />
         <div className="flex-1 text-xs">
@@ -223,7 +223,7 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6" glassmorphism>
         <CardContent className="p-0 space-y-5">
           
           {/* LOGO AND MOTTO */}
@@ -385,7 +385,7 @@ export default function AuthPage() {
                         onClick={() => setSelectedRole('student')}
                         className={`py-2 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
                           selectedRole === 'student'
-                            ? 'bg-blue-50 border-blue-450 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
+                            ? 'bg-blue-50 border-blue-400 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
                             : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-950 dark:border-slate-800'
                         }`}
                       >
@@ -396,7 +396,7 @@ export default function AuthPage() {
                         onClick={() => setSelectedRole('teacher')}
                         className={`py-2 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
                           selectedRole === 'teacher'
-                            ? 'bg-amber-50 border-amber-450 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+                            ? 'bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
                             : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-950 dark:border-slate-800'
                         }`}
                       >

@@ -66,6 +66,7 @@ export default function LessonView() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [studyTime, setStudyTime] = useState(0); // in seconds
   const [progressPercent, setProgressPercent] = useState(0); // simulated video watching percent
+  const [notesTab, setNotesTab] = useState<'notes' | 'pyq' | 'practiceset'>('notes');
 
   const videoRef = useRef<HTMLDivElement>(null);
   const studyTrackerInterval = useRef<any>(null);
@@ -135,7 +136,6 @@ export default function LessonView() {
             // Save progress every 15 seconds
             if (nextTime % 15 === 0) {
               saveProgress(
-                user.id,
                 selectedCourseId || '',
                 lessonObj.id,
                 nextPercent,
@@ -170,17 +170,22 @@ export default function LessonView() {
   const activeVideo = videosList.find(v => v.lessonId === lessonObj.id);
   const activeNote = notesList.find(n => n.lessonId === lessonObj.id);
 
+  const selectedTabNote = notesList.find(n => 
+    n.lessonId === lessonObj.id && 
+    (n.type === notesTab || (!n.type && notesTab === 'notes'))
+  );
+
   const [resolvedPdfUrl, setResolvedPdfUrl] = useState<string>('');
 
   useEffect(() => {
-    if (activeNote) {
-      resolveSecureDownloadUrl(activeNote.pdfUrl).then(url => {
+    if (selectedTabNote) {
+      resolveSecureDownloadUrl(selectedTabNote.pdfUrl).then(url => {
         setResolvedPdfUrl(url);
       });
     } else {
       setResolvedPdfUrl('');
     }
-  }, [activeNote]);
+  }, [selectedTabNote]);
 
   // Filter lessons for course navigation
   const courseLessons = lessonsList
@@ -203,7 +208,6 @@ export default function LessonView() {
     }
     const targetStatus = !isCompleted;
     saveProgress(
-      user.id,
       selectedCourseId || '',
       lessonObj.id,
       targetStatus ? 100 : progressPercent,
@@ -214,10 +218,18 @@ export default function LessonView() {
   };
 
   // Video URL parser
+  const extractYoutubeId = (urlOrId: string): string => {
+    if (!urlOrId) return '';
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = urlOrId.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : urlOrId;
+  };
+
   const getVideoEmbedUrl = () => {
     if (!activeVideo) return '';
     if (activeVideo.provider === 'youtube') {
-      return `https://www.youtube.com/embed/${activeVideo.videoIdOrUrl}?autoplay=1&rel=0&showinfo=0&mute=0&controls=1`;
+      const yId = extractYoutubeId(activeVideo.videoIdOrUrl);
+      return `https://www.youtube.com/embed/${yId}?autoplay=1&rel=0&showinfo=0&mute=0&controls=1`;
     }
     if (activeVideo.provider === 'vimeo') {
       return `https://player.vimeo.com/video/${activeVideo.videoIdOrUrl}?autoplay=1&badge=0&byline=0&portrait=0`;
@@ -358,58 +370,98 @@ export default function LessonView() {
         {/* DECK B: Dynamic Study Notes Split-Screen Panel */}
         <Card className="border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden shadow-md">
           {/* Header Panel */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-indigo-500" />
-              <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white">
-                Handwritten Syllabus Notes
-              </h3>
-            </div>
-            {activeNote && (
+          <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 space-y-3">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleOpenNotes} 
-                  leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
-                  className="h-8 text-[10px]"
-                >
-                  Popout
-                </Button>
-                <a href={resolvedPdfUrl || activeNote.pdfUrl} download className="no-underline">
+                <FileText className="w-5 h-5 text-indigo-500" />
+                <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white">
+                  Lesson Study Materials
+                </h3>
+              </div>
+              {selectedTabNote && (
+                <div className="flex items-center gap-2">
                   <Button 
-                    variant="secondary" 
+                    variant="ghost" 
                     size="sm" 
-                    leftIcon={<Download className="w-3.5 h-3.5" />}
+                    onClick={handleOpenNotes} 
+                    leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
                     className="h-8 text-[10px]"
                   >
-                    Save PDF
+                    Popout
                   </Button>
-                </a>
-              </div>
-            )}
+                  <a href={resolvedPdfUrl || selectedTabNote.pdfUrl} download className="no-underline">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      leftIcon={<Download className="w-3.5 h-3.5" />}
+                      className="h-8 text-[10px]"
+                    >
+                      Save PDF
+                    </Button>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setNotesTab('notes')}
+                className={`text-[10px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
+                  notesTab === 'notes'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800'
+                }`}
+              >
+                Core Notes
+              </button>
+              <button
+                onClick={() => setNotesTab('pyq')}
+                className={`text-[10px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
+                  notesTab === 'pyq'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800'
+                }`}
+              >
+                PYQ Papers
+              </button>
+              <button
+                onClick={() => setNotesTab('practiceset')}
+                className={`text-[10px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
+                  notesTab === 'practiceset'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800'
+                }`}
+              >
+                Practice Sets
+              </button>
+            </div>
           </div>
 
           {/* PDF Embed Sandbox Canvas */}
           <div className="bg-slate-200 dark:bg-slate-950 flex-1 min-h-[300px] lg:min-h-[auto] relative flex flex-col">
-            {activeNote ? (
+            {selectedTabNote ? (
               <iframe 
-                src={`${resolvedPdfUrl || activeNote.pdfUrl}#toolbar=1`} 
-                title={activeNote.title}
+                src={`${resolvedPdfUrl || selectedTabNote.pdfUrl}#toolbar=1`} 
+                title={selectedTabNote.title}
                 className="w-full h-full flex-1 border-0"
               />
             ) : (
               <div className="m-auto p-6 text-center space-y-3">
                 <FileText className="w-12 h-12 text-slate-400 mx-auto" />
-                <p className="text-sm font-semibold text-slate-500">PDF revisions not yet uploaded under this chapter lesson.</p>
-                <p className="text-xs text-slate-400">Doubt sessions will be triggered automatically. Refer to announcements.</p>
+                <p className="text-sm font-semibold text-slate-500">
+                  {notesTab === 'notes' && 'Core revision notes not yet uploaded.'}
+                  {notesTab === 'pyq' && 'No Previous Year Questions (PYQs) uploaded yet.'}
+                  {notesTab === 'practiceset' && 'No Practice Sets uploaded yet.'}
+                </p>
+                <p className="text-xs text-slate-400">All materials will sync automatically. Refer to announcements.</p>
               </div>
             )}
           </div>
 
           {/* Engagement Footer info */}
           <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span className="font-semibold">{activeNote ? activeNote.title : 'No PDF assigned'}</span>
+            <span className="font-semibold">{selectedTabNote ? selectedTabNote.title : 'No PDF assigned'}</span>
             <span className="font-bold">Alignment: CBSE Board 2026</span>
           </div>
         </Card>

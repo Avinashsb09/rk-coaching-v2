@@ -73,7 +73,10 @@ export interface Video {
 
 export interface Note {
   id: string;
-  lessonId: string;
+  lessonId?: string | null;
+  classId?: string | null;
+  subjectId?: string | null;
+  type?: 'notes' | 'pyq' | 'practiceset';
   title: string;
   pdfUrl: string;
   sizeBytes: number;

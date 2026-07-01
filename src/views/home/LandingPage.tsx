@@ -169,7 +169,7 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
                 <button
                   key={card.slug}
                   onClick={() => selectClass(card.slug)}
-                  className="p-5 border border-slate-200 dark:border-slate-850 hover:border-blue-500/50 dark:hover:border-blue-500/50 rounded-2xl bg-white dark:bg-slate-950 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer group flex flex-col justify-between h-full"
+                  className="p-5 border border-slate-200/40 dark:border-slate-800/40 hover:border-blue-500/50 dark:hover:border-blue-500/50 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer group flex flex-col justify-between h-full"
                 >
                   <div className="space-y-4">
                     <div className={`w-10 h-10 flex items-center justify-center rounded-xl border ${card.color} group-hover:scale-110 transition-transform duration-300`}>

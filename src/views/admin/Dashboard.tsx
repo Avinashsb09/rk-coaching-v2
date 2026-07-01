@@ -32,14 +32,33 @@ import {
   Settings,
   Search,
   Download,
-  Printer
+  Printer,
+  BookOpen,
+  Film,
+  PlusCircle,
+  FolderPlus,
+  PlayCircle,
+  ChevronRight,
+  UserMinus,
+  UserCheck,
+  Activity,
+  Video,
+  AlertTriangle,
+  Calendar,
+  Menu,
+  LogOut,
+  Database,
+  TrendingUp,
+  BarChart2,
+  Shield,
+  Eye
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
-
+ 
 export default function AdminDashboard() {
   const { 
     addToast,
@@ -55,20 +74,52 @@ export default function AdminDashboard() {
     setOrders,
     paymentSettings,
     setPaymentSettings,
-    courses
-  } = useApp();
+    courses,
+    setCourses,
+    classes,
+    setClasses,
+    subjects,
+    setSubjects,
+    chapters,
+    setChapters,
+    lessons,
+    setLessons,
+    videos,
+    setVideos,
+    notes,
+    setNotes
+  } = useApp() as any;
 
-  const [activeTab, setActiveTab] = useState<'console' | 'users' | 'copy' | 'faqs' | 'payments' | 'payment-settings'>('console');
+  // Tabs structure state
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Announcement states
-  const [announcementTitle, setAnnouncementTitle] = useState('');
-  const [announcementMsg, setAnnouncementMsg] = useState('');
+  // Global Search states
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
+  // Selected User Profile details modal state
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState<any | null>(null);
+
+  // Suspend Dialog Modal states
+  const [suspendModalUser, setSuspendModalUser] = useState<any | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [suspendStart, setSuspendStart] = useState('');
+  const [suspendEnd, setSuspendEnd] = useState('');
+
+  // User list filters
+  const [userFilterRole, setUserFilterRole] = useState('all');
+  const [userFilterClass, setUserFilterClass] = useState('all');
+  const [userFilterStatus, setUserFilterStatus] = useState('all');
+  const [showDeletedUsers, setShowDeletedUsers] = useState(false);
 
   // User form states
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [userFullName, setUserFullName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [userClassId, setUserClassId] = useState('c6');
+  const [userStatus, setUserStatus] = useState('active');
   const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin' | 'visitor'>('student');
   const [userXp, setUserXp] = useState('500');
   const [userStreak, setUserStreak] = useState('3');
@@ -121,11 +172,14 @@ export default function AdminDashboard() {
   // ---- SECTION 6: USER MANAGEMENT CRUD ----
   const handleOpenUserForm = (userId: string | null = null) => {
     if (userId) {
-      const u = users.find(item => item.id === userId);
+      const u = users.find((item: any) => item.id === userId) as any;
       if (u) {
         setEditingUserId(userId);
         setUserFullName(u.fullName);
         setUserEmail(u.email);
+        setUserPhone(u.phone || '98765 43210');
+        setUserClassId(u.classId || 'c6');
+        setUserStatus(u.status || 'active');
         setUserRole(u.role);
         setUserXp(u.totalXp.toString());
         setUserStreak(u.dailyStreak.toString());
@@ -135,6 +189,9 @@ export default function AdminDashboard() {
       setEditingUserId(null);
       setUserFullName('');
       setUserEmail('');
+      setUserPhone('98765 43210');
+      setUserClassId('c6');
+      setUserStatus('active');
       setUserRole('student');
       setUserXp('300');
       setUserStreak('1');
@@ -143,61 +200,216 @@ export default function AdminDashboard() {
     setUserFormOpen(true);
   };
 
-  const handleSaveUser = (e: React.FormEvent) => {
+  const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userFullName || !userEmail) {
       addToast('Please input complete credentials', 'error');
       return;
     }
 
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    const supabase = (isSupabaseConfigured() && getSupabase()) ? (getSupabase() as any) : null;
+
     if (editingUserId) {
       // Edit User
-      setUsers(prev => prev.map(u => u.id === editingUserId ? {
+      (setUsers as any)((prev: any) => prev.map((u: any) => u.id === editingUserId ? {
         ...u,
         fullName: userFullName,
         email: userEmail,
+        phone: userPhone,
+        classId: userClassId,
+        status: userStatus,
         role: userRole,
         totalXp: Number(userXp) || 0,
         dailyStreak: Number(userStreak) || 0,
         avatarUrl: userAvatar
       } : u));
+
+      if (supabase) {
+        try {
+          await supabase.from('profiles').update({
+            fullName: userFullName,
+            email: userEmail,
+            phone: userPhone,
+            classId: userClassId,
+            status: userStatus,
+            role: userRole,
+            totalXp: Number(userXp) || 0,
+            dailyStreak: Number(userStreak) || 0,
+            avatarUrl: userAvatar
+          }).eq('id', editingUserId);
+        } catch (err) {
+          console.error('Supabase update profile failed:', err);
+        }
+      }
       addToast(`Account for "${userFullName}" updated successfully`, 'success');
     } else {
       // Create User
       const newId = `usr_${Date.now()}`;
-      setUsers(prev => [
-        ...prev,
-        {
-          id: newId,
-          email: userEmail,
-          fullName: userFullName,
-          role: userRole,
-          dailyStreak: Number(userStreak) || 0,
-          totalXp: Number(userXp) || 0,
-          badges: ['scholar'],
-          avatarUrl: userAvatar
+      const newUser = {
+        id: newId,
+        email: userEmail,
+        fullName: userFullName,
+        phone: userPhone,
+        classId: userClassId,
+        status: userStatus,
+        role: userRole,
+        dailyStreak: Number(userStreak) || 0,
+        totalXp: Number(userXp) || 0,
+        badges: ['scholar'],
+        avatarUrl: userAvatar,
+        softDeleted: false,
+        registrationDate: new Date().toISOString().split('T')[0],
+        lastLogin: new Date().toLocaleString()
+      };
+
+      (setUsers as any)((prev: any) => [...prev, newUser]);
+
+      if (supabase) {
+        try {
+          await supabase.from('profiles').insert(newUser);
+        } catch (err) {
+          console.error('Supabase insert profile failed:', err);
         }
-      ]);
+      }
       addToast(`User Profile "${userFullName}" established successfully`, 'success');
     }
     setUserFormOpen(false);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (confirm('Are you absolutely sure you want to delete this user profile?')) {
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      addToast('Profile deleted from database ledger', 'warning');
+  const handleSoftDeleteUser = async (userId: string) => {
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, softDeleted: true } : u));
+    addToast('Profile soft-deleted and moved to archives', 'warning');
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({ softDeleted: true }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase soft delete failed:', err);
+      }
     }
   };
 
+  const handleRestoreUser = async (userId: string) => {
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, softDeleted: false } : u));
+    addToast('Profile restored successfully', 'success');
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({ softDeleted: false }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase restore failed:', err);
+      }
+    }
+  };
+
+  const handlePauseUser = async (userId: string) => {
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, status: 'paused' } : u));
+    addToast('User login paused (access suspended; data remains safe)', 'info');
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({ status: 'paused' }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase status pause failed:', err);
+      }
+    }
+  };
+
+  const handleResumeUser = async (userId: string) => {
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, status: 'active', suspendedReason: null, suspendedStart: null, suspendedEnd: null } : u));
+    addToast('User login access resumed and reactivated', 'success');
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({ status: 'active', suspendedReason: null, suspendedStart: null, suspendedEnd: null }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase status resume failed:', err);
+      }
+    }
+  };
+
+  const handleBlockUser = async (userId: string) => {
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, status: 'blocked' } : u));
+    addToast('User account permanently BLOCKED', 'error');
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({ status: 'blocked' }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase status block failed:', err);
+      }
+    }
+  };
+
+  const handleUnblockUser = async (userId: string) => {
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, status: 'active' } : u));
+    addToast('User account unblocked', 'success');
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({ status: 'active' }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase status unblock failed:', err);
+      }
+    }
+  };
+
+  const handleConfirmSuspension = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!suspendModalUser) return;
+    const userId = suspendModalUser.id;
+
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? {
+      ...u,
+      status: 'suspended',
+      suspendedReason: suspendReason,
+      suspendedStart: suspendStart || new Date().toISOString().split('T')[0],
+      suspendedEnd: suspendEnd
+    } : u));
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('profiles').update({
+          status: 'suspended',
+          suspendedReason: suspendReason,
+          suspendedStart: suspendStart || new Date().toISOString().split('T')[0],
+          suspendedEnd: suspendEnd
+        }).eq('id', userId);
+      } catch (err) {
+        console.error('Supabase status suspend failed:', err);
+      }
+    }
+
+    addToast(`User "${suspendModalUser.fullName}" suspended until ${suspendEnd}`, 'warning');
+    setSuspendModalUser(null);
+    setSuspendReason('');
+    setSuspendStart('');
+    setSuspendEnd('');
+  };
+
   const handleResetXp = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, totalXp: 0 } : u));
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, totalXp: 0 } : u));
     addToast('XP reset completed', 'success');
   };
 
   const handleTogglePremium = (userId: string, currentRole: string) => {
     const nextRole = currentRole === 'student' ? 'visitor' : 'student';
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: nextRole as any } : u));
+    (setUsers as any)((prev: any) => prev.map((u: any) => u.id === userId ? { ...u, role: nextRole as any } : u));
     addToast('User standard tier updated', 'success');
   };
 
@@ -289,6 +501,370 @@ export default function AdminDashboard() {
     }
   };
 
+  // ==========================================
+  // SYLLABUS & NOTES BUILDER STATES & HANDLERS
+  // ==========================================
+  const [selClassId, setSelClassId] = useState<string>('c6');
+  const [selSubjectId, setSelSubjectId] = useState<string | null>(null);
+  const [selChapterId, setSelChapterId] = useState<string | null>(null);
+  const [selLessonId, setSelLessonId] = useState<string | null>(null);
+
+  // Free notes form
+  const [freeNoteFormOpen, setFreeNoteFormOpen] = useState(false);
+  const [freeNoteTitle, setFreeNoteTitle] = useState('');
+  const [freeNoteUrl, setFreeNoteUrl] = useState('');
+  const [freeNoteBytes, setFreeNoteBytes] = useState('280000');
+
+  // Premium notes form
+  const [premNoteFormOpen, setPremNoteFormOpen] = useState(false);
+  const [premNoteTitle, setPremNoteTitle] = useState('');
+  const [premNoteUrl, setPremNoteUrl] = useState('');
+  const [premNoteBytes, setPremNoteBytes] = useState('310000');
+
+  // Subject form
+  const [subjFormOpen, setSubjFormOpen] = useState(false);
+  const [subjName, setSubjName] = useState('');
+  const [subjDesc, setSubjDesc] = useState('');
+  const [subjIconName, setSubjIconName] = useState('BookOpen');
+
+  // Chapter form
+  const [chapFormOpen, setChapFormOpen] = useState(false);
+  const [chapName, setChapName] = useState('');
+  const [chapDesc, setChapDesc] = useState('');
+
+  // Lesson form
+  const [lessFormOpen, setLessFormOpen] = useState(false);
+  const [lessTitle, setLessTitle] = useState('');
+  const [lessDesc, setLessDesc] = useState('');
+
+  // Media bindings on selected lesson
+  const [editVideoUrl, setEditVideoUrl] = useState('');
+  const [editPyqTitle, setEditPyqTitle] = useState('');
+  const [editPyqUrl, setEditPyqUrl] = useState('');
+  const [editPracticeTitle, setEditPracticeTitle] = useState('');
+  const [editPracticeUrl, setEditPracticeUrl] = useState('');
+
+  // Sync lesson media when active lesson changes
+  React.useEffect(() => {
+    if (selLessonId) {
+      const v = videos.find(vid => vid.lessonId === selLessonId);
+      setEditVideoUrl(v ? v.videoIdOrUrl : '');
+      setEditPyqTitle('');
+      setEditPyqUrl('');
+      setEditPracticeTitle('');
+      setEditPracticeUrl('');
+    } else {
+      setEditVideoUrl('');
+    }
+  }, [selLessonId, videos]);
+
+  const handleSaveFreeNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!freeNoteTitle || !freeNoteUrl) {
+      addToast('Please fill all fields', 'warning');
+      return;
+    }
+    const newNote = {
+      id: 'note_' + Math.random().toString(36).substring(2, 9),
+      classId: selClassId,
+      subjectId: null,
+      lessonId: null,
+      title: freeNoteTitle,
+      pdfUrl: freeNoteUrl,
+      sizeBytes: parseInt(freeNoteBytes) || 280000,
+      isPremium: false,
+      type: 'notes' as const
+    };
+
+    (setNotes as any)((prev: any) => [...prev, newNote]);
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('notes').insert(newNote);
+      } catch (err) {
+        console.error('Supabase save note failed:', err);
+      }
+    }
+
+    addToast('Free Handwritten Note added to Class!', 'success');
+    setFreeNoteTitle('');
+    setFreeNoteUrl('');
+    setFreeNoteFormOpen(false);
+  };
+
+  const handleSavePremNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selSubjectId) return;
+    if (!premNoteTitle || !premNoteUrl) {
+      addToast('Please fill all fields', 'warning');
+      return;
+    }
+    const newNote = {
+      id: 'note_' + Math.random().toString(36).substring(2, 9),
+      classId: selClassId,
+      subjectId: selSubjectId,
+      lessonId: null,
+      title: premNoteTitle,
+      pdfUrl: premNoteUrl,
+      sizeBytes: parseInt(premNoteBytes) || 310000,
+      isPremium: true,
+      price: 30,
+      type: 'notes' as const
+    };
+
+    (setNotes as any)((prev: any) => [...prev, newNote]);
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('notes').insert(newNote);
+      } catch (err) {
+        console.error('Supabase save note failed:', err);
+      }
+    }
+
+    addToast('Premium Notes added to Subject (₹30 locked preview)!', 'success');
+    setPremNoteTitle('');
+    setPremNoteUrl('');
+    setPremNoteFormOpen(false);
+  };
+
+  const handleDeleteSyllabusNote = async (noteId: string) => {
+    if (!confirm('Are you sure you want to delete this notes resource?')) return;
+    (setNotes as any)((prev: any) => prev.filter((n: any) => n.id !== noteId));
+    
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('notes').delete().eq('id', noteId);
+      } catch (err) {
+        console.error('Supabase delete notes failed:', err);
+      }
+    }
+    addToast('Notes file deleted', 'warning');
+  };
+
+  const handleSaveSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subjName) return;
+    const newSubj = {
+      id: 'subj_' + Math.random().toString(36).substring(2, 9),
+      classId: selClassId,
+      name: subjName,
+      description: subjDesc,
+      icon: subjIconName,
+      slug: subjName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+    };
+    
+    (setSubjects as any)((prev: any) => [...prev, newSubj]);
+
+    const newCourse = {
+      id: 'course_' + newSubj.id,
+      classId: selClassId,
+      subjectId: newSubj.id,
+      title: `${classes.find(c => c.id === selClassId)?.name || 'Class'} ${subjName} Masterclass`,
+      subtitle: `Unlock high-yield handwritten notes and video lectures.`,
+      description: subjDesc || `Comprehensive syllabus course prep module.`,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1453733190148-c44698c26588?auto=format&fit=crop&w=500&q=80',
+      isPremium: false,
+      price: 0
+    };
+
+    (setCourses as any)((prev: any) => [...prev, newCourse]);
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('subjects').insert(newSubj);
+        await supabase.from('courses').insert(newCourse);
+      } catch (err) {
+        console.error('Supabase save subject failed:', err);
+      }
+    }
+    
+    addToast('Subject successfully registered!', 'success');
+    setSubjName('');
+    setSubjDesc('');
+    setSubjFormOpen(false);
+    setSelSubjectId(newSubj.id);
+  };
+
+  const handleSaveChapter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selSubjectId || !chapName) return;
+    const newChap = {
+      id: 'chap_' + Math.random().toString(36).substring(2, 9),
+      subjectId: selSubjectId,
+      name: chapName,
+      description: chapDesc,
+      orderIndex: chapters.filter(c => c.subjectId === selSubjectId).length + 1
+    };
+    
+    (setChapters as any)((prev: any) => [...prev, newChap]);
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('chapters').insert(newChap);
+      } catch (err) {
+        console.error('Supabase save chapter failed:', err);
+      }
+    }
+    
+    addToast('Chapter folder added successfully!', 'success');
+    setChapName('');
+    setChapDesc('');
+    setChapFormOpen(false);
+    setSelChapterId(newChap.id);
+  };
+
+  const handleSaveLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selChapterId || !lessTitle) return;
+    
+    const matchedCourse = courses.find(c => c.subjectId === selSubjectId);
+    const newLesson = {
+      id: 'less_' + Math.random().toString(36).substring(2, 9),
+      chapterId: selChapterId,
+      courseId: matchedCourse?.id || 'course_' + selSubjectId,
+      title: lessTitle,
+      description: lessDesc,
+      orderIndex: lessons.filter(l => l.chapterId === selChapterId).length + 1,
+      isPremium: false
+    };
+    
+    (setLessons as any)((prev: any) => [...prev, newLesson]);
+
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('lessons').insert(newLesson);
+      } catch (err) {
+        console.error('Supabase save lesson failed:', err);
+      }
+    }
+    
+    addToast('Lesson node created!', 'success');
+    setLessTitle('');
+    setLessDesc('');
+    setLessFormOpen(false);
+    setSelLessonId(newLesson.id);
+  };
+
+  const handleSaveVideoLecture = async () => {
+    if (!selLessonId) return;
+    const existingVideo = videos.find(v => v.lessonId === selLessonId);
+    
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+
+    if (existingVideo) {
+      const updatedVideo = { ...existingVideo, videoIdOrUrl: editVideoUrl };
+      (setVideos as any)((prev: any) => prev.map((v: any) => v.id === existingVideo.id ? updatedVideo : v));
+      
+      if (isSupabaseConfigured() && getSupabase()) {
+        const supabase = getSupabase() as any;
+        try {
+          await supabase.from('videos').update({ videoIdOrUrl: editVideoUrl }).eq('id', existingVideo.id);
+        } catch (err) {
+          console.error('Supabase update video failed:', err);
+        }
+      }
+    } else {
+      const newVideo = {
+        id: 'vid_' + Math.random().toString(36).substring(2, 9),
+        lessonId: selLessonId,
+        title: (lessons.find(l => l.id === selLessonId)?.title || 'Lesson') + ' Lecture Video',
+        provider: 'youtube' as const,
+        videoIdOrUrl: editVideoUrl,
+        durationSeconds: 1800
+      };
+      (setVideos as any)((prev: any) => [...prev, newVideo]);
+      
+      if (isSupabaseConfigured() && getSupabase()) {
+        const supabase = getSupabase() as any;
+        try {
+          await supabase.from('videos').insert(newVideo);
+        } catch (err) {
+          console.error('Supabase insert video failed:', err);
+        }
+      }
+    }
+    addToast('YouTube Lecture URL bound to Lesson!', 'success');
+  };
+
+  const handleAddPyq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selLessonId || !editPyqTitle || !editPyqUrl) {
+      addToast('Please provide PYQ title and PDF URL', 'warning');
+      return;
+    }
+    const newNote = {
+      id: 'note_' + Math.random().toString(36).substring(2, 9),
+      lessonId: selLessonId,
+      classId: selClassId,
+      subjectId: selSubjectId,
+      title: editPyqTitle,
+      pdfUrl: editPyqUrl,
+      sizeBytes: 250000,
+      isPremium: false,
+      type: 'pyq' as const
+    };
+    (setNotes as any)((prev: any) => [...prev, newNote]);
+    
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('notes').insert(newNote);
+      } catch (err) {
+        console.error('Supabase insert note failed:', err);
+      }
+    }
+    addToast('PYQ Question Sheet added!', 'success');
+    setEditPyqTitle('');
+    setEditPyqUrl('');
+  };
+
+  const handleAddPractice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selLessonId || !editPracticeTitle || !editPracticeUrl) {
+      addToast('Please provide Practice Set title and PDF URL', 'warning');
+      return;
+    }
+    const newNote = {
+      id: 'note_' + Math.random().toString(36).substring(2, 9),
+      lessonId: selLessonId,
+      classId: selClassId,
+      subjectId: selSubjectId,
+      title: editPracticeTitle,
+      pdfUrl: editPracticeUrl,
+      sizeBytes: 280000,
+      isPremium: false,
+      type: 'practiceset' as const
+    };
+    (setNotes as any)((prev: any) => [...prev, newNote]);
+    
+    const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+    if (isSupabaseConfigured() && getSupabase()) {
+      const supabase = getSupabase() as any;
+      try {
+        await supabase.from('notes').insert(newNote);
+      } catch (err) {
+        console.error('Supabase insert note failed:', err);
+      }
+    }
+    addToast('Practice Test Set added!', 'success');
+    setEditPracticeTitle('');
+    setEditPracticeUrl('');
+  };
+
   const handleSavePaymentSettings = (e: React.FormEvent) => {
     e.preventDefault();
     setPaymentSettings({
@@ -359,956 +935,1286 @@ export default function AdminDashboard() {
   const handleTriggerRefund = (payId: string) => {
     addToast(`Refund initiated for Payment ID ${payId}. Processing API handshake with Razorpay Refund daemon (Future-ready).`, 'info');
   };
+  const usersWithMeta = (users || []).map((u: any) => ({
+    phone: u.phone || '98765 43210',
+    status: u.status || 'active',
+    softDeleted: u.softDeleted || false,
+    lastLogin: u.lastLogin || new Date(Date.now() - 3600000 * 2).toLocaleString(),
+    registrationDate: u.registrationDate || '2026-01-15',
+    classId: u.classId || 'c10',
+    purchasedSubjects: u.purchasedSubjects || [],
+    suspendedReason: u.suspendedReason || '',
+    suspendedStart: u.suspendedStart || '',
+    suspendedEnd: u.suspendedEnd || '',
+    ...u
+  }));
+
+  // Auto-resume expired suspensions reactively
+  React.useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const expiredSuspendedUsers = usersWithMeta.filter((u: any) => u.status === 'suspended' && u.suspendedEnd && u.suspendedEnd < todayStr);
+    
+    if (expiredSuspendedUsers.length > 0) {
+      expiredSuspendedUsers.forEach(async (u: any) => {
+        (setUsers as any)((prev: any) => prev.map((item: any) => item.id === u.id ? { ...item, status: 'active', suspendedReason: null, suspendedStart: null, suspendedEnd: null } : item));
+        
+        const { getSupabase, isSupabaseConfigured } = await import('../../lib/supabase');
+        if (isSupabaseConfigured() && getSupabase()) {
+          const supabase = getSupabase() as any;
+          try {
+            await supabase.from('profiles').update({ status: 'active', suspendedReason: null, suspendedStart: null, suspendedEnd: null }).eq('id', u.id);
+          } catch (err) {
+            console.error('Auto resume status sync failed:', err);
+          }
+        }
+      });
+      addToast(`Reactivated ${expiredSuspendedUsers.length} user accounts (suspension periods expired).`, 'success');
+    }
+  }, [users]);
+
+  // Global Search logic
+  const getGlobalSearchResults = () => {
+    if (!globalSearchQuery) return [];
+    const query = globalSearchQuery.toLowerCase();
+    
+    const matchedUsers = usersWithMeta
+      .filter((u: any) => u.fullName.toLowerCase().includes(query) || u.email.toLowerCase().includes(query))
+      .map((u: any) => ({ type: 'user', title: u.fullName, subtitle: `Role: ${u.role} | Status: ${u.status}`, data: u }));
+      
+    const matchedSubjects = subjects
+      .filter((s: any) => s.name.toLowerCase().includes(query))
+      .map((s: any) => ({ type: 'subject', title: s.name, subtitle: `Subject ID: ${s.id}`, data: s }));
+
+    const matchedLessons = lessons
+      .filter((l: any) => l.title.toLowerCase().includes(query))
+      .map((l: any) => ({ type: 'lesson', title: l.title, subtitle: `Lesson ID: ${l.id}`, data: l }));
+
+    const matchedPayments = allTxns
+      .filter((p: any) => p.id.toLowerCase().includes(query) || p.userFullName.toLowerCase().includes(query))
+      .map((p: any) => ({ type: 'payment', title: `Payment ${p.id}`, subtitle: `By: ${p.userFullName} | ₹${p.amount}`, data: p }));
+
+    const matchedNotes = notes
+      .filter((n: any) => n.title.toLowerCase().includes(query))
+      .map((n: any) => ({ type: 'note', title: n.title, subtitle: `${n.isPremium ? 'Premium' : 'Free'} PDF Notes`, data: n }));
+
+    return [...matchedUsers, ...matchedSubjects, ...matchedLessons, ...matchedPayments, ...matchedNotes].slice(0, 8);
+  };
+
+  const handleSearchResultClick = (result: any) => {
+    setGlobalSearchQuery('');
+    if (result.type === 'user') {
+      setSelectedUserForProfile(result.data);
+    } else if (result.type === 'payment') {
+      setActiveTab('payments');
+      setSelectedTxnInvoice(result.data);
+    } else if (result.type === 'subject' || result.type === 'lesson' || result.type === 'note') {
+      setActiveTab('syllabus');
+      addToast(`Inspecting syllabus match: "${result.title}"`, 'info');
+    }
+  };
+
+  // Filtered Users List
+  const filteredUsers = usersWithMeta.filter((u: any) => {
+    const matchesSearch = !u.fullName.toLowerCase().includes(globalSearchQuery.toLowerCase()) && !u.email.toLowerCase().includes(globalSearchQuery.toLowerCase());
+    
+    // Check soft delete status
+    if (!showDeletedUsers && u.softDeleted) return false;
+    if (showDeletedUsers && !u.softDeleted) return false;
+
+    // Class Filter
+    if (userFilterClass !== 'all' && u.classId !== userFilterClass) return false;
+
+    // Role Filter
+    if (userFilterRole !== 'all' && u.role !== userFilterRole) return false;
+
+    // Status Filter
+    if (userFilterStatus !== 'all' && u.status !== userFilterStatus) return false;
+
+    return true;
+  });
 
   return (
-    <div className="space-y-8 py-4 text-left">
-      {/* 1. Header Segment */}
-      <section className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-indigo-600" />
-            Administrator Control Center
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Publish global announcement banners, supervise student rosters, elevate teacher ranks, and update landing copy.
-          </p>
+    <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans -mx-4 -my-8 -md:mx-0">
+      {/* SIDEBAR */}
+      <aside className={`w-64 bg-slate-900/60 backdrop-blur-xl border-r border-slate-800 flex flex-col h-screen sticky top-0 z-30 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} absolute md:relative`}>
+        {/* Sidebar Brand Header */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800/80">
+          <div className="flex items-center gap-2.5">
+            <Shield className="w-6 h-6 text-indigo-500" />
+            <span className="font-extrabold text-base tracking-wide bg-gradient-to-r from-indigo-400 to-indigo-200 bg-clip-text text-transparent">
+              RK Control Panel
+            </span>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-slate-200">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div>
-          <Badge variant="danger" className="h-8">Role Claim: Administrator Supreme</Badge>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 scrollbar-thin">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: Sliders },
+            { id: 'users', label: 'Users Directory', icon: Users },
+            { id: 'teachers', label: 'Teachers Hub', icon: UserCheck },
+            { id: 'courses', label: 'Courses', icon: Award, locked: true },
+            { id: 'classes', label: 'Classes', icon: Landmark, locked: true },
+            { id: 'subjects', label: 'Subjects', icon: BookOpen, locked: true },
+            { id: 'chapters', label: 'Chapters', icon: FolderPlus, locked: true },
+            { id: 'lessons', label: 'Lessons', icon: Film, locked: true },
+            { id: 'notes', label: 'Study Notes', icon: FileText, locked: true },
+            { id: 'video-lectures', label: 'Video Lectures', icon: Video, locked: true },
+            { id: 'pyqs', label: 'PYQ Papers', icon: FileCheck, locked: true },
+            { id: 'practice-sets', label: 'Practice Sets', icon: PlayCircle, locked: true },
+            { id: 'mock-tests', label: 'Mock Tests', icon: BadgeCheck, locked: true },
+            { id: 'payments', label: 'Payments Auditor', icon: CreditCard },
+            { id: 'orders', label: 'Orders Registry', icon: Landmark },
+            { id: 'announcements', label: 'Announcements', icon: Megaphone },
+            { id: 'notifications', label: 'Notifications Hub', icon: Sliders, locked: true },
+            { id: 'homepage-cms', label: 'Homepage CMS', icon: FileText },
+            { id: 'media-library', label: 'Media Library', icon: Film, locked: true },
+            { id: 'website-settings', label: 'Website Settings', icon: Settings },
+            { id: 'security', label: 'Security Log', icon: Lock, locked: true },
+            { id: 'audit-logs', label: 'Audit Log', icon: Activity, locked: true },
+            { id: 'backups', label: 'Backup Manager', icon: Database, locked: true },
+            { id: 'analytics', label: 'Analytics Insights', icon: TrendingUp, locked: true },
+            { id: 'syllabus', label: 'Integrated Studio', icon: Sliders }
+          ].map((item) => {
+            const Icon = item.icon;
+            const isTabActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  isTabActive
+                    ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-400'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 border border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className={`w-4 h-4 ${isTabActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </div>
+                {item.locked && (
+                  <Badge variant="outline" size="sm" className="text-[9px] border-slate-700 text-slate-500">Lock</Badge>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-slate-800/80 bg-slate-900/20">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-indigo-900/60 border border-indigo-800 flex items-center justify-center font-extrabold text-xs text-indigo-300">
+              AD
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-200">RK SUPREME ADMIN</p>
+              <p className="text-[10px] text-indigo-400 font-bold">Enterprise Mode</p>
+            </div>
+          </div>
         </div>
-      </section>
+      </aside>
 
-      {/* TABS NAV */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-1 overflow-x-auto pb-px">
-        <button
-          onClick={() => setActiveTab('console')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'console'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-950 dark:hover:text-slate-100'
-          }`}
-        >
-          <Sliders className="w-4 h-4" />
-          Command Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'users'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-950 dark:hover:text-slate-100'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          User Accounts Ledger ({users.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('copy')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'copy'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-950 dark:hover:text-slate-100'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Website Copy CMS
-        </button>
-        <button
-          onClick={() => setActiveTab('faqs')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'faqs'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-950 dark:hover:text-slate-100'
-          }`}
-        >
-          <HelpCircle className="w-4 h-4" />
-          Central FAQ Builder ({faqs.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('payments')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'payments'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-950 dark:hover:text-slate-100'
-          }`}
-        >
-          <CreditCard className="w-4 h-4" />
-          Razorpay Payments ({allTxns.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('payment-settings')}
-          className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'payment-settings'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-950 dark:hover:text-slate-100'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          Payment Settings
-        </button>
-      </div>
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Sticky Header with Global Search */}
+        <header className="sticky top-0 z-20 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/60 h-16 flex items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-400 hover:text-slate-200">
+              <Menu className="w-5 h-5" />
+            </button>
+            <h2 className="text-sm font-extrabold text-slate-200 capitalize hidden sm:block">
+              {activeTab.replace('-', ' ')} Manager
+            </h2>
+          </div>
 
-      {/* TAB CONTENT: Command Overview (Existing metrics + forms) */}
-      {activeTab === 'console' && (
-        <div className="space-y-8 animate-fade-in">
-          {/* STATS */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center">
-                  <DollarSign className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Est. Revenue</p>
-                  <p className="text-xl font-extrabold text-slate-900 dark:text-white">₹2,45,600</p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Global Search Engine Bar */}
+          <div className="relative w-72 sm:w-96">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
+              <Search className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search users, subjects, lessons, payments..."
+              value={globalSearchQuery}
+              onChange={(e) => setGlobalSearchQuery(e.target.value)}
+              className="w-full text-xs pl-10 pr-4 py-2.5 rounded-xl border border-slate-800/80 bg-slate-900/40 hover:bg-slate-900/60 focus:bg-slate-900/90 text-slate-200 outline-none transition-all placeholder-slate-500 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30"
+            />
 
-            <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-600 flex items-center justify-center">
-                  <Landmark className="w-5.5 h-5.5" />
+            {/* Global Search dropdown overlays */}
+            {globalSearchQuery.length > 0 && (
+              <div className="absolute top-13 right-0 left-0 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden max-h-96 overflow-y-auto">
+                <div className="p-2 border-b border-slate-800 text-[10px] uppercase font-black text-slate-500 tracking-wider">
+                  Real-time Search matches
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Completed Orders</p>
-                  <p className="text-xl font-extrabold text-slate-900 dark:text-white">492 Txns</p>
-                </div>
-              </CardContent>
-            </Card>
+                {getGlobalSearchResults().length === 0 ? (
+                  <div className="p-4 text-center text-xs text-slate-400 italic">
+                    No results matching your query.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-800/50">
+                    {getGlobalSearchResults().map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSearchResultClick(item)}
+                        className="w-full text-left p-3 hover:bg-slate-800/40 flex items-center justify-between text-xs transition-colors"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-200">{item.title}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold">{item.subtitle}</p>
+                        </div>
+                        <Badge variant="outline" size="sm" className="text-[9px] uppercase border-indigo-900 text-indigo-400">
+                          {item.type}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
-            <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center">
-                  <BadgeCheck className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Active Campaigns</p>
-                  <p className="text-xl font-extrabold text-slate-900 dark:text-white">4 Live Ads</p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="border-indigo-900 text-indigo-400 text-[10px] h-7 font-black">
+              Enterprise Beta
+            </Badge>
+          </div>
+        </header>
 
-            <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-purple-100 dark:bg-purple-950 text-purple-600 flex items-center justify-center">
-                  <ShieldAlert className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Platform Integrity</p>
-                  <p className="text-xl font-extrabold text-slate-900 dark:text-white">SECURE</p>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* DUAL COLS */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left side: Publish Announcement */}
-            <Card className="p-5 flex flex-col space-y-5">
+        {/* Dynamic tabs mount */}
+        <main className="p-6 max-w-7xl mx-auto w-full space-y-6 flex-1">
+          {/* TAB 1: DASHBOARD OVERVIEW */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-8 animate-fade-in text-left">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Megaphone className="w-5 h-5 text-amber-500" />
-                  Write Global Website Announcements
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Publish critical notification banners appearing on visitor landing and student dashboards instantly.
-                </p>
+                <h3 className="text-lg font-black text-slate-100">Enterprise Control Center</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Summary metrics, registered user tallies, and financial streams overview.</p>
               </div>
 
-              <form onSubmit={handlePostAnnouncement} className="space-y-4">
-                <Input
-                  label="Announcement Title"
-                  placeholder="e.g., Extended NEET (Biology & Chemistry) Practice Mock Quiz Session live on Sunday!"
-                  value={announcementTitle}
-                  onChange={(e) => setAnnouncementTitle(e.target.value)}
-                  required
-                />
+              {/* Statistics Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Students', value: usersWithMeta.filter(u => u.role === 'student' && !u.softDeleted).length, sub: `${Math.round(usersWithMeta.filter(u => u.role === 'student' && !u.softDeleted).length * 0.82)} Active today`, icon: Users, color: 'text-indigo-400 bg-indigo-950/40 border-indigo-900/30' },
+                  { label: 'Total Teachers', value: usersWithMeta.filter(u => u.role === 'teacher').length, sub: 'Assigned subject leads', icon: UserCheck, color: 'text-emerald-400 bg-emerald-950/40 border-emerald-900/30' },
+                  { label: 'Estimated Revenue', value: `₹${allTxns.filter(t => t.status === 'success').reduce((sum, t) => sum + t.amount, 0)}`, sub: 'Paid premium materials', icon: DollarSign, color: 'text-amber-400 bg-amber-950/40 border-amber-900/30' },
+                  { label: 'Successful Purchases', value: `${allTxns.filter(t => t.status === 'success').length} Txns`, sub: `${allTxns.filter(t => t.status === 'failed').length} Failed checks`, icon: BadgeCheck, color: 'text-blue-400 bg-blue-950/40 border-blue-900/30' }
+                ].map((stat, idx) => {
+                  const Icon = stat.icon;
+                  return (
+                    <Card key={idx} hoverEffect className={`bg-slate-900/30 backdrop-blur-lg border border-slate-800/80`}>
+                      <CardContent className="p-5 flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${stat.color}`}>
+                          <Icon className="w-5.5 h-5.5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase text-slate-500 tracking-wider">{stat.label}</p>
+                          <p className="text-xl font-extrabold text-slate-100 mt-0.5">{stat.value}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{stat.sub}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
 
+              {/* Syllabus metrics summary banner */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 rounded-2xl bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg text-xs font-semibold text-slate-300">
+                <div><span className="text-indigo-400 font-bold">{courses.length}</span> Courses</div>
+                <div><span className="text-indigo-400 font-bold">{classes.length}</span> Classes</div>
+                <div><span className="text-indigo-400 font-bold">{subjects.length}</span> Subjects</div>
+                <div><span className="text-indigo-400 font-bold">{lessons.length}</span> Lessons</div>
+                <div><span className="text-indigo-400 font-bold">{notes.length}</span> PDF Manuals</div>
+              </div>
+
+              {/* Feed logs (Registrations and Purchases) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent users registration log */}
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/60 backdrop-blur-lg">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">Recent Registrations Feed</h4>
+                  <div className="space-y-3.5">
+                    {usersWithMeta.slice(0, 5).map((user: any) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 rounded-xl border border-slate-800/40 bg-slate-950/20 hover:bg-slate-900/30 transition-all">
+                        <div className="flex items-center gap-3">
+                          <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full border border-slate-800" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-200">{user.fullName}</p>
+                            <p className="text-[10px] text-slate-500 font-semibold">{user.email}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] uppercase px-2 py-0.5 rounded-lg border border-slate-800 bg-slate-900 font-black text-slate-400">{user.role}</span>
+                          <p className="text-[9px] text-slate-500 font-bold mt-1">{user.registrationDate}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Latest Payments flow */}
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/60 backdrop-blur-lg">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">Latest Purchases Feed</h4>
+                  <div className="space-y-3.5">
+                    {allTxns.slice(0, 5).map((txn: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-slate-800/40 bg-slate-950/20 hover:bg-slate-900/30 transition-all">
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold text-slate-200">{txn.userFullName}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold truncate max-w-xs">{txn.courseTitle}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-black text-indigo-400">₹{txn.amount}</p>
+                          <span className={`text-[8px] uppercase px-1.5 py-0.5 rounded-lg font-black ${txn.status === 'success' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-red-950 text-red-400 border border-red-900'}`}>
+                            {txn.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: USER DIRECTORY & STATUS TRANSITIONS */}
+          {activeTab === 'users' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Target Role Group
-                  </label>
-                  <select className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm px-3 py-2.5 focus:ring-2 focus:ring-blue-500">
-                    <option>All Students</option>
-                    <option>All Teachers</option>
-                    <option>All Guest Visitors</option>
+                  <h3 className="text-lg font-black text-slate-100">User Accounts Directory</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Manage credentials, toggle roles, pause login access, suspend accounts, and view user metrics.</p>
+                </div>
+                <Button variant="primary" size="sm" onClick={() => handleOpenUserForm()} className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold">
+                  <UserPlus className="w-4 h-4" /> Add User Account
+                </Button>
+              </div>
+
+              {/* Filters Header Dashboard */}
+              <div className="p-4 rounded-2xl bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                <div>
+                  <label className="block text-[10px] uppercase font-black text-slate-500 mb-1">Filter Role</label>
+                  <select value={userFilterRole} onChange={e => setUserFilterRole(e.target.value)} className="w-full text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none">
+                    <option value="all">All Roles</option>
+                    <option value="student">Students Only</option>
+                    <option value="teacher">Teachers Only</option>
+                    <option value="admin">Administrators</option>
+                    <option value="visitor">Guest Visitors</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Message Content
-                  </label>
-                  <textarea
-                    placeholder="Write announcements, rules, coupons, or scheduling updates clearly..."
-                    value={announcementMsg}
-                    onChange={(e) => setAnnouncementMsg(e.target.value)}
-                    className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm p-3 h-24 focus:ring-2 focus:ring-blue-500 outline-none"
-                    required
-                  />
+                  <label className="block text-[10px] uppercase font-black text-slate-500 mb-1">Filter Class</label>
+                  <select value={userFilterClass} onChange={e => setUserFilterClass(e.target.value)} className="w-full text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none">
+                    <option value="all">All Classes</option>
+                    {classes.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
-
-                <Button variant="warning" type="submit" className="w-full">
-                  Publish Alert Banner
-                </Button>
-              </form>
-            </Card>
-
-            {/* Right side: payment approval ledger */}
-            <Card className="p-5 space-y-5">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-blue-500" />
-                  Razorpay Transaction Auditor
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Verify recent order IDs and force unlock premium levels for manual payment requests.
-                </p>
+                <div>
+                  <label className="block text-[10px] uppercase font-black text-slate-500 mb-1">Filter Status</label>
+                  <select value={userFilterStatus} onChange={e => setUserFilterStatus(e.target.value)} className="w-full text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none">
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase font-black text-slate-500 mb-1">Trash Bin</label>
+                  <button onClick={() => setShowDeletedUsers(prev => !prev)} className={`w-full text-xs p-2.5 rounded-xl border font-bold flex items-center justify-center gap-2 ${showDeletedUsers ? 'bg-red-950/30 border-red-900/50 text-red-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
+                    <Trash className="w-4 h-4" />
+                    {showDeletedUsers ? 'Deleted Accounts' : 'Active Directory'}
+                  </button>
+                </div>
+                <div className="flex items-end">
+                  <button onClick={() => { setUserFilterClass('all'); setUserFilterRole('all'); setUserFilterStatus('all'); setShowDeletedUsers(false); }} className="w-full text-xs p-2.5 font-bold rounded-xl border border-slate-800 bg-slate-950/40 text-slate-400 hover:text-slate-200 transition-colors">
+                    Reset Filters
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                {[
-                  { name: 'Kunal Verma', course: 'NEET (Biology & Chemistry) Complete Physics Electrostatics', amount: '₹499', rzpId: 'pay_RZP983271892', status: 'Pending Manual Review' },
-                  { name: 'Divya Shah', course: 'Class 10 CBSE Maths Preparation', amount: '₹299', rzpId: 'pay_RZP748231908', status: 'Pending Manual Review' }
-                ].map((order, idx) => (
-                  <div key={idx} className="p-4 border border-slate-150 dark:border-slate-800/80 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{order.name}</p>
-                        <Badge variant="warning" size="sm" className="text-[9px]">Manual Check</Badge>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{order.course} · {order.amount}</p>
-                      <p className="text-[10px] font-mono text-slate-400">{order.rzpId}</p>
-                    </div>
-                    <Button variant="success" size="sm" className="h-8 text-xs shrink-0 cursor-pointer" onClick={() => handleApprovePayment(order.name, order.rzpId)}>
-                      Verify & Unlock
-                    </Button>
+              {/* USER REGISTRATION FORM OVERLAY */}
+              {userFormOpen && (
+                <Card className="p-5 border-2 border-indigo-500/30 bg-slate-900/30 backdrop-blur-xl">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
+                    <h4 className="text-sm font-black text-slate-200">
+                      {editingUserId ? '🖊️ Modify User Account' : '🚀 Register New User Profile'}
+                    </h4>
+                    <button onClick={() => setUserFormOpen(false)} className="text-slate-400 hover:text-slate-200">
+                      <X className="w-4.5 h-4.5" />
+                    </button>
                   </div>
+                  <form onSubmit={handleSaveUser} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <Input label="Full Name" value={userFullName} onChange={e => setUserFullName(e.target.value)} placeholder="Ramesh Sharma" required />
+                      <Input label="Email Address" type="email" value={userEmail} onChange={e => setUserEmail(e.target.value)} placeholder="ramesh@rkcoaching.com" required />
+                      <Input label="Phone Number" value={userPhone} onChange={e => setUserPhone(e.target.value)} placeholder="98765 43210" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-slate-400 mb-1.5 font-bold">Role assignment</label>
+                        <select value={userRole} onChange={e => setUserRole(e.target.value as any)} className="w-full p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none">
+                          <option value="student">Student</option>
+                          <option value="teacher">Teacher</option>
+                          <option value="admin">Administrator</option>
+                          <option value="visitor">Guest Visitor</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1.5 font-bold">Class mapping</label>
+                        <select value={userClassId} onChange={e => setUserClassId(e.target.value)} className="w-full p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none">
+                          {classes.map((c: any) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <Input label="XP Points" type="number" value={userXp} onChange={e => setUserXp(e.target.value)} />
+                      <Input label="Daily Streak" type="number" value={userStreak} onChange={e => setUserStreak(e.target.value)} />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                      <Button variant="secondary" size="sm" type="button" onClick={() => setUserFormOpen(false)}>Cancel</Button>
+                      <Button variant="primary" size="sm" type="submit">Save Account Profile</Button>
+                    </div>
+                  </form>
+                </Card>
+              )}
+
+              {/* Users directory table grid */}
+              <div className="border border-slate-800/80 rounded-2xl overflow-hidden bg-slate-900/10 backdrop-blur-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-900/40 border-b border-slate-800 text-slate-500 uppercase font-black tracking-wider">
+                      <tr>
+                        <th className="p-4">Student Profile</th>
+                        <th className="p-4">Credentials</th>
+                        <th className="p-4">LMS Scope</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4 text-right">Directory actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-slate-400 italic">No user accounts found matching selected filters.</td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map((u: any) => (
+                          <tr key={u.id} className="hover:bg-slate-900/20 transition-colors">
+                            <td className="p-4 flex items-center gap-3">
+                              <img src={u.avatarUrl} alt="" className="w-9 h-9 rounded-full border border-slate-800" />
+                              <div>
+                                <p className="font-bold text-slate-200">{u.fullName}</p>
+                                <div className="flex gap-1.5 mt-0.5">
+                                  <span className="text-[8px] uppercase px-1.5 py-0.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 font-extrabold">{u.role}</span>
+                                  {u.dailyStreak > 0 && <span className="text-[8px] px-1 bg-amber-950 text-amber-400 border border-amber-900/40 rounded-lg">🔥 {u.dailyStreak} Days</span>}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <p className="font-semibold text-slate-300">{u.email}</p>
+                              <p className="text-[10px] text-slate-500 font-semibold">{u.phone}</p>
+                            </td>
+                            <td className="p-4">
+                              <p className="font-bold text-indigo-400">{classes.find(c => c.id === u.classId)?.name || 'NEET Standard'}</p>
+                              <p className="text-[10px] text-slate-500 font-semibold">{u.totalXp} XP points</p>
+                            </td>
+                            <td className="p-4">
+                              {u.status === 'active' && <span className="text-[9px] uppercase px-2 py-0.5 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-900/50 font-black">Active</span>}
+                              {u.status === 'paused' && <span className="text-[9px] uppercase px-2 py-0.5 rounded-lg bg-amber-950 text-amber-400 border border-amber-900/50 font-black">Paused</span>}
+                              {u.status === 'suspended' && (
+                                <div>
+                                  <span className="text-[9px] uppercase px-2 py-0.5 rounded-lg bg-red-950 text-red-400 border border-red-900/50 font-black">Suspended</span>
+                                  <p className="text-[8px] text-slate-400 font-semibold mt-1 truncate max-w-xs">{u.suspendedReason} (End: {u.suspendedEnd})</p>
+                                </div>
+                              )}
+                              {u.status === 'blocked' && <span className="text-[9px] uppercase px-2 py-0.5 rounded-lg bg-slate-900 text-slate-500 border border-slate-800 font-black">Blocked</span>}
+                            </td>
+                            <td className="p-4 text-right">
+                              <div className="flex gap-1 justify-end items-center">
+                                <button onClick={() => setSelectedUserForProfile(u)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-200" title="Inspect Profile Details">
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleOpenUserForm(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-200" title="Modify details">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+
+                                {/* Action drop Toggles */}
+                                {u.status === 'active' ? (
+                                  <button onClick={() => handlePauseUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-amber-500 hover:text-amber-400" title="Pause Access">
+                                    <Lock className="w-4 h-4" />
+                                  </button>
+                                ) : u.status === 'paused' ? (
+                                  <button onClick={() => handleResumeUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-emerald-500 hover:text-emerald-400" title="Resume Access">
+                                    <Unlock className="w-4 h-4" />
+                                  </button>
+                                ) : null}
+
+                                {u.status === 'suspended' ? (
+                                  <button onClick={() => handleResumeUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-emerald-500 hover:text-emerald-400" title="Lift Suspension">
+                                    <Unlock className="w-4 h-4" />
+                                  </button>
+                                ) : u.status !== 'blocked' ? (
+                                  <button onClick={() => setSuspendModalUser(u)} className="p-2 hover:bg-slate-800 rounded-xl text-red-500 hover:text-red-400" title="Suspend Temp">
+                                    <Calendar className="w-4 h-4" />
+                                  </button>
+                                ) : null}
+
+                                {u.status === 'blocked' ? (
+                                  <button onClick={() => handleUnblockUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-emerald-500 hover:text-emerald-400" title="Unblock user">
+                                    <UserCheck className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <button onClick={() => handleBlockUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-400" title="Block User">
+                                    <UserMinus className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                {u.softDeleted ? (
+                                  <button onClick={() => handleRestoreUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-emerald-500 hover:text-emerald-400" title="Restore account">
+                                    <RefreshCw className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <button onClick={() => handleSoftDeleteUser(u.id)} className="p-2 hover:bg-slate-800 rounded-xl text-red-500 hover:text-red-400" title="Archive account">
+                                    <Trash className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: TEACHERS ROSTER */}
+          {activeTab === 'teachers' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              <div>
+                <h3 className="text-lg font-black text-slate-100">Teachers Hub</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Manage active teacher assignments, review course syllabi domains, and inspect teacher roster details.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {usersWithMeta.filter(u => u.role === 'teacher').map((teacher: any) => (
+                  <Card key={teacher.id} className="p-5 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg flex gap-4 items-start">
+                    <img src={teacher.avatarUrl} alt="" className="w-14 h-14 rounded-2xl border border-slate-800 shrink-0" />
+                    <div className="space-y-2 flex-1 text-xs">
+                      <div>
+                        <p className="font-extrabold text-sm text-slate-200">{teacher.fullName}</p>
+                        <p className="text-[10px] text-indigo-400 font-bold uppercase mt-0.5">Subject Lead</p>
+                      </div>
+                      <div className="space-y-0.5 text-slate-400 font-semibold">
+                        <p>Email: {teacher.email}</p>
+                        <p>Phone: {teacher.phone}</p>
+                        <p>Class assigned: NEET / Higher Secondary Physics</p>
+                        <p>Last Activity: {teacher.lastLogin}</p>
+                      </div>
+                      <div className="flex gap-2 pt-1.5 border-t border-slate-800">
+                        <Button variant="secondary" size="sm" onClick={() => setSelectedUserForProfile(teacher)} className="h-8 text-[10px] font-bold">
+                          View details Profile
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleOpenUserForm(teacher.id)} className="h-8 text-[10px] font-bold">
+                          Edit assignment
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
                 ))}
               </div>
-            </Card>
-          </section>
-        </div>
-      )}
-
-      {/* TAB CONTENT: SECTION 6 - USER CRUD */}
-      {activeTab === 'users' && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex justify-between items-center gap-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Administrative User Directory</h3>
-              <p className="text-xs text-slate-500">Edit profiles, grant premium roles, award/reset stats ledger.</p>
             </div>
-            <Button variant="primary" size="sm" onClick={() => handleOpenUserForm()} className="flex items-center gap-1">
-              <UserPlus className="w-4 h-4" /> Add User Account
-            </Button>
-          </div>
-
-          {/* USER FORM */}
-          {userFormOpen && (
-            <Card className="p-5 border-2 border-indigo-500 bg-slate-50/50 dark:bg-slate-900/20">
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2 mb-4">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                  {editingUserId ? '🖊️ Modify User Roster Record' : '🚀 Register New User Profile'}
-                </h4>
-                <button onClick={() => setUserFormOpen(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveUser} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    value={userFullName}
-                    onChange={e => setUserFullName(e.target.value)}
-                    placeholder="e.g. Ramesh Kumar"
-                    required
-                  />
-                  <Input
-                    label="Email Address"
-                    type="email"
-                    value={userEmail}
-                    onChange={e => setUserEmail(e.target.value)}
-                    placeholder="e.g. ramesh@gmail.com"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                      Security Role
-                    </label>
-                    <select
-                      value={userRole}
-                      onChange={e => setUserRole(e.target.value as any)}
-                      className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm px-3 py-2.5 focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="student">Student</option>
-                      <option value="teacher">Teacher</option>
-                      <option value="admin">Administrator</option>
-                      <option value="visitor">Guest Visitor</option>
-                    </select>
-                  </div>
-
-                  <Input
-                    label="Total Points (XP)"
-                    type="number"
-                    value={userXp}
-                    onChange={e => setUserXp(e.target.value)}
-                  />
-
-                  <Input
-                    label="Daily Streak Count"
-                    type="number"
-                    value={userStreak}
-                    onChange={e => setUserStreak(e.target.value)}
-                  />
-
-                  <Input
-                    label="Avatar Photo URL"
-                    value={userAvatar}
-                    onChange={e => setUserAvatar(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex gap-2 justify-end pt-2">
-                  <Button variant="secondary" size="sm" type="button" onClick={() => setUserFormOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="primary" size="sm" type="submit">
-                    Save Account
-                  </Button>
-                </div>
-              </form>
-            </Card>
           )}
 
-          {/* USERS TABLE GRID */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-950">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-black tracking-wider">
-                  <tr>
-                    <th className="p-4">Profile & Identity</th>
-                    <th className="p-4">Assigned Role</th>
-                    <th className="p-4">Streak Status</th>
-                    <th className="p-4">Total XP points</th>
-                    <th className="p-4 text-right">Actions Panel</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                  {users.map(u => (
-                    <tr key={u.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-900/25">
-                      <td className="p-4 flex items-center gap-3">
-                        <img 
-                          src={u.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'}
-                          alt={u.fullName}
-                          className="h-9 w-9 rounded-full object-cover border border-slate-200"
-                        />
-                        <div>
-                          <p className="font-bold text-slate-900 dark:text-white">{u.fullName}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">{u.email}</p>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <Badge 
-                          variant={u.role === 'admin' ? 'danger' : (u.role === 'teacher' ? 'info' : 'success')}
-                          size="sm"
-                        >
-                          {u.role.toUpperCase()}
-                        </Badge>
-                      </td>
-                      <td className="p-4 font-bold font-mono text-slate-700 dark:text-slate-300">
-                        🔥 {u.dailyStreak} days
-                      </td>
-                      <td className="p-4 font-black text-indigo-600 dark:text-indigo-400">
-                        💎 {u.totalXp} XP
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            onClick={() => handleTogglePremium(u.id, u.role)}
-                            className="px-2"
-                            title="Toggle Premium Role Lock"
-                          >
-                            <Award className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            onClick={() => handleOpenUserForm(u.id)}
-                            className="px-2"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            onClick={() => handleResetXp(u.id)}
-                            className="px-2 text-yellow-600"
-                            title="Reset XP"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button 
-                            variant="danger" 
-                            size="sm" 
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="px-2"
-                          >
-                            <Trash className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: SECTION 7 - WEBSITE COPY CMS */}
-      {activeTab === 'copy' && (
-        <Card className="p-6 space-y-6 animate-fade-in">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Website Visitor Copy Management</h3>
-            <p className="text-xs text-slate-500">Live modify central marketing copy, SEO headings, and institutional contact details.</p>
-          </div>
-
-          <form onSubmit={handleSaveWebsiteCopy} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Primary Landing Hero Title"
-                value={copyHeroTitle}
-                onChange={e => setCopyHeroTitle(e.target.value)}
-                placeholder="e.g. RK Coaching Institute"
-                required
-              />
-              <Input
-                label="Admissions Support Contact Hotline"
-                value={copyContactPhone}
-                onChange={e => setCopyContactPhone(e.target.value)}
-                placeholder="e.g. +91 98765 43210"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Primary Landing Subtitle Descriptor
-              </label>
-              <textarea
-                value={copyHeroSubtitle}
-                onChange={e => setCopyHeroSubtitle(e.target.value)}
-                className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm p-3 h-20 focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Admissions Email Channel"
-                type="email"
-                value={copyContactEmail}
-                onChange={e => setCopyContactEmail(e.target.value)}
-                placeholder="e.g. admissions@rkcoaching.com"
-                required
-              />
-              <Input
-                label="Physical Complex Address"
-                value={copyContactAddress}
-                onChange={e => setCopyContactAddress(e.target.value)}
-                placeholder="e.g. Sector 4, New Delhi"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Platform Footer Copy / Copyright Declarations
-              </label>
-              <textarea
-                value={copyFooterText}
-                onChange={e => setCopyFooterText(e.target.value)}
-                className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm p-3 h-20 focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-              />
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button variant="primary" size="sm" type="submit" className="flex items-center gap-1.5">
-                <Save className="w-4 h-4" /> Save Homepage Copy
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-
-      {/* TAB CONTENT: SECTION 7 - FAQ CRUD */}
-      {activeTab === 'faqs' && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex justify-between items-center gap-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Institutional FAQs Manager</h3>
-              <p className="text-xs text-slate-500">Edit, reorder, append, or delete visitor-facing help questions.</p>
-            </div>
-            <Button variant="primary" size="sm" onClick={() => handleOpenFaqForm()} className="flex items-center gap-1">
-              <Plus className="w-4 h-4" /> Add FAQ Item
-            </Button>
-          </div>
-
-          {/* FAQ FORM */}
-          {faqFormOpen && (
-            <Card className="p-5 border-2 border-indigo-500 bg-slate-50/50 dark:bg-slate-900/20">
-              <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2 mb-4">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                  {editingFaqId ? '🖊️ Modify FAQ Node' : '🚀 Build FAQ Entry'}
-                </h4>
-                <button onClick={() => setFaqFormOpen(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveFaq} className="space-y-4">
-                <Input
-                  label="Question Prompt"
-                  value={faqQuestion}
-                  onChange={e => setFaqQuestion(e.target.value)}
-                  placeholder="e.g. How do I unlock CBSE 12 Premium packages?"
-                  required
-                />
-
+          {/* TAB 4: PAYMENTS ledgers */}
+          {activeTab === 'payments' && (
+            <div className="space-y-8 animate-fade-in text-left">
+              <div className="flex justify-between items-center gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Detailed Answer Markdown
-                  </label>
-                  <textarea
-                    value={faqAnswer}
-                    onChange={e => setFaqAnswer(e.target.value)}
-                    placeholder="Provide clear diagnostic help text..."
-                    className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm p-3 h-24 focus:ring-2 focus:ring-blue-500 outline-none"
-                    required
-                  />
+                  <h3 className="text-lg font-black text-slate-100">Razorpay Payments auditor</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Audits real-time payment transactions and force unlocks premium materials.</p>
                 </div>
-
-                <div className="flex gap-2 justify-end pt-2">
-                  <Button variant="secondary" size="sm" type="button" onClick={() => setFaqFormOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="primary" size="sm" type="submit">
-                    Save FAQ Item
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          )}
-
-          {/* FAQs LIST */}
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => (
-              <Card key={faq.id} className="p-4 flex flex-col sm:flex-row justify-between items-start gap-4 hover:shadow-sm transition-shadow">
-                <div className="space-y-1 text-left">
-                  <span className="text-[10px] font-mono font-extrabold text-indigo-500 uppercase bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded-md">
-                    INDEX #{idx + 1}
-                  </span>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1">Q: {faq.question}</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">A: {faq.answer}</p>
-                </div>
-
-                <div className="flex gap-1 shrink-0">
-                  <button 
-                    disabled={idx === 0}
-                    onClick={() => handleReorderFaq(faq.id, 'up')}
-                    className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30"
-                  >
-                    <ArrowUp className="w-4 h-4" />
-                  </button>
-                  <button 
-                    disabled={idx === faqs.length - 1}
-                    onClick={() => handleReorderFaq(faq.id, 'down')}
-                    className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30"
-                  >
-                    <ArrowDown className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleOpenFaqForm(faq.id)}
-                    className="p-1 text-blue-500 hover:scale-110 transition-transform"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteFaq(faq.id)}
-                    className="p-1 text-red-500 hover:scale-110 transition-transform"
-                  >
-                    <Trash className="w-4 h-4" />
-                  </button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: Razorpay Payments Management */}
-      {activeTab === 'payments' && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Summary Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card hoverEffect className="bg-gradient-to-br from-indigo-50 to-indigo-100/40 dark:from-indigo-950/20 dark:to-indigo-950/10">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-500">Gross Course Receipts</p>
-                  <p className="text-2xl font-black text-indigo-950 dark:text-indigo-200 mt-1">
-                    ₹{allTxns.filter(t => t.status === 'success').reduce((sum, t) => sum + t.amount, 0)}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Simulated + live transaction totals</p>
-                </div>
-                <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card hoverEffect className="bg-gradient-to-br from-emerald-50 to-emerald-100/40 dark:from-emerald-950/20 dark:to-emerald-950/10">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-500">Authorized Payments</p>
-                  <p className="text-2xl font-black text-emerald-950 dark:text-emerald-200 mt-1">
-                    {allTxns.filter(t => t.status === 'success').length}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Successful premium enrollment unlocks</p>
-                </div>
-                <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                  <BadgeCheck className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card hoverEffect className="bg-gradient-to-br from-slate-50 to-slate-100/40 dark:from-slate-950/20 dark:to-slate-950/10">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Authorized Channels</p>
-                  <p className="text-lg font-black text-slate-950 dark:text-slate-200 mt-1">UPI Core Gateway Only</p>
-                  <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Razorpay strict UPI filter active</p>
-                </div>
-                <div className="h-12 w-12 rounded-2xl bg-slate-500/10 text-slate-600 flex items-center justify-center">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search, Filter & Export Strip */}
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-            <div className="flex flex-1 flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search Payment ID, student email, name, course..."
-                  value={txnSearch}
-                  onChange={(e) => setTxnSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-900 focus:border-indigo-500 outline-none"
-                />
-              </div>
-              <select
-                value={txnFilterStatus}
-                onChange={(e) => setTxnFilterStatus(e.target.value)}
-                className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-900 text-slate-700 dark:text-slate-300 outline-none font-bold"
-              >
-                <option value="all">All Statuses</option>
-                <option value="success">Authorized (Success)</option>
-                <option value="failed">Failed / Cancelled</option>
-              </select>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportTxns}
-              leftIcon={<Download className="w-4 h-4" />}
-              className="text-xs font-bold"
-            >
-              Export Ledger (CSV)
-            </Button>
-          </div>
-
-          {/* Table Ledger list */}
-          <Card className="overflow-hidden border border-slate-100 dark:border-slate-800">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] border-collapse text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase tracking-wider text-[10px] font-black border-b border-slate-100 dark:border-slate-800">
-                    <th className="p-4">Payment ID / Order</th>
-                    <th className="p-4">Student</th>
-                    <th className="p-4">Course Package</th>
-                    <th className="p-4">Amount</th>
-                    <th className="p-4">Channel</th>
-                    <th className="p-4 text-center">Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                  {allTxns
-                    .filter(txn => {
-                      const matchesSearch = 
-                        txn.id.toLowerCase().includes(txnSearch.toLowerCase()) ||
-                        txn.orderId.toLowerCase().includes(txnSearch.toLowerCase()) ||
-                        txn.userFullName.toLowerCase().includes(txnSearch.toLowerCase()) ||
-                        txn.userEmail.toLowerCase().includes(txnSearch.toLowerCase()) ||
-                        txn.courseTitle.toLowerCase().includes(txnSearch.toLowerCase());
-                      const matchesStatus = 
-                        txnFilterStatus === 'all' || txn.status === txnFilterStatus;
-                      return matchesSearch && matchesStatus;
-                    })
-                    .map((txn) => (
-                      <tr key={txn.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors">
-                        <td className="p-4 space-y-0.5">
-                          <p className="font-mono text-indigo-600 dark:text-indigo-400 font-extrabold">{txn.id}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">Order: {txn.orderId}</p>
-                        </td>
-                        <td className="p-4 space-y-0.5">
-                          <p className="font-bold text-slate-900 dark:text-white">{txn.userFullName}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{txn.userEmail}</p>
-                        </td>
-                        <td className="p-4 max-w-[180px] truncate">
-                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{txn.courseTitle}</p>
-                          <p className="text-[9px] text-slate-400 font-semibold uppercase">{new Date(txn.createdAt).toLocaleDateString('en-IN')}</p>
-                        </td>
-                        <td className="p-4 font-extrabold text-slate-950 dark:text-white">
-                          ₹{txn.amount}
-                        </td>
-                        <td className="p-4 font-semibold text-slate-500 text-[11px]">
-                          {txn.method}
-                        </td>
-                        <td className="p-4 text-center">
-                          <Badge variant={txn.status === 'success' ? 'success' : 'danger'}>
-                            {txn.status === 'success' ? 'success' : 'failed'}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-right shrink-0">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedTxnInvoice(txn)}
-                              className="text-indigo-600 dark:text-indigo-400 text-[10px] font-bold py-1 px-2 h-7"
-                            >
-                              Invoice
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={txn.status !== 'success'}
-                              onClick={() => handleTriggerRefund(txn.id)}
-                              className="text-red-500 hover:text-red-600 disabled:opacity-30 text-[10px] font-bold py-1 px-2 h-7"
-                            >
-                              Refund
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* TAB CONTENT: Razorpay Global Payment Configuration Settings */}
-      {activeTab === 'payment-settings' && (
-        <Card className="max-w-2xl border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden animate-fade-in text-left">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <h3 className="text-base font-black flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Razorpay API Merchant Configuration
-            </h3>
-            <p className="text-xs text-blue-100 mt-1 leading-normal">
-              Administer credentials, business checkout identity and custom client responses. Changes apply instantly without redeploying code.
-            </p>
-          </div>
-
-          <CardContent className="p-6">
-            <form onSubmit={handleSavePaymentSettings} className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label htmlFor="rzp-key-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Razorpay Key ID</label>
-                  <Input
-                    id="rzp-key-input"
-                    type="text"
-                    required
-                    value={cfgRzpKey}
-                    onChange={(e) => setCfgRzpKey(e.target.value)}
-                    placeholder="rzp_live_xxxxxxxxxxxxxx"
-                    className="text-xs font-mono"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label htmlFor="bus-name-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Business Public Name</label>
-                  <Input
-                    id="bus-name-input"
-                    type="text"
-                    required
-                    value={cfgBusName}
-                    onChange={(e) => setCfgBusName(e.target.value)}
-                    placeholder="RK Coaching Institute"
-                    className="text-xs font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label htmlFor="bus-logo-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Merchant Logo URL (Square Image)</label>
-                <Input
-                  id="bus-logo-input"
-                  type="url"
-                  required
-                  value={cfgBusLogo}
-                  onChange={(e) => setCfgBusLogo(e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label htmlFor="support-email-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Support Helpline Email</label>
-                  <Input
-                    id="support-email-input"
-                    type="email"
-                    required
-                    value={cfgSupEmail}
-                    onChange={(e) => setCfgSupEmail(e.target.value)}
-                    placeholder="support@rkcoaching.com"
-                    className="text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label htmlFor="support-phone-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Support Contact Phone</label>
-                  <Input
-                    id="support-phone-input"
-                    type="text"
-                    required
-                    value={cfgSupPhone}
-                    onChange={(e) => setCfgSupPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label htmlFor="success-msg-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Success Alert Message</label>
-                <textarea
-                  id="success-msg-input"
-                  required
-                  rows={2}
-                  value={cfgSuccessMsg}
-                  onChange={(e) => setCfgSuccessMsg(e.target.value)}
-                  placeholder="Payment completed successfully!"
-                  className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-900 outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label htmlFor="failure-msg-input" className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Failure Alert Message</label>
-                <textarea
-                  id="failure-msg-input"
-                  required
-                  rows={2}
-                  value={cfgFailureMsg}
-                  onChange={(e) => setCfgFailureMsg(e.target.value)}
-                  placeholder="Your payment failed. Please try again."
-                  className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-900 outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-xs font-black py-3 rounded-xl"
-                >
-                  Save & Publish Merchant Configurations
+                <Button variant="primary" size="sm" onClick={handleExportTxns} className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold">
+                  <Download className="w-4 h-4" /> Export CSV ledger
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Invoice Detailed Overlay Modal */}
-      {selectedTxnInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-slate-950 shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col my-8">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Official Razorpay Invoice</p>
-                <h3 className="text-sm font-bold text-white mt-0.5">Payment Reference</h3>
+              {/* Transactions table */}
+              <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/10 backdrop-blur-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-900/40 border-b border-slate-800 text-slate-500 uppercase font-black tracking-wider">
+                      <tr>
+                        <th className="p-4">Payment ID</th>
+                        <th className="p-4">Order ID</th>
+                        <th className="p-4">User Info</th>
+                        <th className="p-4">Course Name</th>
+                        <th className="p-4">Amount</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4 text-right">Audit</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {allTxns.map((txn: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-900/20 transition-all">
+                          <td className="p-4 font-mono font-bold text-slate-300">{txn.id}</td>
+                          <td className="p-4 font-mono text-slate-500">{txn.orderId}</td>
+                          <td className="p-4">
+                            <p className="font-bold text-slate-200">{txn.userFullName}</p>
+                            <p className="text-[10px] text-slate-500 font-semibold">{txn.userEmail}</p>
+                          </td>
+                          <td className="p-4 font-semibold text-slate-300">{txn.courseTitle}</td>
+                          <td className="p-4 font-extrabold text-indigo-400">₹{txn.amount}</td>
+                          <td className="p-4">
+                            <span className={`text-[9px] uppercase px-2 py-0.5 rounded-lg font-black ${txn.status === 'success' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-red-950 text-red-400 border border-red-900/50'}`}>
+                              {txn.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            <button onClick={() => setSelectedTxnInvoice(txn)} className="text-indigo-400 hover:text-indigo-300 font-bold hover:underline">
+                              Invoice
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <button
-                onClick={() => setSelectedTxnInvoice(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            </div>
+          )}
+
+          {/* TAB 5: ORDERS registry */}
+          {activeTab === 'orders' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              <div>
+                <h3 className="text-lg font-black text-slate-100">Orders Registry</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Audit student order placements, amount logs, and pending Razorpay transactions.</p>
+              </div>
+
+              <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/10 backdrop-blur-lg">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-900/40 border-b border-slate-800 text-slate-500 uppercase font-black tracking-wider">
+                      <tr>
+                        <th className="p-4">Order ID</th>
+                        <th className="p-4">Course ID</th>
+                        <th className="p-4">Price</th>
+                        <th className="p-4">Placement Date</th>
+                        <th className="p-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {[
+                        { id: 'order_NEET_01', courseId: 'course_neet_physics', amount: 499, status: 'completed', createdAt: '2026-06-25T11:20:00Z' },
+                        { id: 'order_CBSE_02', courseId: 'course_c10_maths', amount: 299, status: 'completed', createdAt: '2026-06-26T14:45:00Z' },
+                        { id: 'order_NEET_03', courseId: 'course_neet_mock', amount: 199, status: 'failed', createdAt: '2026-06-27T09:12:00Z' },
+                        { id: 'order_CBSE_04', courseId: 'course_c12_physics', amount: 399, status: 'completed', createdAt: '2026-06-28T16:05:00Z' }
+                      ].map((ord, idx) => (
+                        <tr key={idx} className="hover:bg-slate-900/20 transition-all">
+                          <td className="p-4 font-mono font-bold text-slate-300">{ord.id}</td>
+                          <td className="p-4 text-slate-400 font-semibold">{ord.courseId}</td>
+                          <td className="p-4 font-extrabold text-indigo-400">₹{ord.amount}</td>
+                          <td className="p-4 text-slate-500 font-semibold">{new Date(ord.createdAt).toLocaleDateString()}</td>
+                          <td className="p-4">
+                            <span className={`text-[9px] uppercase px-2 py-0.5 rounded-lg font-black ${ord.status === 'completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-red-950 text-red-400 border border-red-900/50'}`}>
+                              {ord.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: ANNOUNCEMENTS */}
+          {activeTab === 'announcements' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              <div>
+                <h3 className="text-lg font-black text-slate-100">Write Website Announcements</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Publish alerts, coupons, or scheduling updates to visitor and student dashboards.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg lg:col-span-1">
+                  <form onSubmit={handlePostAnnouncement} className="space-y-4 text-xs">
+                    <Input label="Announcement Title" placeholder="Offline doubt clearing session!" value={announcementTitle} onChange={e => setAnnouncementTitle(e.target.value)} required />
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1.5">Target group</label>
+                      <select className="w-full p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none">
+                        <option>All Students</option>
+                        <option>All Teachers</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1.5">Message Content</label>
+                      <textarea placeholder="Write announcement content..." value={announcementMsg} onChange={e => setAnnouncementMsg(e.target.value)} className="w-full p-3 h-24 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none placeholder-slate-600" required />
+                    </div>
+                    <Button variant="warning" type="submit" className="w-full text-xs font-bold">Publish banner alert</Button>
+                  </form>
+                </Card>
+
+                <div className="lg:col-span-2 space-y-4">
+                  {[
+                    { title: '⚡ Offline Test Schedule & Doubt Clearing Camps', content: 'Weekly doubt solving session live at center...', date: 'Today' },
+                    { title: '🎯 Class 10 Board Test-Series Launch', content: 'Full syllabus pre-board test mapping is live...', date: 'Yesterday' }
+                  ].map((item, idx) => (
+                    <Card key={idx} className="p-4 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg flex justify-between items-start gap-4">
+                      <div className="space-y-1.5 text-xs">
+                        <p className="font-extrabold text-slate-200">{item.title}</p>
+                        <p className="text-slate-400 font-semibold">{item.content}</p>
+                      </div>
+                      <span className="text-[9px] uppercase px-2 py-0.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-500 font-black">{item.date}</span>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: HOMEPAGE CMS */}
+          {activeTab === 'homepage-cms' && (
+            <div className="space-y-8 animate-fade-in text-left">
+              <div>
+                <h3 className="text-lg font-black text-slate-100">Homepage CMS editor</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Modify visitor landing copy, Hero headlines, and central FAQ database.</p>
+              </div>
+
+              {/* Combined CMS forms */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Landing page copy forms */}
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">Hero & Copy controls</h4>
+                  <form onSubmit={handleSaveWebsiteCopy} className="space-y-4 text-xs">
+                    <Input label="Hero Banner Title" value={copyHeroTitle} onChange={e => setCopyHeroTitle(e.target.value)} required />
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1.5">Hero Subtitle</label>
+                      <textarea value={copyHeroSubtitle} onChange={e => setCopyHeroSubtitle(e.target.value)} className="w-full p-3 h-24 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none" required />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input label="Contact Phone" value={copyContactPhone} onChange={e => setCopyContactPhone(e.target.value)} />
+                      <Input label="Contact Email" value={copyContactEmail} onChange={e => setCopyContactEmail(e.target.value)} />
+                    </div>
+                    <Input label="Footer text Copyright" value={copyFooterText} onChange={e => setCopyFooterText(e.target.value)} />
+                    <Button variant="primary" type="submit" className="w-full text-xs font-bold">Publish Website Changes</Button>
+                  </form>
+                </Card>
+
+                {/* FAQ builder list */}
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">FAQ database items</h4>
+                    <Button variant="primary" size="sm" onClick={() => handleOpenFaqForm()} className="h-7 text-[10px] font-bold">
+                      Add FAQ Item
+                    </Button>
+                  </div>
+
+                  {faqFormOpen && (
+                    <form onSubmit={handleSaveFaq} className="p-4 rounded-xl border border-slate-800 bg-slate-950/40 space-y-3 text-xs">
+                      <Input label="Question Text" value={faqQuestion} onChange={e => setFaqQuestion(e.target.value)} required />
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">Answer Text</label>
+                        <textarea value={faqAnswer} onChange={e => setFaqAnswer(e.target.value)} className="w-full p-3 h-16 rounded-xl border border-slate-800 bg-slate-950 text-slate-300 outline-none" required />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm" type="button" onClick={() => setFaqFormOpen(false)}>Cancel</Button>
+                        <Button variant="primary" size="sm" type="submit">Save FAQ</Button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                    {faqs.map(f => (
+                      <div key={f.id} className="p-3 rounded-xl border border-slate-850 bg-slate-950/20 flex justify-between items-start gap-4">
+                        <div className="text-xs">
+                          <p className="font-extrabold text-slate-200">{f.question}</p>
+                          <p className="text-[10px] text-slate-400 mt-1 font-semibold">{f.answer}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => handleReorderFaq(f.id, 'up')} className="p-1 hover:bg-slate-800 rounded text-slate-400">▲</button>
+                          <button onClick={() => handleReorderFaq(f.id, 'down')} className="p-1 hover:bg-slate-800 rounded text-slate-400">▼</button>
+                          <button onClick={() => handleOpenFaqForm(f.id)} className="p-1 hover:bg-slate-800 rounded text-slate-400">🖊️</button>
+                          <button onClick={() => handleDeleteFaq(f.id)} className="p-1 hover:bg-slate-800 rounded text-red-400">✕</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: WEBSITE SETTINGS & PAYMENT OPTIONS */}
+          {activeTab === 'website-settings' && (
+            <div className="space-y-8 animate-fade-in text-left">
+              <div>
+                <h3 className="text-lg font-black text-slate-100">Website & Payment Settings</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Configure institute profiles, Razorpay key credentials, and active checkout messaging template layouts.</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Razorpay configs */}
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">Razorpay gateway configurations</h4>
+                  <form onSubmit={handleSavePaymentSettings} className="space-y-4 text-xs">
+                    <Input label="Razorpay Key ID" value={cfgRzpKey} onChange={e => setCfgRzpKey(e.target.value)} required />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input label="Business Name" value={cfgBusName} onChange={e => setCfgBusName(e.target.value)} />
+                      <Input label="Business Logo URL" value={cfgBusLogo} onChange={e => setCfgBusLogo(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input label="Support Email" value={cfgSupEmail} onChange={e => setCfgSupEmail(e.target.value)} />
+                      <Input label="Support Phone" value={cfgSupPhone} onChange={e => setCfgSupPhone(e.target.value)} />
+                    </div>
+                    <Input label="Success Message Template" value={cfgSuccessMsg} onChange={e => setCfgSuccessMsg(e.target.value)} />
+                    <Input label="Failure Message Template" value={cfgFailureMsg} onChange={e => setCfgFailureMsg(e.target.value)} />
+                    <Button variant="primary" type="submit" className="w-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700">Save payment credentials</Button>
+                  </form>
+                </Card>
+
+                {/* Institute profile management */}
+                <Card className="p-5 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg space-y-4">
+                  <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Institute Profile management</h4>
+                  <div className="space-y-4 text-xs">
+                    <Input label="Coaching Center Name" defaultValue="RK Coaching Center" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input label="Active Registration Code" defaultValue="RK-2026-IND-AS" disabled />
+                      <Input label="Institute Motto" defaultValue="Transforming Potential into Ranks" />
+                    </div>
+                    <Input label="Full Address location" defaultValue="G.S. Road, Christian Basti, Guwahati, Assam, 781005" />
+                    <div className="p-3 bg-indigo-950/20 border border-indigo-900/40 rounded-xl text-indigo-400 text-[10px] font-semibold">
+                      Note: Institute profile changes propagate live to PDF invoices and student dashboards dynamically.
+                    </div>
+                    <Button variant="secondary" className="w-full text-xs font-bold" onClick={() => addToast('Institute profile updated successfully', 'success')}>
+                      Save Profile details
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 9: SYLLABUS BUILDER (checkpoint 2 integrated syllabus studio) */}
+          {activeTab === 'syllabus' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              {/* TOP SYLLABUS STUDIO CONTENT */}
+              <div className="p-4 rounded-2xl bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg">
+                <h3 className="text-base font-extrabold text-slate-100">Integrated Syllabus & Binders Studio</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Directly configure Class lists, Subjects, Chapters, Lessons, video binds, PYQs, and Study PDFs.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                {/* 1. Classes Column */}
+                <Card className="p-4 bg-slate-900/20 border border-slate-800/60 backdrop-blur-lg">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Classes roster</h4>
+                  </div>
+                  <div className="space-y-1">
+                    {classes.map((c: any) => (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          setSelClassId(c.id);
+                          setSelSubjectId(null);
+                          setSelChapterId(null);
+                          setSelLessonId(null);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
+                          selClassId === c.id
+                            ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400'
+                            : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <span>{c.name}</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* 2. Subjects Column */}
+                <Card className="p-4 bg-slate-900/20 border border-slate-800/60 backdrop-blur-lg">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Subjects registry</h4>
+                    <Button variant="outline" size="sm" onClick={() => setSubjFormOpen(true)} className="h-6 text-[9px] font-bold">
+                      Add Subject
+                    </Button>
+                  </div>
+
+                  {subjFormOpen && (
+                    <form onSubmit={handleSaveSubject} className="mb-4 p-3 rounded-xl border border-slate-800 bg-slate-950/40 space-y-3 text-xs">
+                      <Input label="Subject Name" value={subjName} onChange={e => setSubjName(e.target.value)} placeholder="Chemistry" required />
+                      <Input label="Description" value={subjDesc} onChange={e => setSubjDesc(e.target.value)} placeholder="Topic details" />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm" type="button" onClick={() => setSubjFormOpen(false)}>Cancel</Button>
+                        <Button variant="primary" size="sm" type="submit">Save</Button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="space-y-1">
+                    {subjects.filter(s => s.classId === selClassId).length === 0 ? (
+                      <p className="text-[10px] text-slate-400 italic p-3 text-center">No subjects registered for this class.</p>
+                    ) : (
+                      subjects.filter(s => s.classId === selClassId).map((sub: any) => (
+                        <button
+                          key={sub.id}
+                          onClick={() => {
+                            setSelSubjectId(sub.id);
+                            setSelChapterId(null);
+                            setSelLessonId(null);
+                          }}
+                          className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
+                            selSubjectId === sub.id
+                              ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400'
+                              : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          <span>{sub.name}</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </Card>
+
+                {/* 3. Chapters Column */}
+                <Card className="p-4 bg-slate-900/20 border border-slate-800/60 backdrop-blur-lg">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Chapters & Lessons</h4>
+                    {selSubjectId && (
+                      <Button variant="outline" size="sm" onClick={() => setChapFormOpen(true)} className="h-6 text-[9px] font-bold">
+                        Add Chapter
+                      </Button>
+                    )}
+                  </div>
+
+                  {chapFormOpen && (
+                    <form onSubmit={handleSaveChapter} className="mb-4 p-3 rounded-xl border border-slate-800 bg-slate-950/40 space-y-3 text-xs">
+                      <Input label="Chapter Name" value={chapName} onChange={e => setChapName(e.target.value)} required />
+                      <Input label="Description" value={chapDesc} onChange={e => setChapDesc(e.target.value)} />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm" type="button" onClick={() => setChapFormOpen(false)}>Cancel</Button>
+                        <Button variant="primary" size="sm" type="submit">Save</Button>
+                      </div>
+                    </form>
+                  )}
+
+                  {!selSubjectId ? (
+                    <p className="text-[10px] text-slate-400 italic p-3 text-center">Select a subject to display folders.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {chapters.filter(ch => ch.subjectId === selSubjectId).length === 0 ? (
+                        <p className="text-[10px] text-slate-400 italic p-3 text-center">No chapters added yet.</p>
+                      ) : (
+                        chapters.filter(ch => ch.subjectId === selSubjectId).map((ch: any) => (
+                          <div key={ch.id} className="space-y-1.5">
+                            <div className="flex justify-between items-center px-2 py-1 rounded border border-slate-800/40 bg-slate-900/10 text-xs font-bold text-slate-300">
+                              <span>📁 {ch.name}</span>
+                              <Button variant="outline" size="sm" onClick={() => { setSelChapterId(ch.id); setLessFormOpen(true); }} className="h-5 text-[8px] font-bold px-1.5">
+                                + Lesson
+                              </Button>
+                            </div>
+
+                            {/* Lessons List in chapter folder */}
+                            <div className="pl-3 space-y-1 border-l border-slate-800/80">
+                              {lessons.filter(l => l.chapterId === ch.id).map((less: any) => (
+                                <button
+                                  key={less.id}
+                                  onClick={() => {
+                                    setSelChapterId(ch.id);
+                                    setSelLessonId(less.id);
+                                  }}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-between ${
+                                    selLessonId === less.id
+                                      ? 'bg-indigo-600/10 text-indigo-400 font-bold'
+                                      : 'text-slate-400 hover:text-slate-200'
+                                  }`}
+                                >
+                                  <span>{less.title}</span>
+                                  {less.isPremium && <span className="text-[7px] uppercase px-1 border border-amber-900 text-amber-500 rounded bg-amber-950/20 font-black">locked</span>}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              {/* Lesson details binder manager (Video & notes files) */}
+              {selLessonId && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+                  {/* Left Column: video lectures URL pasting */}
+                  <Card className="p-4 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">Video binds</h4>
+                    <div className="space-y-4 text-xs">
+                      <Input label="YouTube video URL / ID" value={editVideoUrl} onChange={e => setEditVideoUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
+                      
+                      {/* Video Preview iframe before saving */}
+                      {editVideoUrl && (
+                        <div className="aspect-video w-full rounded-xl overflow-hidden border border-slate-800">
+                          <iframe
+                            src={`https://www.youtube.com/embed/${editVideoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1] || editVideoUrl}`}
+                            className="w-full h-full border-0"
+                            allowFullScreen
+                            title="Preview Video"
+                          ></iframe>
+                        </div>
+                      )}
+
+                      <Button variant="primary" className="w-full text-xs font-bold" onClick={handleSaveVideoLecture}>
+                        Bind Video URL
+                      </Button>
+                    </div>
+                  </Card>
+
+                  {/* Middle Column: PYQs papers */}
+                  <Card className="p-4 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">PYQ papers upload</h4>
+                    <form onSubmit={handleAddPyq} className="space-y-4 text-xs">
+                      <Input label="PYQ Title" value={editPyqTitle} onChange={e => setEditPyqTitle(e.target.value)} placeholder="e.g. CBSE 2024 Mechanics.pdf" required />
+                      <Input label="PDF URL Reference" value={editPyqUrl} onChange={e => setEditPyqUrl(e.target.value)} placeholder="https://..." required />
+                      <Button variant="primary" type="submit" className="w-full text-xs font-bold">Add PYQ PDF</Button>
+                    </form>
+                  </Card>
+
+                  {/* Right Column: Practice Sets */}
+                  <Card className="p-4 bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg">
+                    <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-4">Practice Sets upload</h4>
+                    <form onSubmit={handleAddPractice} className="space-y-4 text-xs">
+                      <Input label="Set Title" value={editPracticeTitle} onChange={e => setEditPracticeTitle(e.target.value)} placeholder="e.g. Assignment 1.1 Key.pdf" required />
+                      <Input label="PDF URL Reference" value={editPracticeUrl} onChange={e => setEditPracticeUrl(e.target.value)} placeholder="https://..." required />
+                      <Button variant="primary" type="submit" className="w-full text-xs font-bold">Add Practice Set</Button>
+                    </form>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SPRINT 2 / 3 / 4 locked tab warning overlays */}
+          {['courses', 'classes', 'subjects', 'chapters', 'lessons', 'notes', 'video-lectures', 'pyqs', 'practice-sets', 'mock-tests', 'notifications', 'media-library', 'security', 'audit-logs', 'backups', 'analytics'].includes(activeTab) && (
+            <div className="flex flex-col items-center justify-center p-12 text-center bg-slate-900/20 border border-slate-800/80 backdrop-blur-lg rounded-2xl space-y-4">
+              <div className="w-14 h-14 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-400">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div className="max-w-md space-y-1.5 text-xs">
+                <h4 className="text-sm font-extrabold text-slate-200">🔒 Component Workspace Locked</h4>
+                <p className="text-slate-400 font-semibold leading-relaxed">
+                  This dedicated control panel route is scheduled to unlock in future Sprints. 
+                  In the meantime, you can manage all courses, classes, subjects, chapters, lessons, unlisted video lectures, PYQ test sheets, and study note binders in the active integrated **Syllabus Builder** workspace.
+                </p>
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setActiveTab('syllabus')}
+                className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700"
               >
-                &times;
+                Go to Integrated Studio
+              </Button>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* USER DETAILS VISUAL PROFILE VIEW MODAL */}
+      {selectedUserForProfile && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-800">
+              <h3 className="text-sm font-black text-slate-200 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-indigo-500" />
+                Student Roster Profile Card
+              </h3>
+              <button onClick={() => setSelectedUserForProfile(null)} className="text-slate-400 hover:text-slate-200">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-5 text-left text-xs">
-              <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div>
-                  <h4 className="text-base font-black text-slate-950 dark:text-white">{paymentSettings.businessName}</h4>
-                  <p className="text-slate-500 text-[10px] mt-0.5">Helpline: {paymentSettings.supportPhone}</p>
-                  <p className="text-slate-500 text-[10px]">{paymentSettings.supportEmail}</p>
-                </div>
-                <div className="text-right">
-                  <Badge variant={selectedTxnInvoice.status === 'success' ? 'success' : 'danger'}>
-                    {selectedTxnInvoice.status === 'success' ? 'Paid / Authorized' : 'Failed / Decline'}
-                  </Badge>
-                  <p className="text-[10px] font-mono text-slate-400 mt-1">{selectedTxnInvoice.id}</p>
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 text-xs text-left">
+              <div className="flex items-center gap-4">
+                <img src={selectedUserForProfile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'} alt="" className="w-16 h-16 rounded-2xl border border-slate-800" />
+                <div className="space-y-1">
+                  <p className="font-extrabold text-base text-slate-100">{selectedUserForProfile.fullName}</p>
+                  <p className="text-[10px] text-slate-505 font-semibold">{selectedUserForProfile.email}</p>
+                  <div className="flex gap-2 mt-1">
+                    <span className="text-[8px] uppercase px-1.5 py-0.5 rounded-lg border border-slate-800 bg-slate-950 font-black text-slate-400">{selectedUserForProfile.role}</span>
+                    <span className={`text-[8px] uppercase px-1.5 py-0.5 rounded-lg font-black ${selectedUserForProfile.status === 'active' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/50' : 'bg-red-950 text-red-400 border border-red-900/50'}`}>{selectedUserForProfile.status}</span>
+                  </div>
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4">
+                <div>
+                  <p className="text-slate-505 font-black uppercase text-[9px] tracking-wider">Phone contact</p>
+                  <p className="font-bold text-slate-200 mt-0.5">{selectedUserForProfile.phone || '98765 43210'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-505 font-black uppercase text-[9px] tracking-wider">Class scope</p>
+                  <p className="font-bold text-slate-200 mt-0.5">{classes.find((c) => c.id === selectedUserForProfile.classId)?.name || 'NEET Standard'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-505 font-black uppercase text-[9px] tracking-wider">XP points</p>
+                  <p className="font-bold text-indigo-400 mt-0.5">{selectedUserForProfile.totalXp} Points</p>
+                </div>
+                <div>
+                  <p className="text-slate-505 font-black uppercase text-[9px] tracking-wider">Daily Streak</p>
+                  <p className="font-bold text-amber-500 mt-0.5">🔥 {selectedUserForProfile.dailyStreak} Days</p>
+                </div>
+                <div>
+                  <p className="text-slate-505 font-black uppercase text-[9px] tracking-wider">Registered Since</p>
+                  <p className="font-bold text-slate-300 mt-0.5">{selectedUserForProfile.registrationDate || '2026-01-15'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-505 font-black uppercase text-[9px] tracking-wider">Last login date</p>
+                  <p className="font-bold text-slate-300 mt-0.5">{selectedUserForProfile.lastLogin || 'N/A'}</p>
+                </div>
+              </div>
+
+              {selectedUserForProfile.status === 'suspended' && (
+                <div className="p-3 bg-red-950/20 border border-red-900/40 rounded-2xl text-red-400">
+                  <p className="font-bold">Suspension details:</p>
+                  <p className="mt-1 text-slate-300">Reason: {selectedUserForProfile.suspendedReason}</p>
+                  <p className="mt-0.5 text-slate-400">Period: {selectedUserForProfile.suspendedStart} to {selectedUserForProfile.suspendedEnd}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4 border-t border-slate-800">
+                <Button variant="secondary" size="sm" onClick={() => setSelectedUserForProfile(null)} className="w-full text-xs font-bold">Close profile</Button>
+                <Button variant="primary" size="sm" onClick={() => { handleOpenUserForm(selectedUserForProfile.id); setSelectedUserForProfile(null); }} className="w-full text-xs font-bold">Edit Profile details</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUSPEND DIALOG MODAL FORM */}
+      {suspendModalUser && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center p-5 border-b border-slate-800">
+              <h3 className="text-xs font-black text-slate-200">
+                Suspend Account: {suspendModalUser.fullName}
+              </h3>
+              <button onClick={() => setSuspendModalUser(null)} className="text-slate-400 hover:text-slate-200">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleConfirmSuspension} className="p-5 space-y-4 text-xs text-left">
+              <div>
+                <label className="block text-slate-400 font-bold mb-1.5">Suspension Reason</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Terms violation / Overdue balance"
+                  value={suspendReason}
+                  onChange={e => setSuspendReason(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 outline-none"
+                  required
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wide">Billed To</p>
-                  <p className="font-extrabold text-slate-950 dark:text-white mt-1">{selectedTxnInvoice.userFullName}</p>
-                  <p className="text-slate-500 font-semibold text-[10px] mt-0.5">{selectedTxnInvoice.userEmail}</p>
+                  <label className="block text-slate-400 font-bold mb-1.5">Start Date</label>
+                  <input
+                    type="date"
+                    value={suspendStart}
+                    onChange={e => setSuspendStart(e.target.value)}
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1.5">End Date (Auto Resume)</label>
+                  <input
+                    type="date"
+                    value={suspendEnd}
+                    onChange={e => setSuspendEnd(e.target.value)}
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-200 outline-none"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-800">
+                <Button variant="secondary" size="sm" type="button" onClick={() => setSuspendModalUser(null)}>Cancel</Button>
+                <Button variant="primary" size="sm" type="submit" className="bg-red-600 hover:bg-red-700">Confirm Suspension</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RENDER BILLING TRANSACTION INVOICES OVERLAY */}
+      {selectedTxnInvoice && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-slate-800">
+              <h3 className="text-sm font-black text-slate-200 flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-indigo-505" />
+                Razorpay Invoice Receipt
+              </h3>
+              <button onClick={() => setSelectedTxnInvoice(null)} className="text-slate-400 hover:text-slate-200">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 text-xs text-left">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <p className="font-extrabold text-base text-slate-105">{paymentSettings.businessName || 'RK Coaching Center'}</p>
+                  <p className="text-[10px] text-slate-405 font-semibold">{paymentSettings.supportEmail || 'support@rkcoaching.com'}</p>
+                  <p className="text-[10px] text-slate-505 font-semibold">{paymentSettings.supportPhone || '+91 98765 43210'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] text-slate-400 uppercase font-extrabold tracking-wide">Transaction Date</p>
-                  <p className="font-bold text-slate-950 dark:text-white mt-1">
-                    {new Date(selectedTxnInvoice.createdAt).toLocaleString('en-IN')}
-                  </p>
-                  <p className="text-slate-500 font-semibold text-[10px] mt-0.5">Channel: {selectedTxnInvoice.method}</p>
+                  <Badge variant="success" className="uppercase font-black text-[9px]">Captured Payment</Badge>
+                  <p className="text-[10px] text-slate-405 font-bold mt-1.5">TXN: {selectedTxnInvoice.id}</p>
                 </div>
               </div>
 
-              <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-2 grid grid-cols-3 text-[9px] font-black uppercase text-slate-400 tracking-wider">
+              <div className="grid grid-cols-2 gap-4 border-t border-slate-800 pt-4">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] text-slate-550 uppercase font-extrabold tracking-wide">Billed student profile</p>
+                  <p className="font-bold text-slate-105">{selectedTxnInvoice.userFullName}</p>
+                  <p className="text-[10px] text-slate-405 font-semibold">{selectedTxnInvoice.userEmail}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] text-slate-550 uppercase font-extrabold tracking-wide">Transaction Date</p>
+                  <p className="font-bold text-slate-105 mt-1">
+                    {new Date(selectedTxnInvoice.createdAt).toLocaleString('en-IN')}
+                  </p>
+                  <p className="text-slate-405 font-semibold text-[10px] mt-0.5">Channel: {selectedTxnInvoice.method}</p>
+                </div>
+              </div>
+
+              <div className="border border-slate-800 rounded-2xl overflow-hidden">
+                <div className="bg-slate-900/60 px-4 py-2 grid grid-cols-3 text-[9px] font-black uppercase text-slate-550 tracking-wider">
                   <span className="col-span-2">Course Package Syllabus</span>
                   <span className="text-right">Price (INR)</span>
                 </div>
-                <div className="px-4 py-3.5 grid grid-cols-3 font-semibold text-slate-800 dark:text-slate-200 border-t border-slate-100 dark:border-slate-800">
+                <div className="px-4 py-3.5 grid grid-cols-3 font-semibold text-slate-300 border-t border-slate-800">
                   <span className="col-span-2 font-bold">{selectedTxnInvoice.courseTitle}</span>
                   <span className="text-right font-bold">₹{selectedTxnInvoice.amount}</span>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-900 px-4 py-3 grid grid-cols-3 font-bold border-t border-slate-100 dark:border-slate-800 text-slate-950 dark:text-white">
-                  <span className="col-span-2 text-right text-[10px] text-slate-400 uppercase tracking-wide">Total Deducted:</span>
-                  <span className="text-right text-indigo-600 dark:text-indigo-400 font-black">₹{selectedTxnInvoice.amount}</span>
+                <div className="bg-slate-900/60 px-4 py-3 grid grid-cols-3 font-bold border-t border-slate-800 text-slate-202">
+                  <span className="col-span-2 text-right text-[10px] text-slate-550 uppercase tracking-wide">Total Deducted:</span>
+                  <span className="text-right text-indigo-400 font-black">₹{selectedTxnInvoice.amount}</span>
                 </div>
               </div>
 
-              <div className="flex gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex gap-2.5 pt-4 border-t border-slate-800">
                 <Button
                   onClick={() => window.print()}
                   variant="outline"

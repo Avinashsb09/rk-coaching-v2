@@ -55,8 +55,8 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             exit={{ scale: 0.95, opacity: 0, y: 15 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
             className={`
-              relative w-full ${sizes[size]} bg-white dark:bg-slate-900 
-              rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 
+              relative w-full ${sizes[size]} bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg 
+              rounded-3xl shadow-2xl border border-slate-200/50 dark:border-slate-800/50 
               overflow-hidden z-10 text-left flex flex-col max-h-[90vh]
             `}
           >

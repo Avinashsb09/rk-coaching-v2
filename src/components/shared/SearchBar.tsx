@@ -45,7 +45,7 @@ export function SearchBar({
   return (
     <div className={`relative w-full ${className}`}>
       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-        <Search className="h-5 h-5 text-slate-400 dark:text-slate-500" />
+        <Search className="w-5 h-5 text-slate-400 dark:text-slate-500" />
       </div>
       <input
         type="text"
@@ -55,10 +55,10 @@ export function SearchBar({
         placeholder={placeholderText}
         className="
           block w-full pl-11 pr-10 py-2.5 h-11 text-sm rounded-2xl border
-          border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80
-          text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600
-          focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-          transition-all duration-200
+          border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg
+          text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500
+          focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+          transition-all duration-200 shadow-sm
         "
       />
       {globalSearch && (

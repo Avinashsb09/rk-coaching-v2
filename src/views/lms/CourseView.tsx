@@ -271,7 +271,7 @@ export default function CourseView() {
                             <div className="flex items-center gap-3">
                               {lesson.isPremium ? <Lock className="w-4 h-4 text-amber-500" /> : <Play className="w-3 h-3 text-emerald-500 fill-current" />}
                               <div className="space-y-0.5">
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-250">{lesson.title}</h4>
+                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{lesson.title}</h4>
                                 <p className="text-[10px] text-slate-500 line-clamp-1">{lesson.description}</p>
                               </div>
                             </div>
@@ -305,7 +305,7 @@ export default function CourseView() {
               {/* Syllabus Core details count */}
               <div className="grid grid-cols-2 gap-4 text-center border-b border-slate-100 dark:border-slate-800/80 pb-4">
                 <div>
-                  <p className="text-lg font-extrabold text-blue-600 dark:text-blue-450">{videoCount}</p>
+                  <p className="text-lg font-extrabold text-blue-600 dark:text-blue-400">{videoCount}</p>
                   <p className="text-[10px] text-slate-500 font-semibold uppercase">Video Lectures</p>
                 </div>
                 <div className="border-l border-slate-100 dark:border-slate-800">
