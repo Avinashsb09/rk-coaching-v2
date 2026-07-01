@@ -11,9 +11,11 @@ export const mockClasses: AcademicClass[] = [
   { id: 'c8', name: 'Class 8', slug: 'class-8', priority: 3 },
   { id: 'c9', name: 'Class 9', slug: 'class-9', priority: 4 },
   { id: 'c10', name: 'Class 10', slug: 'class-10', priority: 5 },
-  { id: 'c11_sci', name: 'Class 11 (Science)', slug: 'class-11-science', priority: 6 },
-  { id: 'c12_sci', name: 'Class 12 (Science)', slug: 'class-12-science', priority: 7 },
-  { id: 'neet', name: 'NEET (Biology & Chemistry)', slug: 'neet', priority: 8 }
+  { id: 'c11_sci', name: 'Class 11 Science', slug: 'class-11-science', priority: 6 },
+  { id: 'c12_sci', name: 'Class 12 Science', slug: 'class-12-science', priority: 7 },
+  { id: 'neet-biology', name: 'NEET Biology', slug: 'neet-biology', priority: 8 },
+  { id: 'neet-chemistry', name: 'NEET Chemistry', slug: 'neet-chemistry', priority: 9 },
+  { id: 'neet', name: 'NEET (Biology & Chemistry)', slug: 'neet', priority: 10 }
 ];
 
 const subjectsData: AcademicSubject[] = [];
@@ -51,6 +53,10 @@ mockClasses.forEach((cls) => {
     subjs = class6to10Subjects;
   } else if (['class-11-science', 'class-12-science'].includes(cls.slug)) {
     subjs = scienceSubjects;
+  } else if (cls.slug === 'neet-biology') {
+    subjs = [neetSubjects[0]];
+  } else if (cls.slug === 'neet-chemistry') {
+    subjs = [neetSubjects[1]];
   } else if (cls.slug === 'neet') {
     subjs = neetSubjects;
   }

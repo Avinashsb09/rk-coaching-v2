@@ -26,7 +26,8 @@ import {
   Tv,
   FileText,
   Clock,
-  Printer
+  Printer,
+  Lock
 } from 'lucide-react';
 
 export default function LessonView() {
@@ -47,7 +48,9 @@ export default function LessonView() {
     chapters,
     lessons,
     videos,
-    notes
+    notes,
+    subjects,
+    hasSubjectNotesAccess
   } = useApp();
 
   // Load datasets (syncing Supabase if present)
@@ -165,6 +168,9 @@ export default function LessonView() {
       </div>
     );
   }
+
+  const chapterObj = chaptersList.find(c => c.id === lessonObj.chapterId);
+  const subjectObj = subjects.find(s => s.id === chapterObj?.subjectId);
 
   // Filter video & notes
   const activeVideo = videosList.find(v => v.lessonId === lessonObj.id);
@@ -441,11 +447,38 @@ export default function LessonView() {
           {/* PDF Embed Sandbox Canvas */}
           <div className="bg-slate-200 dark:bg-slate-950 flex-1 min-h-[300px] lg:min-h-[auto] relative flex flex-col">
             {selectedTabNote ? (
-              <iframe 
-                src={`${resolvedPdfUrl || selectedTabNote.pdfUrl}#toolbar=1`} 
-                title={selectedTabNote.title}
-                className="w-full h-full flex-1 border-0"
-              />
+              (selectedTabNote.isPremium && !hasSubjectNotesAccess(subjectObj?.id || '')) ? (
+                <div className="m-auto p-6 text-center space-y-4">
+                  <div className="h-14 w-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 mx-auto shadow-inner">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Premium Handout Locked</h4>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    This study notes PDF is reserved for premium tier users. Buy notes for this subject to unlock all chapters.
+                  </p>
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={() => {
+                      if (user?.role === 'visitor' || !user) {
+                        addToast('Please register or log in to unlock content.', 'warning');
+                        setCurrentView('auth');
+                      } else {
+                        setCurrentView('subject-view');
+                      }
+                    }} 
+                    className="text-xs font-bold bg-amber-500 border-none text-slate-950 hover:bg-amber-600"
+                  >
+                    Unlock All Subject Notes
+                  </Button>
+                </div>
+              ) : (
+                <iframe 
+                  src={`${resolvedPdfUrl || selectedTabNote.pdfUrl}#toolbar=1`} 
+                  title={selectedTabNote.title}
+                  className="w-full h-full flex-1 border-0"
+                />
+              )
             ) : (
               <div className="m-auto p-6 text-center space-y-3">
                 <FileText className="w-12 h-12 text-slate-400 mx-auto" />

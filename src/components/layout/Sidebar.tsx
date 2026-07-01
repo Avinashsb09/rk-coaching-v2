@@ -48,6 +48,11 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
             icon: <Sparkles className="w-5 h-5 text-indigo-500" />
           },
           {
+            id: 'pyq-dashboard',
+            label: 'PYQ Arena',
+            icon: <Trophy className="w-5 h-5 text-amber-500" />
+          },
+          {
             id: 'catalog',
             label: 'All Courses',
             icon: <BookOpen className="w-5 h-5" />

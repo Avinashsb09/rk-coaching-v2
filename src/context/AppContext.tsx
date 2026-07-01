@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserRole, UserProfile, Course, AcademicClass, AcademicSubject, AcademicChapter, Lesson, Video, Note, Announcement, FaqItem, Bookmark, UserProgress, Order, Payment, Notification, PaymentSettings } from '../types';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { UserRole, UserProfile, Course, AcademicClass, AcademicSubject, AcademicChapter, Lesson, Video, Note, Announcement, FaqItem, Bookmark, UserProgress, Order, Payment, Notification, PaymentSettings, Quiz, QuizQuestion, QuizOption, QuizAttempt, LeaderboardEntry } from '../types';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { NotificationProvider, useNotifications, ToastMessage } from './NotificationContext';
@@ -159,13 +159,16 @@ function AppSyncController({
   const { loadEnrollments, setEnrolledCourseIds, loadSubjectNotesPurchases, setUnlockedSubjectNoteIds } = useCourses();
   const { addToast } = useNotifications();
 
+  const syncedUserIdRef = useRef<string | null>(null);
+
   // Listen to Auth sessions reactively
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+      if (session?.user && syncedUserIdRef.current !== session.user.id) {
+        syncedUserIdRef.current = session.user.id;
         syncUserProfile(session.user.id, addToast, setCurrentView);
       }
     });
@@ -173,8 +176,12 @@ function AppSyncController({
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          await syncUserProfile(session.user.id, addToast, setCurrentView);
+          if (syncedUserIdRef.current !== session.user.id) {
+            syncedUserIdRef.current = session.user.id;
+            await syncUserProfile(session.user.id, addToast, setCurrentView);
+          }
         } else if (event === 'SIGNED_OUT') {
+          syncedUserIdRef.current = null;
           setUser(null);
           setCurrentView('home');
         }

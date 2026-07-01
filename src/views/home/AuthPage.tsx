@@ -33,7 +33,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedClass, setSelectedClass] = useState('neet');
+  const [selectedClass, setSelectedClass] = useState('neet-biology');
   const [selectedRole, setSelectedRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -399,10 +399,15 @@ export default function AuthPage() {
                         onChange={(e) => setSelectedClass(e.target.value)}
                         className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs px-3 py-2.5 focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="class-6">Class 6–9</option>
-                        <option value="class-10">Class 10</option>
-                        <option value="class-12-science">Class 11–12 (Science)</option>
-                        <option value="neet">NEET (Biology & Chemistry)</option>
+                        <option value="c6">Class 6</option>
+                        <option value="c7">Class 7</option>
+                        <option value="c8">Class 8</option>
+                        <option value="c9">Class 9</option>
+                        <option value="c10">Class 10</option>
+                        <option value="c11_sci">Class 11 Science</option>
+                        <option value="c12_sci">Class 12 Science</option>
+                        <option value="neet-biology">NEET Biology</option>
+                        <option value="neet-chemistry">NEET Chemistry</option>
                       </select>
                     </div>
                   )}

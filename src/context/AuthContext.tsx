@@ -45,6 +45,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error || !profile) {
         console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);
         
+        // Try to auto-create the profile row dynamically as a fallback!
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            console.log('Missing profile row detected. Attempting automatic sync/creation fallback...');
+            const newProfile = {
+              id: authUser.id,
+              email: authUser.email!,
+              fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
+              role: authUser.user_metadata?.role || 'student',
+              avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
+              classId: authUser.user_metadata?.classId || null,
+              dailyStreak: 1,
+              totalXp: 0
+            };
+
+            const { data: insertedProfile, error: insertError } = await (supabase
+              .from('profiles') as any)
+              .insert(newProfile)
+              .select('*')
+              .single();
+
+            if (!insertError && insertedProfile) {
+              console.log('Successfully auto-created user profile fallback:', insertedProfile);
+              const profileData = insertedProfile as any;
+              const userProfile: UserProfile = {
+                id: profileData.id,
+                email: profileData.email,
+                fullName: profileData.fullName || 'Scholar',
+                role: (profileData.role as any) || 'student',
+                avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
+                dailyStreak: profileData.dailyStreak || 1,
+                totalXp: profileData.totalXp || 0,
+                badges: ['streak_1']
+              };
+              setUser(userProfile);
+              setRoleState(userProfile.role);
+              
+              // Redirect
+              const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+              const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+              if (isOnDefaultPage) {
+                if (userProfile.role === 'student') setCurrentView('student-dashboard');
+                else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
+                else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+              } else {
+                setCurrentView(currentHash);
+              }
+              return userProfile;
+            } else {
+              console.error('Insert query failed during auto-creation:', insertError);
+            }
+          }
+        } catch (e) {
+          console.error('Exception during profile auto-creation fallback:', e);
+        }
+
         const err = error as any;
         const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
         if (isAuthErr) {

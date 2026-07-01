@@ -137,7 +137,63 @@ export default function AdminDashboard() {
   const [userAvatar, setUserAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80');
 
   // Quiz states
-  const [quizSubTab, setQuizSubTab] = useState<'quizzes' | 'attempts' | 'analytics'>('quizzes');
+  const [quizSubTab, setQuizSubTab] = useState<'quizzes' | 'attempts' | 'analytics' | 'question-bank'>('quizzes');
+
+  // Reusable Question Bank states
+  const [globalQuestionBank, setGlobalQuestionBank] = useState<any[]>([
+    {
+      id: 'qb_1',
+      questionText: 'What is the SI unit of gravitational constant G?',
+      questionType: 'single_correct',
+      difficulty: 'medium',
+      marks: 3,
+      negativeMarks: 1,
+      options: [
+        { id: 'qb_1_oA', text: 'N m^2 kg^-2', isCorrect: true },
+        { id: 'qb_1_oB', text: 'N m kg^-1', isCorrect: false },
+        { id: 'qb_1_oC', text: 'N m^2 kg^-1', isCorrect: false },
+        { id: 'qb_1_oD', text: 'N m kg^-2', isCorrect: false }
+      ],
+      explanation: 'The SI unit of G is N m^2 kg^-2 derived from F = G m1 m2 / r^2.'
+    },
+    {
+      id: 'qb_2',
+      questionText: 'Which cell organelle is known as the powerhouse of the cell?',
+      questionType: 'single_correct',
+      difficulty: 'easy',
+      marks: 3,
+      negativeMarks: 1,
+      options: [
+        { id: 'qb_2_oA', text: 'Nucleus', isCorrect: false },
+        { id: 'qb_2_oB', text: 'Mitochondria', isCorrect: true },
+        { id: 'qb_2_oC', text: 'Ribosome', isCorrect: false },
+        { id: 'qb_2_oD', text: 'Golgi Apparatus', isCorrect: false }
+      ],
+      explanation: 'Mitochondria generates chemical energy in the form of ATP.'
+    }
+  ]);
+
+  const [qbSearchQuery, setQbSearchQuery] = useState('');
+  const [qbFilterDifficulty, setQbFilterDifficulty] = useState('all');
+  const [qbFormOpen, setQbFormOpen] = useState(false);
+  const [editingQbId, setEditingQbId] = useState<string | null>(null);
+
+  // Form states for QB questions
+  const [qbText, setQbText] = useState('');
+  const [qbType, setQbType] = useState('single_correct');
+  const [qbDifficulty, setQbDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [qbMarks, setQbMarks] = useState('3');
+  const [qbNegativeMarks, setQbNegativeMarks] = useState('1');
+  const [qbOptA, setQbOptA] = useState('');
+  const [qbOptB, setQbOptB] = useState('');
+  const [qbOptC, setQbOptC] = useState('');
+  const [qbOptD, setQbOptD] = useState('');
+  const [qbCorrectOption, setQbCorrectOption] = useState<'A' | 'B' | 'C' | 'D'>('A');
+  const [qbExplanation, setQbExplanation] = useState('');
+
+  // Import Modal state inside Quiz details
+  const [qbImportModalOpen, setQbImportModalOpen] = useState(false);
+  const [selectedQbQuestionsToImport, setSelectedQbQuestionsToImport] = useState<Set<string>>(new Set());
   const [quizFilterClass, setQuizFilterClass] = useState('all');
   const [quizFilterSubject, setQuizFilterSubject] = useState('all');
   const [selectedQuizForQuestions, setSelectedQuizForQuestions] = useState<any | null>(null);
@@ -205,6 +261,10 @@ export default function AdminDashboard() {
   const [cfgSupPhone, setCfgSupPhone] = useState(paymentSettings.supportPhone);
   const [cfgSuccessMsg, setCfgSuccessMsg] = useState(paymentSettings.successMessage);
   const [cfgFailureMsg, setCfgFailureMsg] = useState(paymentSettings.failureMessage);
+
+  // Announcement states
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMsg, setAnnouncementMsg] = useState('');
 
   // ---- ENTERPRISE HANDLERS ----
   const handlePostAnnouncement = (e: React.FormEvent) => {
@@ -1374,6 +1434,127 @@ export default function AdminDashboard() {
     }
   }, [users]);
 
+  // ==========================================
+  // REUSABLE QUESTION BANK HANDLERS
+  // ==========================================
+  const handleOpenQbForm = (question?: any) => {
+    if (question) {
+      setEditingQbId(question.id);
+      setQbText(question.questionText);
+      setQbType(question.questionType || 'single_correct');
+      setQbDifficulty(question.difficulty || 'medium');
+      setQbMarks(String(question.marks || 3));
+      setQbNegativeMarks(String(question.negativeMarks || 1));
+      setQbOptA(question.options[0]?.text || '');
+      setQbOptB(question.options[1]?.text || '');
+      setQbOptC(question.options[2]?.text || '');
+      setQbOptD(question.options[3]?.text || '');
+      
+      const correctIdx = question.options.findIndex((o: any) => o.isCorrect);
+      setQbCorrectOption(correctIdx === 0 ? 'A' : correctIdx === 1 ? 'B' : correctIdx === 2 ? 'C' : 'D');
+      setQbExplanation(question.explanation || '');
+    } else {
+      setEditingQbId(null);
+      setQbText('');
+      setQbType('single_correct');
+      setQbDifficulty('medium');
+      setQbMarks('3');
+      setQbNegativeMarks('1');
+      setQbOptA('');
+      setQbOptB('');
+      setQbOptC('');
+      setQbOptD('');
+      setQbCorrectOption('A');
+      setQbExplanation('');
+    }
+    setQbFormOpen(true);
+  };
+
+  const handleSaveQbQuestion = (e: React.FormEvent) => {
+    e.preventDefault();
+    const options = [
+      { id: editingQbId ? `${editingQbId}_oA` : `qb_opt_${Date.now()}_A`, text: qbOptA, isCorrect: qbCorrectOption === 'A' },
+      { id: editingQbId ? `${editingQbId}_oB` : `qb_opt_${Date.now()}_B`, text: qbOptB, isCorrect: qbCorrectOption === 'B' },
+      { id: editingQbId ? `${editingQbId}_oC` : `qb_opt_${Date.now()}_C`, text: qbOptC, isCorrect: qbCorrectOption === 'C' },
+      { id: editingQbId ? `${editingQbId}_oD` : `qb_opt_${Date.now()}_D`, text: qbOptD, isCorrect: qbCorrectOption === 'D' }
+    ];
+
+    const qPayload = {
+      id: editingQbId || `qb_q_${Date.now()}`,
+      questionText: qbText,
+      questionType: qbType,
+      difficulty: qbDifficulty,
+      marks: Number(qbMarks),
+      negativeMarks: Number(qbNegativeMarks),
+      options,
+      explanation: qbExplanation
+    };
+
+    if (editingQbId) {
+      setGlobalQuestionBank(prev => prev.map(q => q.id === editingQbId ? qPayload : q));
+      addToast('Question updated in global bank!', 'success');
+    } else {
+      setGlobalQuestionBank(prev => [...prev, qPayload]);
+      addToast('Question added to global bank!', 'success');
+    }
+    setQbFormOpen(false);
+  };
+
+  const handleDeleteQbQuestion = (id: string) => {
+    if (window.confirm('Delete this question from the Question Bank?')) {
+      setGlobalQuestionBank(prev => prev.filter(q => q.id !== id));
+      addToast('Question removed from global bank.', 'info');
+    }
+  };
+
+  const handleImportFromQb = (quizId: string) => {
+    if (selectedQbQuestionsToImport.size === 0) {
+      addToast('No questions selected.', 'warning');
+      return;
+    }
+
+    const nextOrder = quizQuestions.filter((q: any) => q.quizId === quizId).length + 1;
+    const newQuestions: any[] = [];
+    const newOptions: any[] = [];
+
+    let orderOffset = 0;
+    selectedQbQuestionsToImport.forEach(qbId => {
+      const qbQ = globalQuestionBank.find(q => q.id === qbId);
+      if (qbQ) {
+        const newQId = `q_imported_${Date.now()}_${orderOffset}`;
+        newQuestions.push({
+          id: newQId,
+          quizId,
+          questionText: qbQ.questionText,
+          questionType: qbQ.questionType,
+          difficulty: qbQ.difficulty,
+          marks: qbQ.marks,
+          negativeMarks: qbQ.negativeMarks,
+          explanation: qbQ.explanation,
+          orderIndex: nextOrder + orderOffset
+        });
+
+        qbQ.options.forEach((opt: any, oIdx: number) => {
+          const suffix = ['A', 'B', 'C', 'D'][oIdx];
+          newOptions.push({
+            id: `opt_imported_${Date.now()}_${orderOffset}_${suffix}`,
+            questionId: newQId,
+            optionText: opt.text,
+            isCorrect: opt.isCorrect
+          });
+        });
+
+        orderOffset++;
+      }
+    });
+
+    setQuizQuestions((prev: any) => [...prev, ...newQuestions]);
+    setQuizOptions((prev: any) => [...prev, ...newOptions]);
+    setQbImportModalOpen(false);
+    setSelectedQbQuestionsToImport(new Set());
+    addToast(`Successfully imported ${newQuestions.length} questions into quiz!`, 'success');
+  };
+
   // Global Search logic
   const getGlobalSearchResults = () => {
     if (!globalSearchQuery) return [];
@@ -1502,7 +1683,7 @@ export default function AdminDashboard() {
                   <span>{item.label}</span>
                 </div>
                 {item.locked && (
-                  <Badge variant="outline" size="sm" className="text-[9px] border-slate-700 text-slate-500">Lock</Badge>
+                  <Badge variant="secondary" size="sm" className="text-[9px] border-slate-700 text-slate-500">Lock</Badge>
                 )}
               </button>
             );
@@ -1571,7 +1752,7 @@ export default function AdminDashboard() {
                           <p className="font-bold text-slate-200">{item.title}</p>
                           <p className="text-[10px] text-slate-500 font-semibold">{item.subtitle}</p>
                         </div>
-                        <Badge variant="outline" size="sm" className="text-[9px] uppercase border-indigo-900 text-indigo-400">
+                        <Badge variant="secondary" size="sm" className="text-[9px] uppercase border-indigo-900 text-indigo-400">
                           {item.type}
                         </Badge>
                       </button>
@@ -1583,7 +1764,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="border-indigo-900 text-indigo-400 text-[10px] h-7 font-black">
+            <Badge variant="secondary" className="border-indigo-900 text-indigo-400 text-[10px] h-7 font-black">
               Enterprise Beta
             </Badge>
           </div>
@@ -2429,11 +2610,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* Subtab Picker */}
-              <div className="flex gap-2 p-1 bg-slate-900/60 border border-slate-800/40 rounded-xl w-fit">
+              <div className="flex flex-wrap gap-2 p-1 bg-slate-900/60 border border-slate-800/40 rounded-xl w-fit">
                 {[
                   { id: 'quizzes', label: 'Quiz Registry' },
                   { id: 'attempts', label: 'Student Attempts' },
-                  { id: 'analytics', label: 'Quiz Analytics' }
+                  { id: 'analytics', label: 'Quiz Analytics' },
+                  { id: 'question-bank', label: 'Question Bank' }
                 ].map(sub => (
                   <button
                     key={sub.id}
@@ -2570,11 +2752,67 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
 
+                          <Button variant="outline" size="sm" onClick={() => setQbImportModalOpen(true)} className="text-xs font-bold border border-slate-800 text-slate-300">
+                            <Database className="w-4 h-4 mr-1" /> Reusable Question Bank
+                          </Button>
+
                           <Button variant="primary" size="sm" onClick={() => handleOpenQuestionForm()} className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700">
                             <Plus className="w-4 h-4 mr-1" /> Add Question
                           </Button>
                         </div>
                       </div>
+
+                      {/* IMPORT FROM QUESTION BANK MODAL */}
+                      {qbImportModalOpen && (
+                        <Card className="p-5 border-2 border-indigo-500/30 bg-slate-900/30 backdrop-blur-xl mb-4 text-xs">
+                          <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
+                            <h4 className="text-sm font-black text-slate-200">
+                              🗄️ Import from Reusable Question Bank
+                            </h4>
+                            <button onClick={() => setQbImportModalOpen(false)} className="text-slate-400 hover:text-slate-200">
+                              <X className="w-4.5 h-4.5" />
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <p className="text-[10px] text-slate-400">Select questions from the global question bank to clone into this quiz.</p>
+                            
+                            <div className="max-h-60 overflow-y-auto space-y-2 border border-slate-800 p-3 rounded-xl bg-slate-950/30">
+                              {globalQuestionBank.map(q => {
+                                const isChecked = selectedQbQuestionsToImport.has(q.id);
+                                return (
+                                  <div key={q.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-slate-800/60 bg-slate-900/10 hover:bg-slate-900/20">
+                                    <input 
+                                      type="checkbox" 
+                                      checked={isChecked}
+                                      onChange={() => {
+                                        setSelectedQbQuestionsToImport(prev => {
+                                          const next = new Set(prev);
+                                          if (next.has(q.id)) next.delete(q.id);
+                                          else next.add(q.id);
+                                          return next;
+                                        });
+                                      }}
+                                      className="mt-1 h-3.5 w-3.5 cursor-pointer"
+                                    />
+                                    <div className="text-left">
+                                      <p className="font-bold text-slate-200">{q.questionText}</p>
+                                      <p className="text-[9px] text-slate-500 font-semibold mt-0.5">Difficulty: {q.difficulty.toUpperCase()} | Marks: +{q.marks}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="flex justify-end gap-2 border-t border-slate-800 pt-3">
+                              <Button variant="secondary" size="sm" type="button" onClick={() => setQbImportModalOpen(false)}>Cancel</Button>
+                              <Button variant="primary" size="sm" onClick={() => handleImportFromQb(selectedQuizForQuestions.id)} className="bg-indigo-600 hover:bg-indigo-700">
+                                Import Selected ({selectedQbQuestionsToImport.size})
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
 
                       {/* QUESTION EDIT FORM CARD */}
                       {questionFormOpen && (
@@ -2894,6 +3132,156 @@ export default function AdminDashboard() {
                       })}
                     </div>
                   </Card>
+                </div>
+              )}
+
+              {/* 4. REUSABLE QUESTION BANK SUBTAB */}
+              {quizSubTab === 'question-bank' && (
+                <div className="space-y-6">
+                  {/* TOP HEADER CONTROLLERS */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/40 p-5 rounded-2xl border border-slate-800">
+                    <div className="flex-1 w-full sm:max-w-xs flex items-center gap-2 border border-slate-800 bg-slate-950 px-3 py-2 rounded-xl text-xs text-slate-400">
+                      <Search className="w-4 h-4 shrink-0" />
+                      <input 
+                        type="text" 
+                        placeholder="Search bank questions..." 
+                        value={qbSearchQuery} 
+                        onChange={e => setQbSearchQuery(e.target.value)}
+                        className="bg-transparent border-none outline-none w-full text-slate-200"
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <select 
+                        value={qbFilterDifficulty} 
+                        onChange={e => setQbFilterDifficulty(e.target.value)} 
+                        className="p-2.5 rounded-xl border border-slate-800 bg-slate-950 text-xs text-slate-300 outline-none"
+                      >
+                        <option value="all">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                      <Button variant="primary" size="sm" onClick={() => handleOpenQbForm()} className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700">
+                        <Plus className="w-4 h-4 mr-1" /> Add to Bank
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* FORM CARD */}
+                  {qbFormOpen && (
+                    <Card className="p-5 border-2 border-indigo-500/30 bg-slate-900/30 backdrop-blur-xl">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-2 mb-4">
+                        <h4 className="text-sm font-black text-slate-200">
+                          {editingQbId ? '🖊️ Modify Bank Question' : '🚀 Create Question in Bank'}
+                        </h4>
+                        <button onClick={() => setQbFormOpen(false)} className="text-slate-400 hover:text-slate-200">
+                          <X className="w-4.5 h-4.5" />
+                        </button>
+                      </div>
+                      <form onSubmit={handleSaveQbQuestion} className="space-y-4 text-xs">
+                        <div>
+                          <Input label="Question Text" value={qbText} onChange={e => setQbText(e.target.value)} placeholder="Type question details..." required />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-slate-400 mb-1.5 font-bold">Difficulty</label>
+                            <select value={qbDifficulty} onChange={e => setQbDifficulty(e.target.value as any)} className="w-full p-2.5 rounded-xl border border-slate-850 bg-slate-950 text-slate-300 outline-none">
+                              <option value="easy">Easy</option>
+                              <option value="medium">Medium</option>
+                              <option value="hard">Hard</option>
+                            </select>
+                          </div>
+                          <Input label="Award Marks" type="number" value={qbMarks} onChange={e => setQbMarks(e.target.value)} required />
+                          <Input label="Negative Penalty Marks" type="number" value={qbNegativeMarks} onChange={e => setQbNegativeMarks(e.target.value)} required />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+                          <Input label="Option A" value={qbOptA} onChange={e => setQbOptA(e.target.value)} placeholder="Option A choice..." required />
+                          <Input label="Option B" value={qbOptB} onChange={e => setQbOptB(e.target.value)} placeholder="Option B choice..." required />
+                          <Input label="Option C" value={qbOptC} onChange={e => setQbOptC(e.target.value)} placeholder="Option C choice..." required />
+                          <Input label="Option D" value={qbOptD} onChange={e => setQbOptD(e.target.value)} placeholder="Option D choice..." required />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                          <div>
+                            <label className="block text-slate-400 mb-1.5 font-bold">Correct Option</label>
+                            <select value={qbCorrectOption} onChange={e => setQbCorrectOption(e.target.value as any)} className="w-full p-2.5 rounded-xl border border-slate-850 bg-slate-950 text-slate-300 outline-none">
+                              <option value="A">Option A</option>
+                              <option value="B">Option B</option>
+                              <option value="C">Option C</option>
+                              <option value="D">Option D</option>
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Input label="Detailed Explanation Text" value={qbExplanation} onChange={e => setQbExplanation(e.target.value)} placeholder="Describe explanation steps for students..." />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                          <Button variant="secondary" size="sm" type="button" onClick={() => setQbFormOpen(false)}>Cancel</Button>
+                          <Button variant="primary" size="sm" type="submit">Commit to Bank</Button>
+                        </div>
+                      </form>
+                    </Card>
+                  )}
+
+                  {/* BANK QUESTIONS TABLE */}
+                  <div className="border border-slate-800 rounded-2xl overflow-hidden bg-slate-900/10 backdrop-blur-lg">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-slate-900/40 border-b border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
+                        <tr>
+                          <th className="p-4 w-12 text-center font-bold">Index</th>
+                          <th className="p-4">Question Text</th>
+                          <th className="p-4 text-center">Difficulty</th>
+                          <th className="p-4 text-center">Marks</th>
+                          <th className="p-4 text-center">Negative</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/50">
+                        {globalQuestionBank
+                          .filter(q => {
+                            const matchSearch = q.questionText.toLowerCase().includes(qbSearchQuery.toLowerCase());
+                            const matchDiff = qbFilterDifficulty === 'all' || q.difficulty === qbFilterDifficulty;
+                            return matchSearch && matchDiff;
+                          })
+                          .length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="p-8 text-center text-slate-500 font-semibold">
+                                No questions found in global bank. Add one to begin.
+                              </td>
+                            </tr>
+                          ) : (
+                            globalQuestionBank
+                              .filter(q => {
+                                const matchSearch = q.questionText.toLowerCase().includes(qbSearchQuery.toLowerCase());
+                                const matchDiff = qbFilterDifficulty === 'all' || q.difficulty === qbFilterDifficulty;
+                                return matchSearch && matchDiff;
+                              })
+                              .map((q, idx) => (
+                                <tr key={q.id} className="hover:bg-slate-950/20 transition-all">
+                                  <td className="p-4 font-black text-center text-slate-500">{idx + 1}</td>
+                                  <td className="p-4 font-bold text-slate-200">
+                                    <p className="line-clamp-2 max-w-lg text-left">{q.questionText}</p>
+                                  </td>
+                                  <td className="p-4 text-center font-bold uppercase text-[9px] text-indigo-400">
+                                    <Badge variant={q.difficulty === 'easy' ? 'success' : q.difficulty === 'hard' ? 'danger' : 'info'}>
+                                      {q.difficulty}
+                                    </Badge>
+                                  </td>
+                                  <td className="p-4 text-center font-bold text-slate-100">+{q.marks || 3}</td>
+                                  <td className="p-4 text-center font-bold text-red-400">-{q.negativeMarks || 1}</td>
+                                  <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-1.5">
+                                      <button type="button" onClick={() => handleOpenQbForm(q)} className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-indigo-400 hover:text-indigo-200" title="Edit"><Edit className="w-4 h-4" /></button>
+                                      <button type="button" onClick={() => handleDeleteQbQuestion(q.id)} className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-red-500 hover:text-red-300" title="Delete"><Trash className="w-4 h-4" /></button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                          )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
