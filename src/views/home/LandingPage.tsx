@@ -110,32 +110,11 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {[
                 {
-                  title: 'Class 6',
-                  description: 'Comprehensive subject notes, worksheets, and study guides for Class 6.',
-                  slug: 'class-6',
+                  title: 'Class 6–9',
+                  description: 'Comprehensive subject notes, worksheets, and study guides for Class 6, 7, 8, and 9.',
+                  slug: 'class-6-9',
                   icon: <GraduationCap className="w-5 h-5" />,
                   color: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border-blue-100 dark:border-blue-900/30'
-                },
-                {
-                  title: 'Class 7',
-                  description: 'Structured mathematical formulas and foundational science revisions for Class 7.',
-                  slug: 'class-7',
-                  icon: <GraduationCap className="w-5 h-5" />,
-                  color: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
-                },
-                {
-                  title: 'Class 8',
-                  description: 'High-relevance chapter notes, homework aids, and key textbook solutions for Class 8.',
-                  slug: 'class-8',
-                  icon: <GraduationCap className="w-5 h-5" />,
-                  color: 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400 border-violet-100 dark:border-violet-900/30'
-                },
-                {
-                  title: 'Class 9',
-                  description: 'Core CBSE board preparation strategies and essential notes for Class 9 pupils.',
-                  slug: 'class-9',
-                  icon: <GraduationCap className="w-5 h-5" />,
-                  color: 'bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400 border-teal-100 dark:border-teal-900/30'
                 },
                 {
                   title: 'Class 10',
@@ -145,18 +124,11 @@ export default function LandingPage({ showCatalog: initialShowCatalog = false }:
                   color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
                 },
                 {
-                  title: 'Class 11 (Science)',
+                  title: 'Class 11–12 (Science)',
                   description: 'Advanced board-oriented study materials in Physics, Chemistry, and Biology.',
-                  slug: 'class-11-science',
+                  slug: 'class-11-12-science',
                   icon: <Atom className="w-5 h-5" />,
                   color: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400 border-cyan-100 dark:border-cyan-900/30'
-                },
-                {
-                  title: 'Class 12 (Science)',
-                  description: 'Full-syllabus formula decks, boards prep questions, and final revisions.',
-                  slug: 'class-12-science',
-                  icon: <Atom className="w-5 h-5" />,
-                  color: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
                 },
                 {
                   title: 'NEET (Biology & Chemistry)',

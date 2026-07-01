@@ -140,26 +140,38 @@ export default function SubjectView() {
       <Button 
         variant="ghost" 
         size="sm" 
-        onClick={() => setCurrentView('catalog')} 
+        onClick={() => setCurrentView('class-view')} 
         leftIcon={<ArrowLeft className="w-4 h-4" />}
         className="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
       >
-        Back to Catalog
+        Back to Class Dashboard
       </Button>
 
       {/* Header Info */}
       <section className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden border border-indigo-500/10 shadow-xl">
         <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="relative space-y-4">
-          <Badge variant="primary" className="bg-blue-600/20 text-blue-200 border-blue-500/30">
-            Subject Syllabus Directory
-          </Badge>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            {subjectObj.name}
-          </h1>
-          <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-            {subjectObj.description}
-          </p>
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="space-y-4">
+            <Badge variant="primary" className="bg-blue-600/20 text-blue-200 border-blue-500/30">
+              Subject Syllabus Directory
+            </Badge>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              {subjectObj.name}
+            </h1>
+            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+              {subjectObj.description}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <Button 
+              variant="secondary" 
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold border-none flex items-center gap-1.5"
+              onClick={() => setCurrentView('pyq-view')}
+            >
+              Open Subject PYQs & Mocks
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </section>
 
