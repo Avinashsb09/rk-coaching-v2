@@ -29,6 +29,7 @@ import CourseView from './views/lms/CourseView';
 import LessonView from './views/lms/LessonView';
 import AdvancedSearch from './views/lms/AdvancedSearch';
 import PurchasesInvoices from './views/student/PurchasesInvoices';
+import PyqView from './views/lms/PyqView';
 
 function MainAppShell() {
   const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast } = useApp();
@@ -195,6 +196,9 @@ function MainAppShell() {
       
       case 'subject-view':
         return <SubjectView />;
+      
+      case 'pyq-view':
+        return <PyqView />;
       
       case 'course-view':
         return <CourseView />;

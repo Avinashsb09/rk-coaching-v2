@@ -153,16 +153,49 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           { data: dbSettings }
         ] = results;
 
-        setClasses(dbClasses || []);
-        setSubjects(dbSubjects || []);
-        setCourses(dbCourses || []);
-        setChapters(dbChapters || []);
-        setLessons(dbLessons || []);
-        setVideos(dbVideos || []);
-        setNotes(dbNotes || []);
-        setAnnouncements(dbAnnouncements || []);
-        setFaqs(dbFaqs || []);
-        setUsers(dbProfiles || []);
+        if (dbClasses && dbClasses.length > 0) {
+          setClasses(dbClasses);
+          setSubjects(dbSubjects || []);
+          setCourses(dbCourses || []);
+          setChapters(dbChapters || []);
+          setLessons(dbLessons || []);
+          setVideos(dbVideos || []);
+          setNotes(dbNotes || []);
+        } else {
+          console.warn('Supabase is configured but tables are empty. Falling back to local mock data to ensure full interactivity.');
+          setClasses(mockClasses);
+          setSubjects(mockSubjects);
+          setCourses(mockCourses);
+          setChapters(mockChapters);
+          setLessons(mockLessons);
+          setVideos(mockVideos);
+          setNotes(mockNotes);
+        }
+        setAnnouncements(dbAnnouncements && dbAnnouncements.length > 0 ? dbAnnouncements : mockAnnouncements);
+        setFaqs(dbFaqs && dbFaqs.length > 0 ? dbFaqs : [
+          {
+            id: 'faq_1',
+            category: 'admission',
+            question: 'Which classes are supported by RK Coaching?',
+            answer: 'We provide comprehensive courses for Class 6 to Class 12 and NEET (Biology & Chemistry) pre-medical preparation modules.',
+            orderIndex: 1
+          },
+          {
+            id: 'faq_2',
+            category: 'payment',
+            question: 'How do I unlock Premium Course materials?',
+            answer: 'Tap "Buy Now" on any locked lesson. It opens a secure Razorpay checkout modal where you can pay via UPI to unlock instantly.',
+            orderIndex: 2
+          },
+          {
+            id: 'faq_3',
+            category: 'technical',
+            question: 'Are the course PDF notes available for offline download?',
+            answer: 'Yes! Once you enroll in a course (or unlock the premium tier), you can tap the Download icon next to any PDF study note to save it directly to your phone or computer for offline reading.',
+            orderIndex: 3
+          }
+        ]);
+        setUsers(dbProfiles && dbProfiles.length > 0 ? dbProfiles : []);
 
         if (dbSettings && dbSettings.value) {
           setHomepageConfigState(dbSettings.value);
