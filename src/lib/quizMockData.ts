@@ -21,6 +21,20 @@ export const initialQuizzes: Quiz[] = [
     title: 'Quadratic Equations Basics',
     passingScorePct: 60,
     timerSeconds: 240
+  },
+  {
+    id: 'quiz_bpharm_pharmaceutics_intro',
+    lessonId: 'less_bpharm_pharmaceutics_free',
+    title: 'Introduction to Dosage Forms Quiz',
+    passingScorePct: 60,
+    timerSeconds: 300
+  },
+  {
+    id: 'quiz_nursing_anatomyphysiology_intro',
+    lessonId: 'less_nursing_anatomyphysiology_free',
+    title: 'Intro to Anatomy & Physiology Quiz',
+    passingScorePct: 60,
+    timerSeconds: 300
   }
 ];
 
@@ -119,6 +133,30 @@ export const initialQuestions: QuizQuestion[] = [
     quizId: 'quiz_c10_math_quad',
     questionText: 'What is the value of the discriminant for the equation x^2 - 4x + 4 = 0?',
     orderIndex: 5
+  },
+  {
+    id: 'q_bpharm_1',
+    quizId: 'quiz_bpharm_pharmaceutics_intro',
+    questionText: 'Which dosage form is designed for rapid absorption through the oral mucosa?',
+    orderIndex: 1
+  },
+  {
+    id: 'q_bpharm_2',
+    quizId: 'quiz_bpharm_pharmaceutics_intro',
+    questionText: 'What is the primary purpose of an excipient in tablet formulation?',
+    orderIndex: 2
+  },
+  {
+    id: 'q_nursing_1',
+    quizId: 'quiz_nursing_anatomyphysiology_intro',
+    questionText: 'Which anatomical plane divides the body into anterior and posterior portions?',
+    orderIndex: 1
+  },
+  {
+    id: 'q_nursing_2',
+    quizId: 'quiz_nursing_anatomyphysiology_intro',
+    questionText: 'What is the structural and functional unit of the nervous system?',
+    orderIndex: 2
   }
 ];
 
@@ -199,7 +237,23 @@ export const initialOptions: QuizOption[] = [
   { id: 'opt_m5_a', questionId: 'q_math_5', optionText: '0', isCorrect: true },
   { id: 'opt_m5_b', questionId: 'q_math_5', optionText: '8', isCorrect: false },
   { id: 'opt_m5_c', questionId: 'q_math_5', optionText: '16', isCorrect: false },
-  { id: 'opt_m5_d', questionId: 'q_math_5', optionText: '-8', isCorrect: false }
+  { id: 'opt_m5_d', questionId: 'q_math_5', optionText: '-8', isCorrect: false },
+  { id: 'opt_bp1_a', questionId: 'q_bpharm_1', optionText: 'Sublingual tablet (Correct Answer: A)', isCorrect: true },
+  { id: 'opt_bp1_b', questionId: 'q_bpharm_1', optionText: 'Enteric coated tablet', isCorrect: false },
+  { id: 'opt_bp1_c', questionId: 'q_bpharm_1', optionText: 'Sustained release capsule', isCorrect: false },
+  { id: 'opt_bp1_d', questionId: 'q_bpharm_1', optionText: 'Intravenous injection', isCorrect: false },
+  { id: 'opt_bp2_a', questionId: 'q_bpharm_2', optionText: 'To provide bulk and aid manufacturing (Correct Answer: A)', isCorrect: true },
+  { id: 'opt_bp2_b', questionId: 'q_bpharm_2', optionText: 'To act as the active drug molecule', isCorrect: false },
+  { id: 'opt_bp2_c', questionId: 'q_bpharm_2', optionText: 'To increase the physiological side effects', isCorrect: false },
+  { id: 'opt_bp2_d', questionId: 'q_bpharm_2', optionText: 'To color the coating only', isCorrect: false },
+  { id: 'opt_nu1_a', questionId: 'q_nursing_1', optionText: 'Frontal (coronal) plane (Correct Answer: A)', isCorrect: true },
+  { id: 'opt_nu1_b', questionId: 'q_nursing_1', optionText: 'Sagittal plane', isCorrect: false },
+  { id: 'opt_nu1_c', questionId: 'q_nursing_1', optionText: 'Transverse plane', isCorrect: false },
+  { id: 'opt_nu1_d', questionId: 'q_nursing_1', optionText: 'Oblique plane', isCorrect: false },
+  { id: 'opt_nu2_a', questionId: 'q_nursing_2', optionText: 'Neuron (Correct Answer: A)', isCorrect: true },
+  { id: 'opt_nu2_b', questionId: 'q_nursing_2', optionText: 'Nephron', isCorrect: false },
+  { id: 'opt_nu2_c', questionId: 'q_nursing_2', optionText: 'Glial cell', isCorrect: false },
+  { id: 'opt_nu2_d', questionId: 'q_nursing_2', optionText: 'Osteon', isCorrect: false }
 ];
 
 export const initialAttempts: QuizAttempt[] = [

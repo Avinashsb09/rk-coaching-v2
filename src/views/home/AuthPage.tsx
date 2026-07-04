@@ -13,13 +13,12 @@ import { isSupabaseConfigured, getSupabase } from '../../lib/supabase';
 import { ShieldCheck, Mail, Lock, User, Sparkles, BookOpen, AlertCircle, ArrowLeft, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
-  const { loginAs, addToast, setCurrentView, syncUserProfile, currentView } = useApp();
+  const { loginAs, addToast, setCurrentView, syncUserProfile, currentView, classes } = useApp();
   
   // Tab states: 'login' | 'signup' | 'forgot' | 'reset'
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'forgot' | 'reset'>(() => {
     return currentView === 'auth-signup' ? 'signup' : 'login';
   });
-
   React.useEffect(() => {
     if (currentView === 'auth-signup') {
       setActiveTab('signup');
@@ -28,12 +27,13 @@ export default function AuthPage() {
     }
   }, [currentView]);
   
+
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedClass, setSelectedClass] = useState('neet');
+  const [selectedClass, setSelectedClass] = useState('');
   const [selectedRole, setSelectedRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +42,15 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signUpError, setSignUpError] = useState('');
+
+  React.useEffect(() => {
+    if (classes && classes.length > 0 && !selectedClass) {
+      const defaultCls = classes.find(c => c.id === 'neet' || c.slug === 'neet') || classes[0];
+      if (defaultCls) {
+        setSelectedClass(defaultCls.id);
+      }
+    }
+  }, [classes, selectedClass]);
 
   const supabase = getSupabase();
   const configured = isSupabaseConfigured();
@@ -399,14 +408,9 @@ export default function AuthPage() {
                         onChange={(e) => setSelectedClass(e.target.value)}
                         className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs px-3 py-2.5 focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="c6">Class 6</option>
-                        <option value="c7">Class 7</option>
-                        <option value="c8">Class 8</option>
-                        <option value="c9">Class 9</option>
-                        <option value="c10">Class 10</option>
-                        <option value="c11_sci">Class 11 Science</option>
-                        <option value="c12_sci">Class 12 Science</option>
-                        <option value="neet">NEET (Biology & Chemistry)</option>
+                        {classes.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
                       </select>
                     </div>
                   )}

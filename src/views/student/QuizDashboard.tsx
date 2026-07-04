@@ -122,6 +122,36 @@ const ncertChapters: Record<string, string[]> = {
     'Ch 17: Locomotion and Movement',
     'Ch 18: Neural Control and Coordination',
     'Ch 19: Chemical Coordination and Integration'
+  ],
+  'pharmaceutics': [
+    'Ch 1: Introduction to Dosage Forms',
+    'Ch 2: Metrology and Calculations',
+    'Ch 3: Liquid Dosage Forms'
+  ],
+  'pharmaceuticalchemistry': [
+    'Ch 1: Inorganic Pharmaceuticals',
+    'Ch 2: Acid-Base Titrations',
+    'Ch 3: Impurities in Pharmaceuticals'
+  ],
+  'pharmacognosy': [
+    'Ch 1: Scope of Pharmacognosy',
+    'Ch 2: Classification of Crude Drugs',
+    'Ch 3: Adulteration and Evaluation'
+  ],
+  'anatomyphysiology': [
+    'Ch 1: Introduction to Human Body',
+    'Ch 2: Skeletal and Muscular Systems',
+    'Ch 3: Cardiovascular System'
+  ],
+  'nursingfoundations': [
+    'Ch 1: History of Nursing and Ethics',
+    'Ch 2: Nursing Process and Care Plans',
+    'Ch 3: Vital Signs Assessment'
+  ],
+  'microbiology': [
+    'Ch 1: Introduction to Microorganisms',
+    'Ch 2: Bacteria Morphology and Staining',
+    'Ch 3: Sterilization and Disinfection'
   ]
 };
 
@@ -276,16 +306,16 @@ export default function QuizDashboard() {
         
         {/* STEP 1: Academic Standard */}
         <div className="space-y-2">
-          <label className="block text-slate-450 dark:text-slate-400 font-black text-xs uppercase tracking-wider">
+          <label className="block text-slate-455 dark:text-slate-400 font-black text-xs uppercase tracking-wider">
             STEP 1: Select Your Academic Standard
           </label>
           <select 
             value={classId} 
             onChange={e => handleClassChange(e.target.value)}
-            className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-350 outline-none text-xs font-bold"
+            className="w-full p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-355 outline-none text-xs font-bold"
           >
             <option value="">-- Choose Standard --</option>
-            {classes.filter(c => c.id !== 'neet-biology' && c.id !== 'neet-chemistry').map(c => (
+            {classes.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
@@ -317,7 +347,9 @@ export default function QuizDashboard() {
               })}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-400 italic">Please complete Step 1 first.</p>
+            <div className="p-3 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-slate-400 text-xs text-center select-none cursor-not-allowed opacity-50">
+              Please choose an Academic Standard first to load subjects.
+            </div>
           )}
         </div>
 
@@ -348,7 +380,9 @@ export default function QuizDashboard() {
               })}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-400 italic">Please complete Step 2 first.</p>
+            <div className="p-3 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-slate-400 text-xs text-center select-none cursor-not-allowed opacity-50">
+              Please choose a Subject first to load chapters.
+            </div>
           )}
         </div>
 
@@ -359,7 +393,9 @@ export default function QuizDashboard() {
           </label>
           
           {!chapterId ? (
-            <p className="text-[11px] text-slate-400 italic">Please complete Step 3 first to load tests.</p>
+            <div className="p-3 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-slate-400 text-xs text-center select-none cursor-not-allowed opacity-50">
+              Please choose a Chapter first to load available CBT tests.
+            </div>
           ) : (
             <div className="space-y-3">
               {activeQuizzes.map((q) => {

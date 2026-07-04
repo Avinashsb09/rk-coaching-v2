@@ -36,19 +36,73 @@ export default function QuizPlay() {
   }
 
   // Get questions and option list
-  const questions = quizQuestions.filter(q => q.quizId === quiz.id).sort((a, b) => a.orderIndex - b.orderIndex);
+  const dbQuestions = quizQuestions.filter(q => q.quizId === quiz.id).sort((a, b) => a.orderIndex - b.orderIndex);
   
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [localOptions, setLocalOptions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (dbQuestions.length > 0) {
+      setQuestions(dbQuestions);
+      setLocalOptions(quizOptions);
+    } else {
+      const fallbackQs = [];
+      const fallbackOpts = [];
+      const topics = [
+        'Fundamental Concept Foundations',
+        'Core Theoretical Formulation',
+        'Advanced Analytical Derivation',
+        'Formula Application & Mechanics',
+        'Case-based Conceptual Reasoning'
+      ];
+      
+      for (let i = 1; i <= 5; i++) {
+        const qId = `fallback_q_${quiz.id}_${i}`;
+        const topic = topics[(i - 1) % topics.length];
+        fallbackQs.push({
+          id: qId,
+          quizId: quiz.id,
+          questionText: `[Question ${i}] What is the primary conceptual postulate regarding ${topic.toLowerCase()}?`,
+          orderIndex: i
+        });
+        
+        const correctIdx = (i * 7) % 4; // deterministic correct index
+        for (let oIdx = 0; oIdx < 4; oIdx++) {
+          const optId = `fallback_opt_${qId}_${oIdx}`;
+          const isCorrect = oIdx === correctIdx;
+          const letter = ['A', 'B', 'C', 'D'][oIdx];
+          const correctText = isCorrect ? ' (Correct Answer)' : '';
+          fallbackOpts.push({
+            id: optId,
+            questionId: qId,
+            optionText: `Option ${letter}: Core parameter description for ${topic.toLowerCase()}${correctText}`,
+            isCorrect: isCorrect
+          });
+        }
+      }
+      setQuestions(fallbackQs);
+      setLocalOptions(fallbackOpts);
+    }
+  }, [dbQuestions.length, quiz.id, quizOptions]);
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(quiz.timerSeconds);
   
   // CBT states
   const [answers, setAnswers] = useState<Record<string, string>>({}); // maps questionId -> optionId
-  const [visited, setVisited] = useState<Set<string>>(new Set([questions[0]?.id].filter(Boolean)));
+  const [visited, setVisited] = useState<Set<string>>(new Set());
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
   const [saved, setSaved] = useState<Set<string>>(new Set());
 
   const currentQuestion = questions[currentIdx];
-  const currentOptions = quizOptions.filter(o => o.questionId === currentQuestion?.id);
+  const currentOptions = localOptions.filter(o => o.questionId === currentQuestion?.id);
+
+  // Initialize visited with the first question once questions are loaded
+  useEffect(() => {
+    if (questions.length > 0 && visited.size === 0) {
+      setVisited(new Set([questions[0].id]));
+    }
+  }, [questions, visited.size]);
 
   // Timer tick down
   useEffect(() => {

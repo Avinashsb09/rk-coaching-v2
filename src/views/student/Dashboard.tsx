@@ -123,6 +123,36 @@ const ncertChapters: Record<string, string[]> = {
     'Ch 17: Locomotion and Movement',
     'Ch 18: Neural Control and Coordination',
     'Ch 19: Chemical Coordination and Integration'
+  ],
+  'pharmaceutics': [
+    'Ch 1: Introduction to Dosage Forms',
+    'Ch 2: Metrology and Calculations',
+    'Ch 3: Liquid Dosage Forms'
+  ],
+  'pharmaceuticalchemistry': [
+    'Ch 1: Inorganic Pharmaceuticals',
+    'Ch 2: Acid-Base Titrations',
+    'Ch 3: Impurities in Pharmaceuticals'
+  ],
+  'pharmacognosy': [
+    'Ch 1: Scope of Pharmacognosy',
+    'Ch 2: Classification of Crude Drugs',
+    'Ch 3: Adulteration and Evaluation'
+  ],
+  'anatomyphysiology': [
+    'Ch 1: Introduction to Human Body',
+    'Ch 2: Skeletal and Muscular Systems',
+    'Ch 3: Cardiovascular System'
+  ],
+  'nursingfoundations': [
+    'Ch 1: History of Nursing and Ethics',
+    'Ch 2: Nursing Process and Care Plans',
+    'Ch 3: Vital Signs Assessment'
+  ],
+  'microbiology': [
+    'Ch 1: Introduction to Microorganisms',
+    'Ch 2: Bacteria Morphology and Staining',
+    'Ch 3: Sterilization and Disinfection'
   ]
 };
 
@@ -161,6 +191,11 @@ export default function StudentDashboard() {
   // Selector state variables for Sprints 7 & 8 inline selectors
   const [activeSubjectId, setActiveSubjectId] = useState<string>('');
   const [activeChapterId, setActiveChapterId] = useState<string>('');
+
+  useEffect(() => {
+    setActiveSubjectId('');
+    setActiveChapterId('');
+  }, [userClassId]);
 
   // Payment confirmation popup states
   const [confirmSubjectUnlockId, setConfirmSubjectUnlockId] = useState<string | null>(null);

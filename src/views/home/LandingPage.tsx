@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { BookOpen, ArrowRight, ShieldCheck, Star, Users, Sparkles, GraduationCap, Atom, Dna, FlaskConical } from 'lucide-react';
+import { BookOpen, ArrowRight, ShieldCheck, Star, Users, Sparkles, GraduationCap, Atom, Dna, FlaskConical, HeartPulse } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -126,7 +126,7 @@ export default function LandingPage({ showCatalog: initialShowCatalog = true }: 
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
           {[
             {
               title: 'Class 6–9',
@@ -150,18 +150,25 @@ export default function LandingPage({ showCatalog: initialShowCatalog = true }: 
               color: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-400 border-cyan-100 dark:border-cyan-900/30'
             },
             {
-              title: 'NEET Biology',
-              description: 'Rank-boosting Zoology and Botany guides, diagrams, cell biology cycles, and previous mock keys.',
-              slug: 'neet-biology',
+              title: 'NEET Prep',
+              description: 'High-yield Biology & Chemistry guides, cell cycle diagrams, and mock CBT exams.',
+              slug: 'neet',
               icon: <Dna className="w-5 h-5" />,
               color: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
             },
             {
-              title: 'NEET Chemistry',
-              description: 'High-yield Organic, Inorganic and Physical Chemistry worksheets and solved practice sets.',
-              slug: 'neet-chemistry',
+              title: 'B.Pharm Prep',
+              description: 'dosage forms, pharmacognosy crude drugs, and pharmaceutical chemistry titrations.',
+              slug: 'b-pharm-preparation',
               icon: <FlaskConical className="w-5 h-5" />,
               color: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border-amber-100 dark:border-amber-900/30'
+            },
+            {
+              title: 'Nursing Prep',
+              description: 'Anatomy physiology systems, nursing foundations care plans, and sterilization.',
+              slug: 'nursing-preparation',
+              icon: <HeartPulse className="w-5 h-5" />,
+              color: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
             }
           ].map((card) => (
             <button

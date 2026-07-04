@@ -286,7 +286,7 @@ export default function UpdateProfile() {
                     onChange={e => setClassId(e.target.value)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
                   >
-                    {classes.filter(c => c.id !== 'neet-biology' && c.id !== 'neet-chemistry').map(c => (
+                    {classes.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
