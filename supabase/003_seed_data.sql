@@ -1156,3 +1156,210 @@ VALUES
 ('opt_q_quiz_nursing_microbiology_5_d', 'q_quiz_nursing_microbiology_5', 'Option D: Standard conceptual parameters for conceptual diagnostics', false)
 ON CONFLICT (id) DO UPDATE SET "questionId" = EXCLUDED."questionId", "optionText" = EXCLUDED."optionText", "isCorrect" = EXCLUDED."isCorrect";
 
+
+-- ==========================================
+-- SPRINT SEED: MISSING SUBJECTS & NCERT CHAPTERS
+-- ==========================================
+
+-- 1. Missing Subjects Seed
+INSERT INTO public.subjects (id, "classId", name, icon, description)
+VALUES
+  -- Class 6
+  ('sub_c6_hindi', 'c6', 'Hindi', 'Book', 'Class 6 Hindi: Hindi grammar and literature.'),
+  ('sub_c6_assamese', 'c6', 'Assamese', 'Book', 'Class 6 Assamese: Assamese grammar and literature.'),
+  ('sub_c6_socialscience', 'c6', 'Social Science', 'Globe', 'Class 6 Social Science: History, Geography, and Civics.'),
+  -- Class 7
+  ('sub_c7_hindi', 'c7', 'Hindi', 'Book', 'Class 7 Hindi: Hindi grammar and literature.'),
+  ('sub_c7_assamese', 'c7', 'Assamese', 'Book', 'Class 7 Assamese: Assamese grammar and literature.'),
+  ('sub_c7_socialscience', 'c7', 'Social Science', 'Globe', 'Class 7 Social Science: History, Geography, and Civics.'),
+  -- Class 8
+  ('sub_c8_hindi', 'c8', 'Hindi', 'Book', 'Class 8 Hindi: Hindi grammar and literature.'),
+  ('sub_c8_assamese', 'c8', 'Assamese', 'Book', 'Class 8 Assamese: Assamese grammar and literature.'),
+  ('sub_c8_socialscience', 'c8', 'Social Science', 'Globe', 'Class 8 Social Science: History, Geography, and Civics.'),
+  -- Class 9
+  ('sub_c9_hindi', 'c9', 'Hindi', 'Book', 'Class 9 Hindi: Hindi grammar and literature.'),
+  ('sub_c9_assamese', 'c9', 'Assamese', 'Book', 'Class 9 Assamese: Assamese grammar and literature.'),
+  ('sub_c9_socialscience', 'c9', 'Social Science', 'Globe', 'Class 9 Social Science: History, Geography, and Civics.'),
+  -- Class 10
+  ('sub_c10_hindi', 'c10', 'Hindi', 'Book', 'Class 10 Hindi: Hindi grammar and literature.'),
+  ('sub_c10_assamese', 'c10', 'Assamese', 'Book', 'Class 10 Assamese: Assamese grammar and literature.'),
+  ('sub_c10_socialscience', 'c10', 'Social Science', 'Globe', 'Class 10 Social Science: History, Geography, and Civics.'),
+  -- Class 11 Science
+  ('sub_c11_sci_mathematics', 'c11_sci', 'Mathematics', 'Calculator', 'Class 11 Science Mathematics: Algebra, Calculus, and Geometry.'),
+  ('sub_c11_sci_english', 'c11_sci', 'English', 'BookOpen', 'Class 11 English: Grammar and literature.'),
+  -- Class 12 Science
+  ('sub_c12_sci_mathematics', 'c12_sci', 'Mathematics', 'Calculator', 'Class 12 Science Mathematics: Calculus, Algebra, and Probability.'),
+  ('sub_c12_sci_english', 'c12_sci', 'English', 'BookOpen', 'Class 12 English: Grammar and literature.')
+ON CONFLICT (id) DO UPDATE SET "classId" = EXCLUDED."classId", name = EXCLUDED.name, icon = EXCLUDED.icon, description = EXCLUDED.description;
+
+-- 2. Hindi Chapters for Classes 6-10
+INSERT INTO public.chapters (id, "subjectId", name, description, "orderIndex") VALUES
+('chap_c6_hindi_1', 'sub_c6_hindi', 'Ch 1: वह चिड़िया जो', 'NCERT aligned', 1),
+('chap_c6_hindi_2', 'sub_c6_hindi', 'Ch 2: बचपन', 'NCERT aligned', 2),
+('chap_c6_hindi_3', 'sub_c6_hindi', 'Ch 3: नादान दोस्त', 'NCERT aligned', 3),
+('chap_c6_hindi_4', 'sub_c6_hindi', 'Ch 4: चाँद से थोड़ी-सी गप्पें', 'NCERT aligned', 4),
+('chap_c6_hindi_5', 'sub_c6_hindi', 'Ch 5: अक्षरों का महत्व', 'NCERT aligned', 5),
+
+('chap_c7_hindi_1', 'sub_c7_hindi', 'Ch 1: वह चिड़िया जो', 'NCERT aligned', 1),
+('chap_c7_hindi_2', 'sub_c7_hindi', 'Ch 2: बचपन', 'NCERT aligned', 2),
+('chap_c7_hindi_3', 'sub_c7_hindi', 'Ch 3: नादान दोस्त', 'NCERT aligned', 3),
+('chap_c7_hindi_4', 'sub_c7_hindi', 'Ch 4: चाँद से थोड़ी-सी गप्पें', 'NCERT aligned', 4),
+('chap_c7_hindi_5', 'sub_c7_hindi', 'Ch 5: अक्षरों का महत्व', 'NCERT aligned', 5),
+
+('chap_c8_hindi_1', 'sub_c8_hindi', 'Ch 1: वह चिड़िया जो', 'NCERT aligned', 1),
+('chap_c8_hindi_2', 'sub_c8_hindi', 'Ch 2: बचपन', 'NCERT aligned', 2),
+('chap_c8_hindi_3', 'sub_c8_hindi', 'Ch 3: नादान दोस्त', 'NCERT aligned', 3),
+('chap_c8_hindi_4', 'sub_c8_hindi', 'Ch 4: चाँद से थोड़ी-सी गप्पें', 'NCERT aligned', 4),
+('chap_c8_hindi_5', 'sub_c8_hindi', 'Ch 5: अक्षरों का महत्व', 'NCERT aligned', 5),
+
+('chap_c9_hindi_1', 'sub_c9_hindi', 'Ch 1: वह चिड़िया जो', 'NCERT aligned', 1),
+('chap_c9_hindi_2', 'sub_c9_hindi', 'Ch 2: बचपन', 'NCERT aligned', 2),
+('chap_c9_hindi_3', 'sub_c9_hindi', 'Ch 3: नादान दोस्त', 'NCERT aligned', 3),
+('chap_c9_hindi_4', 'sub_c9_hindi', 'Ch 4: चाँद से थोड़ी-सी गप्पें', 'NCERT aligned', 4),
+('chap_c9_hindi_5', 'sub_c9_hindi', 'Ch 5: अक्षरों का महत्व', 'NCERT aligned', 5),
+
+('chap_c10_hindi_1', 'sub_c10_hindi', 'Ch 1: वह चिड़िया जो', 'NCERT aligned', 1),
+('chap_c10_hindi_2', 'sub_c10_hindi', 'Ch 2: बचपन', 'NCERT aligned', 2),
+('chap_c10_hindi_3', 'sub_c10_hindi', 'Ch 3: नादान दोस्त', 'NCERT aligned', 3),
+('chap_c10_hindi_4', 'sub_c10_hindi', 'Ch 4: चाँद से थोड़ी-सी गप्पें', 'NCERT aligned', 4),
+('chap_c10_hindi_5', 'sub_c10_hindi', 'Ch 5: अक्षरों का महत्व', 'NCERT aligned', 5)
+ON CONFLICT (id) DO UPDATE SET "subjectId" = EXCLUDED."subjectId", name = EXCLUDED.name, description = EXCLUDED.description, "orderIndex" = EXCLUDED."orderIndex";
+
+-- 3. Assamese Chapters for Classes 6-10
+INSERT INTO public.chapters (id, "subjectId", name, description, "orderIndex") VALUES
+('chap_c6_assamese_1', 'sub_c6_assamese', 'Ch 1: আমাৰ জন্মভূমি', 'NCERT aligned', 1),
+('chap_c6_assamese_2', 'sub_c6_assamese', 'Ch 2: বৰগীত', 'NCERT aligned', 2),
+('chap_c6_assamese_3', 'sub_c6_assamese', 'Ch 3: অসমৰ জাতীয় উৎসৱ', 'NCERT aligned', 3),
+('chap_c6_assamese_4', 'sub_c6_assamese', 'Ch 4: দেশৰ বাবে প্ৰাণ আহুতি', 'NCERT aligned', 4),
+('chap_c6_assamese_5', 'sub_c6_assamese', 'Ch 5: সৎ সংগ', 'NCERT aligned', 5),
+
+('chap_c7_assamese_1', 'sub_c7_assamese', 'Ch 1: আমাৰ জন্মভূমি', 'NCERT aligned', 1),
+('chap_c7_assamese_2', 'sub_c7_assamese', 'Ch 2: বৰগীত', 'NCERT aligned', 2),
+('chap_c7_assamese_3', 'sub_c7_assamese', 'Ch 3: অসমৰ জাতীয় উৎসৱ', 'NCERT aligned', 3),
+('chap_c7_assamese_4', 'sub_c7_assamese', 'Ch 4: দেশৰ বাবে প্ৰাণ আহুতি', 'NCERT aligned', 4),
+('chap_c7_assamese_5', 'sub_c7_assamese', 'Ch 5: সৎ সংগ', 'NCERT aligned', 5),
+
+('chap_c8_assamese_1', 'sub_c8_assamese', 'Ch 1: আমাৰ জন্মভূমি', 'NCERT aligned', 1),
+('chap_c8_assamese_2', 'sub_c8_assamese', 'Ch 2: বৰগীত', 'NCERT aligned', 2),
+('chap_c8_assamese_3', 'sub_c8_assamese', 'Ch 3: অসমৰ জাতীয় উৎসৱ', 'NCERT aligned', 3),
+('chap_c8_assamese_4', 'sub_c8_assamese', 'Ch 4: দেশৰ বাবে প্ৰাণ আহুতি', 'NCERT aligned', 4),
+('chap_c8_assamese_5', 'sub_c8_assamese', 'Ch 5: সৎ সংগ', 'NCERT aligned', 5),
+
+('chap_c9_assamese_1', 'sub_c9_assamese', 'Ch 1: আমাৰ জন্মভূমি', 'NCERT aligned', 1),
+('chap_c9_assamese_2', 'sub_c9_assamese', 'Ch 2: বৰগীত', 'NCERT aligned', 2),
+('chap_c9_assamese_3', 'sub_c9_assamese', 'Ch 3: অসমৰ জাতীয় উৎসৱ', 'NCERT aligned', 3),
+('chap_c9_assamese_4', 'sub_c9_assamese', 'Ch 4: দেশৰ বাবে প্ৰাণ আহুতি', 'NCERT aligned', 4),
+('chap_c9_assamese_5', 'sub_c9_assamese', 'Ch 5: সৎ সংগ', 'NCERT aligned', 5),
+
+('chap_c10_assamese_1', 'sub_c10_assamese', 'Ch 1: আমাৰ জন্মভূমি', 'NCERT aligned', 1),
+('chap_c10_assamese_2', 'sub_c10_assamese', 'Ch 2: বৰগীত', 'NCERT aligned', 2),
+('chap_c10_assamese_3', 'sub_c10_assamese', 'Ch 3: অসমৰ জাতীয় উৎসৱ', 'NCERT aligned', 3),
+('chap_c10_assamese_4', 'sub_c10_assamese', 'Ch 4: দেশৰ বাবে প্ৰাণ আহুতি', 'NCERT aligned', 4),
+('chap_c10_assamese_5', 'sub_c10_assamese', 'Ch 5: সৎ সংগ', 'NCERT aligned', 5)
+ON CONFLICT (id) DO UPDATE SET "subjectId" = EXCLUDED."subjectId", name = EXCLUDED.name, description = EXCLUDED.description, "orderIndex" = EXCLUDED."orderIndex";
+
+-- 4. Social Science Chapters for Classes 6-10
+INSERT INTO public.chapters (id, "subjectId", name, description, "orderIndex") VALUES
+('chap_c6_socialscience_1', 'sub_c6_socialscience', 'Ch 1: Resources', 'NCERT aligned', 1),
+('chap_c6_socialscience_2', 'sub_c6_socialscience', 'Ch 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources', 'NCERT aligned', 2),
+('chap_c6_socialscience_3', 'sub_c6_socialscience', 'Ch 3: Agriculture', 'NCERT aligned', 3),
+('chap_c6_socialscience_4', 'sub_c6_socialscience', 'Ch 4: Industries', 'NCERT aligned', 4),
+('chap_c6_socialscience_5', 'sub_c6_socialscience', 'Ch 5: Human Resources', 'NCERT aligned', 5),
+('chap_c6_socialscience_6', 'sub_c6_socialscience', 'Ch 6: The Indian Constitution', 'NCERT aligned', 6),
+('chap_c6_socialscience_7', 'sub_c6_socialscience', 'Ch 7: Understanding Secularism', 'NCERT aligned', 7),
+('chap_c6_socialscience_8', 'sub_c6_socialscience', 'Ch 8: Ruling the Countryside', 'NCERT aligned', 8),
+('chap_c6_socialscience_9', 'sub_c6_socialscience', 'Ch 9: Women, Caste and Reform', 'NCERT aligned', 9),
+('chap_c6_socialscience_10', 'sub_c6_socialscience', 'Ch 10: The Making of the National Movement', 'NCERT aligned', 10),
+
+('chap_c7_socialscience_1', 'sub_c7_socialscience', 'Ch 1: Resources', 'NCERT aligned', 1),
+('chap_c7_socialscience_2', 'sub_c7_socialscience', 'Ch 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources', 'NCERT aligned', 2),
+('chap_c7_socialscience_3', 'sub_c7_socialscience', 'Ch 3: Agriculture', 'NCERT aligned', 3),
+('chap_c7_socialscience_4', 'sub_c7_socialscience', 'Ch 4: Industries', 'NCERT aligned', 4),
+('chap_c7_socialscience_5', 'sub_c7_socialscience', 'Ch 5: Human Resources', 'NCERT aligned', 5),
+('chap_c7_socialscience_6', 'sub_c7_socialscience', 'Ch 6: The Indian Constitution', 'NCERT aligned', 6),
+('chap_c7_socialscience_7', 'sub_c7_socialscience', 'Ch 7: Understanding Secularism', 'NCERT aligned', 7),
+('chap_c7_socialscience_8', 'sub_c7_socialscience', 'Ch 8: Ruling the Countryside', 'NCERT aligned', 8),
+('chap_c7_socialscience_9', 'sub_c7_socialscience', 'Ch 9: Women, Caste and Reform', 'NCERT aligned', 9),
+('chap_c7_socialscience_10', 'sub_c7_socialscience', 'Ch 10: The Making of the National Movement', 'NCERT aligned', 10),
+
+('chap_c8_socialscience_1', 'sub_c8_socialscience', 'Ch 1: Resources', 'NCERT aligned', 1),
+('chap_c8_socialscience_2', 'sub_c8_socialscience', 'Ch 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources', 'NCERT aligned', 2),
+('chap_c8_socialscience_3', 'sub_c8_socialscience', 'Ch 3: Agriculture', 'NCERT aligned', 3),
+('chap_c8_socialscience_4', 'sub_c8_socialscience', 'Ch 4: Industries', 'NCERT aligned', 4),
+('chap_c8_socialscience_5', 'sub_c8_socialscience', 'Ch 5: Human Resources', 'NCERT aligned', 5),
+('chap_c8_socialscience_6', 'sub_c8_socialscience', 'Ch 6: The Indian Constitution', 'NCERT aligned', 6),
+('chap_c8_socialscience_7', 'sub_c8_socialscience', 'Ch 7: Understanding Secularism', 'NCERT aligned', 7),
+('chap_c8_socialscience_8', 'sub_c8_socialscience', 'Ch 8: Ruling the Countryside', 'NCERT aligned', 8),
+('chap_c8_socialscience_9', 'sub_c8_socialscience', 'Ch 9: Women, Caste and Reform', 'NCERT aligned', 9),
+('chap_c8_socialscience_10', 'sub_c8_socialscience', 'Ch 10: The Making of the National Movement', 'NCERT aligned', 10),
+
+('chap_c9_socialscience_1', 'sub_c9_socialscience', 'Ch 1: Resources', 'NCERT aligned', 1),
+('chap_c9_socialscience_2', 'sub_c9_socialscience', 'Ch 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources', 'NCERT aligned', 2),
+('chap_c9_socialscience_3', 'sub_c9_socialscience', 'Ch 3: Agriculture', 'NCERT aligned', 3),
+('chap_c9_socialscience_4', 'sub_c9_socialscience', 'Ch 4: Industries', 'NCERT aligned', 4),
+('chap_c9_socialscience_5', 'sub_c9_socialscience', 'Ch 5: Human Resources', 'NCERT aligned', 5),
+('chap_c9_socialscience_6', 'sub_c9_socialscience', 'Ch 6: The Indian Constitution', 'NCERT aligned', 6),
+('chap_c9_socialscience_7', 'sub_c9_socialscience', 'Ch 7: Understanding Secularism', 'NCERT aligned', 7),
+('chap_c9_socialscience_8', 'sub_c9_socialscience', 'Ch 8: Ruling the Countryside', 'NCERT aligned', 8),
+('chap_c9_socialscience_9', 'sub_c9_socialscience', 'Ch 9: Women, Caste and Reform', 'NCERT aligned', 9),
+('chap_c9_socialscience_10', 'sub_c9_socialscience', 'Ch 10: The Making of the National Movement', 'NCERT aligned', 10),
+
+('chap_c10_socialscience_1', 'sub_c10_socialscience', 'Ch 1: Resources', 'NCERT aligned', 1),
+('chap_c10_socialscience_2', 'sub_c10_socialscience', 'Ch 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources', 'NCERT aligned', 2),
+('chap_c10_socialscience_3', 'sub_c10_socialscience', 'Ch 3: Agriculture', 'NCERT aligned', 3),
+('chap_c10_socialscience_4', 'sub_c10_socialscience', 'Ch 4: Industries', 'NCERT aligned', 4),
+('chap_c10_socialscience_5', 'sub_c10_socialscience', 'Ch 5: Human Resources', 'NCERT aligned', 5),
+('chap_c10_socialscience_6', 'sub_c10_socialscience', 'Ch 6: The Indian Constitution', 'NCERT aligned', 6),
+('chap_c10_socialscience_7', 'sub_c10_socialscience', 'Ch 7: Understanding Secularism', 'NCERT aligned', 7),
+('chap_c10_socialscience_8', 'sub_c10_socialscience', 'Ch 8: Ruling the Countryside', 'NCERT aligned', 8),
+('chap_c10_socialscience_9', 'sub_c10_socialscience', 'Ch 9: Women, Caste and Reform', 'NCERT aligned', 9),
+('chap_c10_socialscience_10', 'sub_c10_socialscience', 'Ch 10: The Making of the National Movement', 'NCERT aligned', 10)
+ON CONFLICT (id) DO UPDATE SET "subjectId" = EXCLUDED."subjectId", name = EXCLUDED.name, description = EXCLUDED.description, "orderIndex" = EXCLUDED."orderIndex";
+
+-- 5. Mathematics Chapters for Class 11 & 12 Science
+INSERT INTO public.chapters (id, "subjectId", name, description, "orderIndex") VALUES
+('chap_c11_sci_mathematics_1', 'sub_c11_sci_mathematics', 'Ch 1: Relations and Functions', 'NCERT aligned', 1),
+('chap_c11_sci_mathematics_2', 'sub_c11_sci_mathematics', 'Ch 2: Inverse Trigonometric Functions', 'NCERT aligned', 2),
+('chap_c11_sci_mathematics_3', 'sub_c11_sci_mathematics', 'Ch 3: Matrices', 'NCERT aligned', 3),
+('chap_c11_sci_mathematics_4', 'sub_c11_sci_mathematics', 'Ch 4: Determinants', 'NCERT aligned', 4),
+('chap_c11_sci_mathematics_5', 'sub_c11_sci_mathematics', 'Ch 5: Continuity and Differentiability', 'NCERT aligned', 5),
+('chap_c11_sci_mathematics_6', 'sub_c11_sci_mathematics', 'Ch 6: Application of Derivatives', 'NCERT aligned', 6),
+('chap_c11_sci_mathematics_7', 'sub_c11_sci_mathematics', 'Ch 7: Integrals', 'NCERT aligned', 7),
+('chap_c11_sci_mathematics_8', 'sub_c11_sci_mathematics', 'Ch 8: Application of Integrals', 'NCERT aligned', 8),
+('chap_c11_sci_mathematics_9', 'sub_c11_sci_mathematics', 'Ch 9: Differential Equations', 'NCERT aligned', 9),
+('chap_c11_sci_mathematics_10', 'sub_c11_sci_mathematics', 'Ch 10: Vector Algebra', 'NCERT aligned', 10),
+('chap_c11_sci_mathematics_11', 'sub_c11_sci_mathematics', 'Ch 11: Three Dimensional Geometry', 'NCERT aligned', 11),
+('chap_c11_sci_mathematics_12', 'sub_c11_sci_mathematics', 'Ch 12: Linear Programming', 'NCERT aligned', 12),
+('chap_c11_sci_mathematics_13', 'sub_c11_sci_mathematics', 'Ch 13: Probability', 'NCERT aligned', 13),
+
+('chap_c12_sci_mathematics_1', 'sub_c12_sci_mathematics', 'Ch 1: Relations and Functions', 'NCERT aligned', 1),
+('chap_c12_sci_mathematics_2', 'sub_c12_sci_mathematics', 'Ch 2: Inverse Trigonometric Functions', 'NCERT aligned', 2),
+('chap_c12_sci_mathematics_3', 'sub_c12_sci_mathematics', 'Ch 3: Matrices', 'NCERT aligned', 3),
+('chap_c12_sci_mathematics_4', 'sub_c12_sci_mathematics', 'Ch 4: Determinants', 'NCERT aligned', 4),
+('chap_c12_sci_mathematics_5', 'sub_c12_sci_mathematics', 'Ch 5: Continuity and Differentiability', 'NCERT aligned', 5),
+('chap_c12_sci_mathematics_6', 'sub_c12_sci_mathematics', 'Ch 6: Application of Derivatives', 'NCERT aligned', 6),
+('chap_c12_sci_mathematics_7', 'sub_c12_sci_mathematics', 'Ch 7: Integrals', 'NCERT aligned', 7),
+('chap_c12_sci_mathematics_8', 'sub_c12_sci_mathematics', 'Ch 8: Application of Integrals', 'NCERT aligned', 8),
+('chap_c12_sci_mathematics_9', 'sub_c12_sci_mathematics', 'Ch 9: Differential Equations', 'NCERT aligned', 9),
+('chap_c12_sci_mathematics_10', 'sub_c12_sci_mathematics', 'Ch 10: Vector Algebra', 'NCERT aligned', 10),
+('chap_c12_sci_mathematics_11', 'sub_c12_sci_mathematics', 'Ch 11: Three Dimensional Geometry', 'NCERT aligned', 11),
+('chap_c12_sci_mathematics_12', 'sub_c12_sci_mathematics', 'Ch 12: Linear Programming', 'NCERT aligned', 12),
+('chap_c12_sci_mathematics_13', 'sub_c12_sci_mathematics', 'Ch 13: Probability', 'NCERT aligned', 13)
+ON CONFLICT (id) DO UPDATE SET "subjectId" = EXCLUDED."subjectId", name = EXCLUDED.name, description = EXCLUDED.description, "orderIndex" = EXCLUDED."orderIndex";
+
+-- 6. English Chapters for Class 11 & 12 Science
+INSERT INTO public.chapters (id, "subjectId", name, description, "orderIndex") VALUES
+('chap_c11_sci_english_1', 'sub_c11_sci_english', 'Ch 1: The Portrait of a Lady', 'NCERT aligned', 1),
+('chap_c11_sci_english_2', 'sub_c11_sci_english', 'Ch 2: We\'re Not Afraid to Die...', 'NCERT aligned', 2),
+('chap_c11_sci_english_3', 'sub_c11_sci_english', 'Ch 3: Discovering Tut: the Saga Continues', 'NCERT aligned', 3),
+('chap_c11_sci_english_4', 'sub_c11_sci_english', 'Ch 4: The Adventure', 'NCERT aligned', 4),
+('chap_c11_sci_english_5', 'sub_c11_sci_english', 'Ch 5: Silk Road', 'NCERT aligned', 5),
+
+('chap_c12_sci_english_1', 'sub_c12_sci_english', 'Ch 1: The Last Lesson', 'NCERT aligned', 1),
+('chap_c12_sci_english_2', 'sub_c12_sci_english', 'Ch 2: Lost Spring', 'NCERT aligned', 2),
+('chap_c12_sci_english_3', 'sub_c12_sci_english', 'Ch 3: Deep Water', 'NCERT aligned', 3),
+('chap_c12_sci_english_4', 'sub_c12_sci_english', 'Ch 4: The Rattrap', 'NCERT aligned', 4),
+('chap_c12_sci_english_5', 'sub_c12_sci_english', 'Ch 5: Indigo', 'NCERT aligned', 5)
+ON CONFLICT (id) DO UPDATE SET "subjectId" = EXCLUDED."subjectId", name = EXCLUDED.name, description = EXCLUDED.description, "orderIndex" = EXCLUDED."orderIndex";
+
+

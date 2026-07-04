@@ -26,15 +26,20 @@ const videosData: Video[] = [];
 const notesData: Note[] = [];
 
 const class6to10Subjects = [
-  { name: 'General Science', icon: 'Beaker', desc: 'Basic science, experiments, and natural phenomena.' },
+  { name: 'English', icon: 'BookOpen', desc: 'English grammar, reading comprehension, and prose.' },
+  { name: 'Hindi', icon: 'Book', desc: 'Hindi language, grammar, reading comprehension, and literature.' },
+  { name: 'Assamese', icon: 'Book', desc: 'Assamese language, culture, grammar, and literature.' },
   { name: 'General Mathematics', icon: 'Calculator', desc: 'Mathematics foundations, numbers, geometry, and equations.' },
-  { name: 'English', icon: 'BookOpen', desc: 'English grammar, reading comprehension, and prose.' }
+  { name: 'General Science', icon: 'Beaker', desc: 'Basic science, chemical reactions, life processes, and physical phenomena.' },
+  { name: 'Social Science', icon: 'Globe', desc: 'Geography, history, civics, and economics.' }
 ];
 
 const scienceSubjects = [
   { name: 'Physics', icon: 'Atom', desc: 'Advanced physical mechanics, laws, thermodynamics and optics.' },
   { name: 'Chemistry', icon: 'FlaskConical', desc: 'Physical, organic, and inorganic chemistry principles.' },
-  { name: 'Biology', icon: 'Dna', desc: 'Detailed botany, zoology, human physiology and genetics.' }
+  { name: 'Biology', icon: 'Dna', desc: 'Detailed botany, zoology, human physiology and genetics.' },
+  { name: 'Mathematics', icon: 'Calculator', desc: 'Advanced mathematics, calculus, vectors, algebra.' },
+  { name: 'English', icon: 'BookOpen', desc: 'English core curriculum, reading, writing, and literature.' }
 ];
 
 const neetSubjects = [
@@ -108,32 +113,132 @@ mockClasses.forEach((cls) => {
         'Ch 2: How the Dog Found Himself a New Master!',
         'Ch 3: Taro\'s Reward',
         'Ch 4: An Indian-American Woman in Space',
-        'Ch 5: A Different Kind of School'
+        'Ch 5: A Different Kind of School',
+        'Ch 6: Who I Am',
+        'Ch 7: Fair Play',
+        'Ch 8: A Game of Chance',
+        'Ch 9: Desert Animals',
+        'Ch 10: The Banyan Tree'
+      ],
+      'hindi': [
+        'Ch 1: वह चिड़िया जो',
+        'Ch 2: बचपन',
+        'Ch 3: नादान दोस्त',
+        'Ch 4: चाँद से थोड़ी-सी गप्पें',
+        'Ch 5: अक्षरों का महत्व'
+      ],
+      'assamese': [
+        'Ch 1: আমাৰ জন্মভূমি',
+        'Ch 2: বৰগীত',
+        'Ch 3: অসমৰ জাতীয় উৎসৱ',
+        'Ch 4: দেশৰ বাবে প্ৰাণ আহুতি',
+        'Ch 5: সৎ সংগ'
       ],
       'generalscience': [
-        'Ch 1: Chemical Reactions and Equations',
-        'Ch 2: Acids, Bases and Salts',
-        'Ch 3: Life Processes'
+        'Ch 1: Crop Production and Management',
+        'Ch 2: Microorganisms: Friend and Foe',
+        'Ch 3: Coal and Petroleum',
+        'Ch 4: Combustion and Flame',
+        'Ch 5: Conservation of Plants and Animals',
+        'Ch 6: Reproduction in Animals',
+        'Ch 7: Reaching the Age of Adolescence',
+        'Ch 8: Force and Pressure',
+        'Ch 9: Friction',
+        'Ch 10: Sound',
+        'Ch 11: Chemical Effects of Electric Current',
+        'Ch 12: Some Natural Phenomena',
+        'Ch 13: Light'
       ],
       'generalmathematics': [
-        'Ch 1: Real Numbers',
-        'Ch 2: Polynomials',
-        'Ch 3: Quadratic Equations'
+        'Ch 1: Rational Numbers',
+        'Ch 2: Linear Equations in One Variable',
+        'Ch 3: Understanding Quadrilaterals',
+        'Ch 4: Data Handling',
+        'Ch 5: Squares and Square Roots',
+        'Ch 6: Cubes and Cube Roots',
+        'Ch 7: Comparing Quantities',
+        'Ch 8: Algebraic Expressions and Identities',
+        'Ch 9: Mensuration',
+        'Ch 10: Exponents and Powers',
+        'Ch 11: Direct and Inverse Proportions',
+        'Ch 12: Factorisation',
+        'Ch 13: Introduction to Graphs'
+      ],
+      'mathematics': [
+        'Ch 1: Relations and Functions',
+        'Ch 2: Inverse Trigonometric Functions',
+        'Ch 3: Matrices',
+        'Ch 4: Determinants',
+        'Ch 5: Continuity and Differentiability',
+        'Ch 6: Application of Derivatives',
+        'Ch 7: Integrals',
+        'Ch 8: Application of Integrals',
+        'Ch 9: Differential Equations',
+        'Ch 10: Vector Algebra',
+        'Ch 11: Three Dimensional Geometry',
+        'Ch 12: Linear Programming',
+        'Ch 13: Probability'
+      ],
+      'socialscience': [
+        'Ch 1: Resources',
+        'Ch 2: Land, Soil, Water, Natural Vegetation and Wildlife Resources',
+        'Ch 3: Agriculture',
+        'Ch 4: Industries',
+        'Ch 5: Human Resources',
+        'Ch 6: The Indian Constitution',
+        'Ch 7: Understanding Secularism',
+        'Ch 8: Ruling the Countryside',
+        'Ch 9: Women, Caste and Reform',
+        'Ch 10: The Making of the National Movement'
       ],
       'physics': [
         'Ch 1: Electric Charges and Fields',
         'Ch 2: Electrostatic Potential and Capacitance',
-        'Ch 3: Current Electricity'
+        'Ch 3: Current Electricity',
+        'Ch 4: Moving Charges and Magnetism',
+        'Ch 5: Magnetism and Matter',
+        'Ch 6: Electromagnetic Induction',
+        'Ch 7: Alternating Current',
+        'Ch 8: Electromagnetic Waves',
+        'Ch 9: Ray Optics and Optical Instruments',
+        'Ch 10: Wave Optics',
+        'Ch 11: Dual Nature of Radiation and Matter',
+        'Ch 12: Atoms',
+        'Ch 13: Nuclei',
+        'Ch 14: Semiconductor Electronics'
       ],
       'chemistry': [
         'Ch 1: Solutions',
         'Ch 2: Electrochemistry',
-        'Ch 3: Chemical Kinetics'
+        'Ch 3: Chemical Kinetics',
+        'Ch 4: The d-and f-Block Elements',
+        'Ch 5: Coordination Compounds',
+        'Ch 6: Haloalkanes and Haloarenes',
+        'Ch 7: Alcohols, Phenols and Ethers',
+        'Ch 8: Aldehydes, Ketones and Carboxylic Acids',
+        'Ch 9: Amines',
+        'Ch 10: Biomolecules'
       ],
       'biology': [
         'Ch 1: The Living World',
         'Ch 2: Biological Classification',
-        'Ch 3: Plant Kingdom'
+        'Ch 3: Plant Kingdom',
+        'Ch 4: Animal Kingdom',
+        'Ch 5: Morphology of Flowering Plants',
+        'Ch 6: Anatomy of Flowering Plants',
+        'Ch 7: Structural Organisation in Animals',
+        'Ch 8: Cell: The Unit of Life',
+        'Ch 9: Biomolecules',
+        'Ch 10: Cell Cycle and Cell Division',
+        'Ch 11: Photosynthesis in Higher Plants',
+        'Ch 12: Respiration in Plants',
+        'Ch 13: Plant Growth and Development',
+        'Ch 14: Breathing and Exchange of Gases',
+        'Ch 15: Body Fluids and Circulation',
+        'Ch 16: Excretory Products and their Elimination',
+        'Ch 17: Locomotion and Movement',
+        'Ch 18: Neural Control and Coordination',
+        'Ch 19: Chemical Coordination and Integration'
       ],
       'pharmaceutics': [
         'Ch 1: Introduction to Dosage Forms',

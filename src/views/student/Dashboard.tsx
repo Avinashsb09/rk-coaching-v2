@@ -326,57 +326,6 @@ export default function StudentDashboard() {
         </div>
       </section>
 
-      {/* 2. Overview Stats Analytics Widget Row */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card hoverEffect glassmorphism className="border-slate-200/40 dark:border-slate-800/40">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-orange-105 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-              <Flame className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase">Streak</p>
-              <p className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{user?.dailyStreak || 1} Days 🔥</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card hoverEffect glassmorphism className="border-slate-200/40 dark:border-slate-800/40">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-105 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Star className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase">Total XP</p>
-              <p className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{user?.totalXp || 0} XP ⚡</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card hoverEffect glassmorphism className="border-slate-200/40 dark:border-slate-800/40">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-purple-105 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-              <Award className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase">Badges</p>
-              <p className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">{user?.badges?.length || 1} Earned</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card hoverEffect glassmorphism className="border-slate-200/40 dark:border-slate-800/40">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-105 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle className="w-5.5 h-5.5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase">Completed</p>
-              <p className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">12 Lessons ✅</p>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
       {/* 3. Continue Learning and Arena Split Grid */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Continue Learning card */}
