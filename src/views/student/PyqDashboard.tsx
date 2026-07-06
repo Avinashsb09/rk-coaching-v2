@@ -25,7 +25,7 @@ export default function PyqDashboard() {
   const [subjectId, setSubjectId] = useState<string>('');
   const [chapterId, setChapterId] = useState<string>('');
 
-  const allowedClassIds = ['c6', 'c7', 'c8', 'c9', 'c10', 'c11_sci', 'c12_sci', 'neet'];
+  const allowedClassIds = ['c6', 'c7', 'c8', 'c9', 'c10', 'c11s', 'c12s', 'neet', 'bpharma', 'nursing'];
   const filteredClasses = classes.filter(c => allowedClassIds.includes(c.id));
 
   // Auto-detect registered standard on mount/load
@@ -57,7 +57,7 @@ export default function PyqDashboard() {
   const activeChapters = subjectId ? chapters.filter(c => c.subjectId === subjectId) : [];
 
   // Loading state check
-  if (classes.length === 0) {
+  if (classes.length === 0 || subjects.length === 0 || chapters.length === 0) {
     return (
       <div className="space-y-8 py-4 max-w-4xl mx-auto text-left">
         <Card glassmorphism className="p-8 border-slate-200/40 dark:border-slate-800/40">

@@ -11,11 +11,11 @@ export const mockClasses: AcademicClass[] = [
   { id: 'c8', name: 'Class 8', slug: 'class-8', priority: 3 },
   { id: 'c9', name: 'Class 9', slug: 'class-9', priority: 4 },
   { id: 'c10', name: 'Class 10', slug: 'class-10', priority: 5 },
-  { id: 'c11_sci', name: 'Class 11 Science', slug: 'class-11-science', priority: 6 },
-  { id: 'c12_sci', name: 'Class 12 Science', slug: 'class-12-science', priority: 7 },
+  { id: 'c11s', name: 'Class 11 Science', slug: 'class-11-science', priority: 6 },
+  { id: 'c12s', name: 'Class 12 Science', slug: 'class-12-science', priority: 7 },
   { id: 'neet', name: 'NEET (Biology & Chemistry)', slug: 'neet', priority: 8 },
-  { id: 'bpharm', name: 'B.Pharm Preparation', slug: 'b-pharm-preparation', priority: 9 },
-  { id: 'nursing', name: 'Nursing Preparation', slug: 'nursing-preparation', priority: 10 }
+  { id: 'bpharma', name: 'B.Pharm Entrance Preparation', slug: 'b-pharm-preparation', priority: 9 },
+  { id: 'nursing', name: 'Nursing Entrance Preparation', slug: 'nursing-preparation', priority: 10 }
 ];
 
 const subjectsData: AcademicSubject[] = [];
@@ -44,34 +44,35 @@ const scienceSubjects = [
 
 const neetSubjects = [
   { name: 'Biology', icon: 'Dna', desc: 'High-yield Zoology and Botany concepts, cell cycles, and anatomy.' },
-  { name: 'Chemistry', icon: 'FlaskConical', desc: 'Inorganic, Organic, and Physical Chemistry modules optimized for NEET.' }
+  { name: 'Chemistry', icon: 'FlaskConical', desc: 'Inorganic, Organic, and Physical Chemistry modules optimized for NEET.' },
+  { name: 'Physics', icon: 'Atom', desc: 'NEET high-yield physics, mechanics, thermodynamics, electromagnetism.' }
 ];
 
-const bpharmSubjects = [
-  { name: 'Pharmaceutics', icon: 'FlaskConical', desc: 'Introduction to dosage forms, formulation designs, and pharmacy practice.' },
-  { name: 'Pharmaceutical Chemistry', icon: 'Atom', desc: 'Inorganic chemistry, organic synthesis, and biochemistry analysis.' },
-  { name: 'Pharmacognosy', icon: 'Leaf', desc: 'Study of medicines derived from natural sources, herbs, and plants.' }
+const bpharmaSubjects = [
+  { name: 'Physics', icon: 'Atom', desc: 'Physics concepts applicable to B.Pharm entrance exams.' },
+  { name: 'Chemistry', icon: 'FlaskConical', desc: 'Organic, inorganic, and physical chemistry for pharmacy entrance.' },
+  { name: 'Biology', icon: 'Dna', desc: 'Biology, zoology, botany foundations for pharmacy entrance.' },
+  { name: 'Mathematics', icon: 'Calculator', desc: 'Mathematics and algebra concepts for pharmacy entrance.' }
 ];
 
 const nursingSubjects = [
-  { name: 'Anatomy & Physiology', icon: 'Dna', desc: 'Structure and functions of the human body, organ systems, and functions.' },
-  { name: 'Nursing Foundations', icon: 'HeartPulse', desc: 'Core principles of nursing care, first-aid, patient health, and hygiene.' },
-  { name: 'Microbiology', icon: 'Microscope', desc: 'Study of micro-organisms, infection control, and pathogenic bacteria.' }
+  { name: 'Biology', icon: 'Dna', desc: 'Biology, zoology, botany foundations for nursing entrance.' },
+  { name: 'Chemistry', icon: 'FlaskConical', desc: 'Chemistry foundations for nursing entrance.' },
+  { name: 'Physics', icon: 'Atom', desc: 'Physics foundations for nursing entrance.' },
+  { name: 'English', icon: 'BookOpen', desc: 'General English grammar and comprehension for nursing entrance.' }
 ];
 
 mockClasses.forEach((cls) => {
   let subjs: { name: string; icon: string; desc: string }[] = [];
-  if (['class-6', 'class-7', 'class-8', 'class-9'].includes(cls.slug)) {
+  if (['c6', 'c7', 'c8', 'c9', 'c10'].includes(cls.id)) {
     subjs = class6to10Subjects;
-  } else if (cls.slug === 'class-10') {
-    subjs = class6to10Subjects;
-  } else if (['class-11-science', 'class-12-science'].includes(cls.slug)) {
+  } else if (['c11s', 'c12s'].includes(cls.id)) {
     subjs = scienceSubjects;
-  } else if (cls.slug === 'neet') {
+  } else if (cls.id === 'neet') {
     subjs = neetSubjects;
-  } else if (cls.slug === 'b-pharm-preparation') {
-    subjs = bpharmSubjects;
-  } else if (cls.slug === 'nursing-preparation') {
+  } else if (cls.id === 'bpharma') {
+    subjs = bpharmaSubjects;
+  } else if (cls.id === 'nursing') {
     subjs = nursingSubjects;
   }
 

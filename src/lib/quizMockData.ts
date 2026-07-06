@@ -9,8 +9,8 @@ export const initialQuizzes: Quiz[] = [
     timerSeconds: 180
   },
   {
-    id: 'quiz_c12_physics_electro',
-    lessonId: 'less_c12_sci_physics_free',
+    id: 'quiz_c12s_physics_electro',
+    lessonId: 'less_c12s_physics_free',
     title: 'Electrostatics & Electric Fields',
     passingScorePct: 50,
     timerSeconds: 300
@@ -23,16 +23,16 @@ export const initialQuizzes: Quiz[] = [
     timerSeconds: 240
   },
   {
-    id: 'quiz_bpharm_pharmaceutics_intro',
-    lessonId: 'less_bpharm_pharmaceutics_free',
-    title: 'Introduction to Dosage Forms Quiz',
+    id: 'quiz_bpharma_physics_intro',
+    lessonId: 'less_bpharma_physics_free',
+    title: 'Introduction to Physics for Pharmacy Quiz',
     passingScorePct: 60,
     timerSeconds: 300
   },
   {
-    id: 'quiz_nursing_anatomyphysiology_intro',
-    lessonId: 'less_nursing_anatomyphysiology_free',
-    title: 'Intro to Anatomy & Physiology Quiz',
+    id: 'quiz_nursing_biology_intro',
+    lessonId: 'less_nursing_biology_free',
+    title: 'Intro to Biology for Nursing Quiz',
     passingScorePct: 60,
     timerSeconds: 300
   }
@@ -74,31 +74,31 @@ export const initialQuestions: QuizQuestion[] = [
   // Class 12 Physics Electrostatics Questions
   {
     id: 'q_phys_1',
-    quizId: 'quiz_c12_physics_electro',
+    quizId: 'quiz_c12s_physics_electro',
     questionText: 'What is the unit of electric permittivity of free space (epsilon_0)?',
     orderIndex: 1
   },
   {
     id: 'q_phys_2',
-    quizId: 'quiz_c12_physics_electro',
+    quizId: 'quiz_c12s_physics_electro',
     questionText: 'If the distance between two charges is doubled, the electrostatic force becomes:',
     orderIndex: 2
   },
   {
     id: 'q_phys_3',
-    quizId: 'quiz_c12_physics_electro',
+    quizId: 'quiz_c12s_physics_electro',
     questionText: 'The electric field inside a perfectly hollow spherical conductor is:',
     orderIndex: 3
   },
   {
     id: 'q_phys_4',
-    quizId: 'quiz_c12_physics_electro',
+    quizId: 'quiz_c12s_physics_electro',
     questionText: 'What is the electric potential at a point on the equatorial line of a dipole?',
     orderIndex: 4
   },
   {
     id: 'q_phys_5',
-    quizId: 'quiz_c12_physics_electro',
+    quizId: 'quiz_c12s_physics_electro',
     questionText: 'Which device is used to store electric charge and electrostatic energy?',
     orderIndex: 5
   },
@@ -135,26 +135,26 @@ export const initialQuestions: QuizQuestion[] = [
     orderIndex: 5
   },
   {
-    id: 'q_bpharm_1',
-    quizId: 'quiz_bpharm_pharmaceutics_intro',
+    id: 'q_bpharma_1',
+    quizId: 'quiz_bpharma_physics_intro',
     questionText: 'Which dosage form is designed for rapid absorption through the oral mucosa?',
     orderIndex: 1
   },
   {
-    id: 'q_bpharm_2',
-    quizId: 'quiz_bpharm_pharmaceutics_intro',
+    id: 'q_bpharma_2',
+    quizId: 'quiz_bpharma_physics_intro',
     questionText: 'What is the primary purpose of an excipient in tablet formulation?',
     orderIndex: 2
   },
   {
     id: 'q_nursing_1',
-    quizId: 'quiz_nursing_anatomyphysiology_intro',
+    quizId: 'quiz_nursing_biology_intro',
     questionText: 'Which anatomical plane divides the body into anterior and posterior portions?',
     orderIndex: 1
   },
   {
     id: 'q_nursing_2',
-    quizId: 'quiz_nursing_anatomyphysiology_intro',
+    quizId: 'quiz_nursing_biology_intro',
     questionText: 'What is the structural and functional unit of the nervous system?',
     orderIndex: 2
   }
@@ -238,18 +238,22 @@ export const initialOptions: QuizOption[] = [
   { id: 'opt_m5_b', questionId: 'q_math_5', optionText: '8', isCorrect: false },
   { id: 'opt_m5_c', questionId: 'q_math_5', optionText: '16', isCorrect: false },
   { id: 'opt_m5_d', questionId: 'q_math_5', optionText: '-8', isCorrect: false },
-  { id: 'opt_bp1_a', questionId: 'q_bpharm_1', optionText: 'Sublingual tablet (Correct Answer: A)', isCorrect: true },
-  { id: 'opt_bp1_b', questionId: 'q_bpharm_1', optionText: 'Enteric coated tablet', isCorrect: false },
-  { id: 'opt_bp1_c', questionId: 'q_bpharm_1', optionText: 'Sustained release capsule', isCorrect: false },
-  { id: 'opt_bp1_d', questionId: 'q_bpharm_1', optionText: 'Intravenous injection', isCorrect: false },
-  { id: 'opt_bp2_a', questionId: 'q_bpharm_2', optionText: 'To provide bulk and aid manufacturing (Correct Answer: A)', isCorrect: true },
-  { id: 'opt_bp2_b', questionId: 'q_bpharm_2', optionText: 'To act as the active drug molecule', isCorrect: false },
-  { id: 'opt_bp2_c', questionId: 'q_bpharm_2', optionText: 'To increase the physiological side effects', isCorrect: false },
-  { id: 'opt_bp2_d', questionId: 'q_bpharm_2', optionText: 'To color the coating only', isCorrect: false },
+
+  { id: 'opt_bpa1_a', questionId: 'q_bpharma_1', optionText: 'Sublingual tablet (Correct Answer: A)', isCorrect: true },
+  { id: 'opt_bpa1_b', questionId: 'q_bpharma_1', optionText: 'Enteric coated tablet', isCorrect: false },
+  { id: 'opt_bpa1_c', questionId: 'q_bpharma_1', optionText: 'Sustained release capsule', isCorrect: false },
+  { id: 'opt_bpa1_d', questionId: 'q_bpharma_1', optionText: 'Intravenous injection', isCorrect: false },
+
+  { id: 'opt_bpa2_a', questionId: 'q_bpharma_2', optionText: 'To provide bulk and aid manufacturing (Correct Answer: A)', isCorrect: true },
+  { id: 'opt_bpa2_b', questionId: 'q_bpharma_2', optionText: 'To act as the active drug molecule', isCorrect: false },
+  { id: 'opt_bpa2_c', questionId: 'q_bpharma_2', optionText: 'To increase the physiological side effects', isCorrect: false },
+  { id: 'opt_bpa2_d', questionId: 'q_bpharma_2', optionText: 'To color the coating only', isCorrect: false },
+
   { id: 'opt_nu1_a', questionId: 'q_nursing_1', optionText: 'Frontal (coronal) plane (Correct Answer: A)', isCorrect: true },
   { id: 'opt_nu1_b', questionId: 'q_nursing_1', optionText: 'Sagittal plane', isCorrect: false },
   { id: 'opt_nu1_c', questionId: 'q_nursing_1', optionText: 'Transverse plane', isCorrect: false },
   { id: 'opt_nu1_d', questionId: 'q_nursing_1', optionText: 'Oblique plane', isCorrect: false },
+
   { id: 'opt_nu2_a', questionId: 'q_nursing_2', optionText: 'Neuron (Correct Answer: A)', isCorrect: true },
   { id: 'opt_nu2_b', questionId: 'q_nursing_2', optionText: 'Nephron', isCorrect: false },
   { id: 'opt_nu2_c', questionId: 'q_nursing_2', optionText: 'Glial cell', isCorrect: false },
@@ -269,7 +273,7 @@ export const initialAttempts: QuizAttempt[] = [
   {
     id: 'att_2',
     userId: 'usr_student',
-    quizId: 'quiz_c12_physics_electro',
+    quizId: 'quiz_c12s_physics_electro',
     scoreObtained: 7, // 3 correct (+9), 2 wrong (-2) = 7 marks
     totalQuestions: 5,
     isPassed: false,

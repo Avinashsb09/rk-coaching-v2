@@ -20,7 +20,7 @@ const avatarPresets = [
 ];
 
 export default function UpdateProfile() {
-  const { user, setUser, classes, addToast, setCurrentView } = useApp();
+  const { user, setUser, classes, subjects, chapters, addToast, setCurrentView } = useApp();
   const supabase = getSupabase();
 
   // Profile fields state
@@ -299,15 +299,21 @@ export default function UpdateProfile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-400 font-bold mb-1.5">Academic Standard</label>
-                  <select 
-                    value={classId} 
-                    onChange={e => setClassId(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
-                  >
-                    {classes.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  {classes.length === 0 || subjects.length === 0 || chapters.length === 0 ? (
+                    <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-slate-900 text-slate-400 text-xs">
+                      Loading standards from database...
+                    </div>
+                  ) : (
+                    <select 
+                      value={classId} 
+                      onChange={e => setClassId(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
+                    >
+                      {classes.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 
                 <Input
