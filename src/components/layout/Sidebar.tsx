@@ -22,9 +22,10 @@ interface SidebarProps {
   isOpen: boolean;
   onToggleCollapse: () => void;
   isCollapsed: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps) {
+export function Sidebar({ isOpen, onToggleCollapse, isCollapsed, onClose }: SidebarProps) {
   const { role, currentView, setCurrentView, user, addToast } = useApp();
 
   // Navigation Links based on active user role
@@ -146,6 +147,8 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
               key={link.id}
               onClick={() => {
                 setCurrentView(link.id);
+                // On mobile, close the sidebar after navigation
+                if (window.innerWidth < 1024) onClose?.();
               }}
               className={`
                 w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200 cursor-pointer

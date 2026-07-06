@@ -12,9 +12,12 @@ import { Badge } from '../ui/Badge';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
+  mobileMenuOpen?: boolean;
+  onOpenMobileMenu?: () => void;
+  onCloseMobileMenu?: () => void;
 }
 
-export function Header({ onToggleSidebar }: HeaderProps) {
+export function Header({ onToggleSidebar, mobileMenuOpen = false, onOpenMobileMenu, onCloseMobileMenu }: HeaderProps) {
   const {
     role,
     user,
@@ -33,7 +36,6 @@ export function Header({ onToggleSidebar }: HeaderProps) {
     deleteNotification
   } = useApp();
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [classDropdownOpen, setClassDropdownOpen] = useState(false);
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
 
@@ -269,7 +271,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
 
           {/* Mobile Menu Toggler */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => mobileMenuOpen ? (onCloseMobileMenu?.()) : (onOpenMobileMenu?.())}
             className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -288,7 +290,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <button
               onClick={() => {
                 setCurrentView('catalog');
-                setMobileMenuOpen(false);
+                onCloseMobileMenu?.();
               }}
               className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
                 currentView === 'catalog'
@@ -301,7 +303,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <button
               onClick={() => {
                 setCurrentView('faq');
-                setMobileMenuOpen(false);
+                onCloseMobileMenu?.();
               }}
               className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
                 currentView === 'faq'
@@ -314,7 +316,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <button
               onClick={() => {
                 setCurrentView('contact');
-                setMobileMenuOpen(false);
+                onCloseMobileMenu?.();
               }}
               className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
                 currentView === 'contact'
@@ -338,7 +340,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
               <button
                 onClick={() => {
                   logout();
-                  setMobileMenuOpen(false);
+                  onCloseMobileMenu?.();
                 }}
                 className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/25 rounded-xl transition-all"
               >
@@ -347,10 +349,10 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             </div>
           ) : (
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-              <Button variant="outline" onClick={() => { setCurrentView('auth'); setMobileMenuOpen(false); }}>
+              <Button variant="outline" onClick={() => { setCurrentView('auth'); onCloseMobileMenu?.(); }}>
                 Login
               </Button>
-              <Button variant="primary" onClick={() => { setCurrentView('auth-signup'); setMobileMenuOpen(false); }}>
+              <Button variant="primary" onClick={() => { setCurrentView('auth-signup'); onCloseMobileMenu?.(); }}>
                 Register
               </Button>
             </div>

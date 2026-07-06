@@ -43,6 +43,32 @@ function MainAppShell() {
   // Dashboard drawer states
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Mobile header menu — lifted here so it can be coordinated with sidebar
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Mutual exclusion: only one panel may be open at a time
+  const openSidebar = () => {
+    setMobileMenuOpen(false);
+    setSidebarOpen(true);
+  };
+  const closeSidebar = () => setSidebarOpen(false);
+  const openMobileMenu = () => {
+    setSidebarOpen(false);
+    setMobileMenuOpen(true);
+  };
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const anyPanelOpen = sidebarOpen || mobileMenuOpen;
+
+  // Lock body scroll while any panel is open
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = anyPanelOpen ? 'hidden' : '';
+    }
+    return () => {
+      if (typeof document !== 'undefined') document.body.style.overflow = '';
+    };
+  }, [anyPanelOpen]);
 
   // Handle email verification redirect
   useEffect(() => {
@@ -294,7 +320,21 @@ function MainAppShell() {
       <ToastContainer />
 
       {/* Primary header navbar */}
-      <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Header
+        onToggleSidebar={() => sidebarOpen ? closeSidebar() : openSidebar()}
+        mobileMenuOpen={mobileMenuOpen}
+        onOpenMobileMenu={openMobileMenu}
+        onCloseMobileMenu={closeMobileMenu}
+      />
+
+      {/* Shared backdrop overlay — closes whichever panel is open */}
+      {anyPanelOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={() => { closeSidebar(); closeMobileMenu(); }}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Main core layout containing sidebar & main panels */}
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto relative">
@@ -303,6 +343,7 @@ function MainAppShell() {
           <Sidebar
             isOpen={sidebarOpen}
             isCollapsed={sidebarCollapsed}
+            onClose={closeSidebar}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         )}
