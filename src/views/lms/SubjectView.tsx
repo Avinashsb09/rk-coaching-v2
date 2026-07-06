@@ -216,7 +216,7 @@ export default function SubjectView() {
       </Button>
 
       {/* Header Info */}
-      <section className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden border border-indigo-500/10 shadow-xl">
+      <section className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden border border-indigo-500/10 shadow-xl max-w-4xl mx-auto">
         <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-4">
@@ -230,24 +230,14 @@ export default function SubjectView() {
               {subjectObj.description}
             </p>
           </div>
-          <div className="shrink-0">
-            <Button 
-              variant="secondary" 
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold border-none flex items-center gap-1.5"
-              onClick={() => setCurrentView('pyq-view')}
-            >
-              Open Subject PYQs & Mocks
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
         </div>
       </section>
 
-      {/* Grid: Left chapters wizard, Right teacher & courses */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Centered chapters wizard */}
+      <div className="max-w-4xl mx-auto space-y-6">
         
-        {/* Chapters Section (Left column, wizard, spanning 2 grids) */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* Chapters Section (centered column, wizard) */}
+        <div className="space-y-6">
           
           {/* Step Progress Breadcrumb */}
           <div className="flex items-center gap-2 p-3 bg-white/40 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl backdrop-blur-md overflow-x-auto text-[11px] font-black uppercase tracking-wider text-slate-400">
@@ -451,7 +441,6 @@ export default function SubjectView() {
                             <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-500' : ''}`} />
                           </div>
                         </div>
-
                         {/* Chapter Expanded Resources Panel */}
                         {isExpanded && (
                           <CardContent className="p-5 border-t border-slate-100 dark:border-slate-800/80 bg-white/30 dark:bg-slate-950/20 text-left animate-fade-in">
@@ -460,51 +449,43 @@ export default function SubjectView() {
                                 No study materials published under this chapter yet.
                               </div>
                             ) : (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-3">
                                 {resources.map((resource: any) => {
                                   const isNotes = contentType === 'notes';
                                   return (
-                                    <Card key={resource.id} className="bg-white/50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800 p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-                                      <div className="space-y-2">
-                                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${isNotes ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600'}`}>
+                                    <div 
+                                      key={resource.id} 
+                                      className="p-4 bg-white/50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-slate-100/50 dark:hover:bg-slate-900/60 transition-all"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${isNotes ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600'}`}>
                                           {isNotes ? <FileText className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
                                         </div>
-                                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2">
-                                          {resource.title}
-                                        </h4>
-                                        <p className="text-[9px] text-slate-400 font-semibold uppercase">
-                                          {isNotes 
-                                            ? `Size: ${(resource.sizeBytes / 1024).toFixed(0)} KB` 
-                                            : `Duration: ${Math.floor(resource.durationSeconds / 60)} mins`}
-                                        </p>
+                                        <div>
+                                          <h4 className="text-xs font-bold text-slate-850 dark:text-slate-200">
+                                            {resource.title}
+                                          </h4>
+                                          <p className="text-[10px] text-slate-450 dark:text-slate-450">
+                                            {isNotes ? 'Handwritten PDF revision notes' : 'Video class lecture tutorial'}
+                                          </p>
+                                        </div>
                                       </div>
-                                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 mt-3 flex justify-between items-center gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-[9px] h-7 px-2.5"
-                                          onClick={() => {
-                                            const associatedLesson = lessonsList.find(l => l.id === resource.lessonId);
-                                            const associatedCourse = associatedLesson ? subjectCourses.find(c => c.id === associatedLesson.courseId) : null;
-                                            if (associatedCourse) setSelectedCourseId(associatedCourse.id);
-                                            if (associatedLesson) setSelectedLessonId(associatedLesson.id);
-                                            setCurrentView('lesson-view');
-                                          }}
-                                        >
-                                          {isNotes ? 'Open in Reader' : 'Watch Lecture'}
-                                        </Button>
-                                        {isNotes && (
-                                          <a
-                                            href={resource.pdfUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center justify-center px-2.5 py-1.5 h-7 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-extrabold transition-all shadow-sm"
-                                          >
-                                            Download PDF
-                                          </a>
-                                        )}
-                                      </div>
-                                    </Card>
+                                      
+                                      <Button
+                                        variant="primary"
+                                        size="sm"
+                                        className={`text-[10px] font-black h-7 px-4 shrink-0 border-none ${isNotes ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-emerald-550 hover:bg-emerald-600 text-slate-950'}`}
+                                        onClick={() => {
+                                          const associatedLesson = lessonsList.find(l => l.id === resource.lessonId);
+                                          if (associatedLesson) {
+                                            setSelectedLessonId(associatedLesson.id);
+                                          }
+                                          setCurrentView('lesson-view');
+                                        }}
+                                      >
+                                        {isNotes ? 'Open Notes' : 'Watch Lecture'}
+                                      </Button>
+                                    </div>
                                   );
                                 })}
                               </div>
@@ -519,72 +500,6 @@ export default function SubjectView() {
             </section>
           )}
         </div>
-
-        {/* Sidebar details (Right column) */}
-        <div className="space-y-6">
-          {/* Active Courses */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-indigo-500" />
-              Available Prep Modules
-            </h2>
-            {subjectCourses.length === 0 ? (
-              <Card className="p-4 text-slate-500 text-xs">No active exam prep packages found.</Card>
-            ) : (
-              <div className="space-y-4">
-                {subjectCourses.map((course) => (
-                  <Card key={course.id} className="border-slate-100 dark:border-slate-800 overflow-hidden">
-                    <img src={course.thumbnailUrl} alt={course.title} referrerPolicy="no-referrer" className="h-28 w-full object-cover" />
-                    <CardContent className="p-4 space-y-3">
-                      <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 leading-snug">
-                        {course.title}
-                      </h3>
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                          {course.isPremium ? `₹${course.discountPrice}` : 'FREE'}
-                        </span>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          className="h-7 text-[10px]"
-                          onClick={() => {
-                            setSelectedCourseId(course.id);
-                            setCurrentView('course-view');
-                          }}
-                        >
-                          View Syllabus
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Teacher Info */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-indigo-500" />
-              Syllabus Director
-            </h2>
-            <Card className="p-5 border-slate-100 dark:border-slate-800">
-              <CardContent className="p-0 flex items-start gap-4">
-                <img 
-                  src={teacher.avatar} 
-                  alt={teacher.name} 
-                  className="w-12 h-12 rounded-2xl object-cover shrink-0 border border-slate-100" 
-                />
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">{teacher.name}</h4>
-                  <p className="text-[10px] text-slate-500">{teacher.role}</p>
-                  <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{teacher.experience}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
       </div>
 
       <RazorpayGatewayModal

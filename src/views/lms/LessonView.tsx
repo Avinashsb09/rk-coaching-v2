@@ -102,17 +102,6 @@ export default function LessonView() {
     fetchLessonAssets();
   }, []);
 
-  // Sync breadcrumbs
-  useEffect(() => {
-    if (lessonObj && courseObj) {
-      setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'catalog' },
-        { label: courseObj.title, view: 'course-view' },
-        { label: lessonObj.title }
-      ]);
-    }
-  }, [lessonObj, courseObj, setBreadcrumbs]);
-
   // Start Study Tracker Timer
   useEffect(() => {
     if (lessonObj && user) {
@@ -172,6 +161,17 @@ export default function LessonView() {
   const chapterObj = chaptersList.find(c => c.id === lessonObj.chapterId);
   const subjectObj = subjects.find(s => s.id === chapterObj?.subjectId);
 
+  // Sync breadcrumbs
+  useEffect(() => {
+    if (lessonObj && subjectObj) {
+      setBreadcrumbs([
+        { label: 'Syllabus Catalog', view: 'catalog' },
+        { label: subjectObj.name, view: 'subject-view' },
+        { label: lessonObj.title }
+      ]);
+    }
+  }, [lessonObj, subjectObj, setBreadcrumbs]);
+
   // Filter video & notes
   const activeVideo = videosList.find(v => v.lessonId === lessonObj.id);
   const activeNote = notesList.find(n => n.lessonId === lessonObj.id);
@@ -193,14 +193,14 @@ export default function LessonView() {
     }
   }, [selectedTabNote]);
 
-  // Filter lessons for course navigation
-  const courseLessons = lessonsList
-    .filter(l => l.courseId === selectedCourseId)
+  // Filter lessons for chapter navigation
+  const chapterLessons = lessonsList
+    .filter(l => l.chapterId === lessonObj.chapterId && l.isPremium === lessonObj.isPremium)
     .sort((a, b) => a.orderIndex - b.orderIndex);
   
-  const currentIdx = courseLessons.findIndex(l => l.id === lessonObj.id);
-  const prevLesson = currentIdx > 0 ? courseLessons[currentIdx - 1] : null;
-  const nextLesson = currentIdx < courseLessons.length - 1 ? courseLessons[currentIdx + 1] : null;
+  const currentIdx = chapterLessons.findIndex(l => l.id === lessonObj.id);
+  const prevLesson = currentIdx > 0 ? chapterLessons[currentIdx - 1] : null;
+  const nextLesson = currentIdx < chapterLessons.length - 1 ? chapterLessons[currentIdx + 1] : null;
 
   // Determine current lesson completion status
   const currentProgress = getLessonProgress(lessonObj.id);
@@ -393,54 +393,10 @@ export default function LessonView() {
                     leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
                     className="h-8 text-[10px]"
                   >
-                    Popout
+                    Popout Notes
                   </Button>
-                  <a href={resolvedPdfUrl || selectedTabNote.pdfUrl} download className="no-underline">
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      leftIcon={<Download className="w-3.5 h-3.5" />}
-                      className="h-8 text-[10px]"
-                    >
-                      Save PDF
-                    </Button>
-                  </a>
                 </div>
               )}
-            </div>
-
-            {/* Sub-tabs */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setNotesTab('notes')}
-                className={`text-[10px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
-                  notesTab === 'notes'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800'
-                }`}
-              >
-                Core Notes
-              </button>
-              <button
-                onClick={() => setNotesTab('pyq')}
-                className={`text-[10px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
-                  notesTab === 'pyq'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800'
-                }`}
-              >
-                PYQ Papers
-              </button>
-              <button
-                onClick={() => setNotesTab('practiceset')}
-                className={`text-[10px] px-3 py-1.5 rounded-lg font-bold border transition-all ${
-                  notesTab === 'practiceset'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:text-slate-400 dark:border-slate-800'
-                }`}
-              >
-                Practice Sets
-              </button>
             </div>
           </div>
 
