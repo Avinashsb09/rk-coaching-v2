@@ -14,7 +14,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Flame,
   Settings
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -166,32 +165,6 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
       </nav>
 
       {/* Sidebar Footer details (Streak / Streak details) */}
-      {!isCollapsed && user && role === 'student' && (
-        <div className="p-4 m-4 bg-white/40 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400">
-              <Flame className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                Study Streak 🔥
-              </p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                Study daily to unlock ranks!
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-            <div
-              className="bg-orange-500 h-full rounded-full transition-all duration-500"
-              style={{ width: '71%' }}
-            />
-          </div>
-          <p className="mt-2 text-right text-[10px] font-bold text-slate-600 dark:text-slate-400">
-            5/7 days completed
-          </p>
-        </div>
-      )}
     </aside>
   );
 }

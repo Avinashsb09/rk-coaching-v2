@@ -9,8 +9,8 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { 
-  Flame, Star, Award, BookOpen, Clock, Calendar, CheckCircle, 
-  ChevronRight, PlayCircle, FileText, Compass, Sparkles, 
+  BookOpen, Clock, 
+  ChevronRight, PlayCircle, FileText, Sparkles, 
   GraduationCap, Lock, HelpCircle, Eye, ShieldAlert, X 
 } from 'lucide-react';
 
@@ -312,9 +312,6 @@ export default function StudentDashboard() {
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Welcome Back, {user?.fullName || 'Scholar'}!
           </h1>
-          <p className="text-xs sm:text-sm text-slate-505 dark:text-slate-400 max-w-xl leading-relaxed">
-            Track your curriculum progress, view handwritten revision notes, and test your conceptual understanding in our active CBT exam arenas.
-          </p>
           
           {/* Registered standard auto detection badge */}
           <div className="pt-2 flex items-center gap-3">

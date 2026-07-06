@@ -4,12 +4,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { BookOpen, ArrowRight, ShieldCheck, Star, Users, Sparkles, GraduationCap, Atom, Dna, FlaskConical, HeartPulse } from 'lucide-react';
+import { BookOpen, ArrowRight, Sparkles, GraduationCap, Atom, Dna, FlaskConical, HeartPulse } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { SearchBar } from '../../components/shared/SearchBar';
 
 export default function LandingPage({ showCatalog: initialShowCatalog = true }: { showCatalog?: boolean }) {
   const { 
@@ -53,11 +52,6 @@ export default function LandingPage({ showCatalog: initialShowCatalog = true }: 
         <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed px-1">
           {homepageConfig.heroSubtitle || "Access high-yield handwritten PDF Notes, interactive conceptual quizzes, video lectures, and real-time gamified student leaderboards."}
         </p>
-
-        {/* Global Search Bar */}
-        <div className="max-w-2xl mx-auto pt-2">
-          <SearchBar />
-        </div>
 
         {/* Rapid stats overview */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 pt-6 max-w-2xl mx-auto text-center border-t border-slate-100 dark:border-slate-800/80">

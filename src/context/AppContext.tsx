@@ -62,10 +62,6 @@ interface AppContextType {
   addToast: (message: string, type?: ToastMessage['type'], duration?: number) => void;
   dismissToast: (id: string) => void;
 
-  // Search Engine
-  globalSearch: string;
-  setGlobalSearch: (query: string) => void;
-
   // Mock Global Database
   classes: AcademicClass[];
   setClasses: React.Dispatch<React.SetStateAction<AcademicClass[]>>;
@@ -265,7 +261,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [breadcrumbs, setBreadcrumbs] = useState<{ label: string; view?: string }[]>([
     { label: 'Home', view: 'home' }
   ]);
-  const [globalSearch, setGlobalSearch] = useState<string>('');
 
   // Synchronize state changes to URL hash
   useEffect(() => {
@@ -305,8 +300,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       setCurrentView={setCurrentView}
                       breadcrumbs={breadcrumbs}
                       setBreadcrumbs={setBreadcrumbs}
-                      globalSearch={globalSearch}
-                      setGlobalSearch={setGlobalSearch}
                     >
                       {children}
                     </AppContextInjector>
@@ -326,17 +319,13 @@ function AppContextInjector({
   currentView,
   setCurrentView,
   breadcrumbs,
-  setBreadcrumbs,
-  globalSearch,
-  setGlobalSearch
+  setBreadcrumbs
 }: {
   children: ReactNode;
   currentView: string;
   setCurrentView: (view: string) => void;
   breadcrumbs: { label: string; view?: string }[];
   setBreadcrumbs: (crumbs: { label: string; view?: string }[]) => void;
-  globalSearch: string;
-  setGlobalSearch: (query: string) => void;
 }) {
   const { darkMode, setDarkMode } = useTheme();
   const { toasts, addToast, dismissToast, notifications, setNotifications, unreadNotificationsCount, addNotification, markNotificationRead, markAllNotificationsRead, deleteNotification } = useNotifications();
@@ -466,8 +455,6 @@ function AppContextInjector({
     toasts,
     addToast,
     dismissToast,
-    globalSearch,
-    setGlobalSearch,
     classes,
     setClasses,
     subjects,

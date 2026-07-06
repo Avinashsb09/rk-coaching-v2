@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { BookOpen, Moon, Sun, Menu, X, ChevronDown, User, LogOut, Flame, ShieldAlert, Bell, Check, Trash2 } from 'lucide-react';
+import { BookOpen, Moon, Sun, Menu, X, ChevronDown, User, LogOut, ShieldAlert, Bell, Check, Trash2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
@@ -25,8 +25,6 @@ export function Header({ onToggleSidebar }: HeaderProps) {
     currentView,
     setCurrentView,
     classes,
-    globalSearch,
-    setGlobalSearch,
     addToast,
     notifications,
     unreadNotificationsCount,
@@ -42,7 +40,6 @@ export function Header({ onToggleSidebar }: HeaderProps) {
   const handleClassSelect = (slug: string, className: string) => {
     addToast(`Filtering catalog by ${className}`, 'info');
     setCurrentView('catalog');
-    setGlobalSearch(slug);
     setClassDropdownOpen(false);
   };
 
@@ -64,7 +61,6 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           <div
             onClick={() => {
               setCurrentView('home');
-              setGlobalSearch('');
             }}
             className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
@@ -244,14 +240,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 <p className="text-xs font-bold text-slate-900 dark:text-slate-50">
                   {user.fullName}
                 </p>
-                {role === 'student' && (
-                  <div className="flex items-center justify-end gap-1 mt-0.5">
-                    <Flame className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
-                    <span className="text-[10px] font-extrabold text-orange-600 dark:text-orange-400">
-                      {user.dailyStreak} Days
-                    </span>
-                  </div>
-                )}
+
                 {role !== 'student' && (
                   <span className="text-[10px] font-bold text-slate-400 uppercase">
                     {role}
