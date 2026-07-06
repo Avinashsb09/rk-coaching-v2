@@ -88,18 +88,16 @@ export default function UpdateProfile() {
         reader.onload = () => {
           if (typeof reader.result === 'string') {
             setAvatarUrl(reader.result);
-            addToast('Avatar loaded (local simulation)', 'info');
           }
         };
         reader.readAsDataURL(file);
       }
-    } catch (err: any) {
-      console.warn('Storage upload failed, using local FileReader simulation:', err);
+    } catch {
+      // Storage upload failed silently — fall back to FileReader preview
       const reader = new FileReader();
       reader.onload = () => {
         if (typeof reader.result === 'string') {
           setAvatarUrl(reader.result);
-          addToast('Avatar loaded (local simulation fallback)', 'info');
         }
       };
       reader.readAsDataURL(file);
@@ -110,19 +108,26 @@ export default function UpdateProfile() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName) {
+    if (!fullName.trim()) {
       addToast('Full name is required', 'error');
+      return;
+    }
+
+    // Validate that the selected classId exists in the loaded classes list
+    const resolvedClass = classes.find(c => c.id === classId);
+    if (!resolvedClass) {
+      addToast('Unable to update your Academic Standard. Please select a valid option and try again.', 'error');
       return;
     }
 
     setIsSavingProfile(true);
     try {
       const updatedFields = {
-        fullName,
+        fullName: fullName.trim(),
         avatarUrl,
-        phone,
-        classId,
-        schoolName
+        phone: phone.trim(),
+        classId: resolvedClass.id,   // always a verified FK value
+        schoolName: schoolName.trim()
       };
 
       if (supabase && user?.id) {
@@ -132,31 +137,30 @@ export default function UpdateProfile() {
           .update(updatedFields)
           .eq('id', user.id);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          // Surface a friendly message instead of raw DB error text
+          if (profileError.code === '23503') {
+            throw new Error('Unable to update your Academic Standard. Please select a valid option and try again.');
+          }
+          throw new Error(profileError.message || 'Failed to save profile. Please try again.');
+        }
 
         // Also update Auth metadata so session stays in sync
         const { error: authError } = await supabase.auth.updateUser({
-          data: {
-            fullName,
-            classId,
-            avatarUrl
-          }
+          data: { fullName: updatedFields.fullName, classId: updatedFields.classId, avatarUrl }
         });
-        if (authError) console.warn('Auth metadata sync failed, database row is updated:', authError);
+        if (authError) console.warn('Auth metadata sync skipped:', authError.message);
       }
 
       // Update local state context
       setUser((prev: any) => {
         if (!prev) return null;
-        return {
-          ...prev,
-          ...updatedFields
-        };
+        return { ...prev, ...updatedFields };
       });
 
-      addToast('Profile metadata updated successfully!', 'success');
+      addToast('Profile updated successfully!', 'success');
     } catch (err: any) {
-      addToast(err.message || 'Failed to update profile information.', 'error');
+      addToast(err.message || 'Failed to update profile. Please try again.', 'error');
     } finally {
       setIsSavingProfile(false);
     }
@@ -299,15 +303,15 @@ export default function UpdateProfile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-400 font-bold mb-1.5">Academic Standard</label>
-                  {classes.length === 0 || subjects.length === 0 || chapters.length === 0 ? (
-                    <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-slate-900 text-slate-400 text-xs">
+                  {classes.length === 0 ? (
+                    <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 text-xs">
                       Loading standards from database...
                     </div>
                   ) : (
                     <select 
                       value={classId} 
                       onChange={e => setClassId(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
                     >
                       {classes.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
