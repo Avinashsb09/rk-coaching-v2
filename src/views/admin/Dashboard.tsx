@@ -291,7 +291,8 @@ export default function AdminDashboard() {
         setUserFullName(u.fullName);
         setUserEmail(u.email);
         setUserPhone(u.phone || '98765 43210');
-        setUserClassId(u.classId || 'c6');
+        const matchedClass = classes.find((c: any) => c.id === u.classId || c.slug === u.classId);
+        setUserClassId(matchedClass?.id || u.classId || 'c6');
         setUserStatus(u.status || 'active');
         setUserRole(u.role);
         setUserXp(u.totalXp.toString());

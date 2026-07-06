@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -29,6 +29,24 @@ export default function UpdateProfile() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [classId, setClassId] = useState(user?.classId || 'c10');
   const [schoolName, setSchoolName] = useState(user?.schoolName || '');
+
+  // Synchronize form state when user profile or classes load/change
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName || '');
+      setAvatarUrl(user.avatarUrl || avatarPresets[0]);
+      setPhone(user.phone || '');
+      setSchoolName(user.schoolName || '');
+      
+      // Resolve classId (handling legacy slugs/names to find correct primary key ID)
+      const matched = classes.find(c => c.id === user.classId || c.slug === user.classId);
+      if (matched) {
+        setClassId(matched.id);
+      } else {
+        setClassId(user.classId || 'c10');
+      }
+    }
+  }, [user, classes]);
 
   // Password fields state
   const [newPassword, setNewPassword] = useState('');
