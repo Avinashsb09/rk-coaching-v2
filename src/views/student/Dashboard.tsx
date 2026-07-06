@@ -313,7 +313,7 @@ export default function StudentDashboard() {
             Welcome Back, {user?.fullName || 'Scholar'}!
           </h1>
           <p className="text-xs sm:text-sm text-slate-505 dark:text-slate-400 max-w-xl leading-relaxed">
-            Your daily study goal is active. Continue where you left off or attempt a mock paper to earn extra XP points today!
+            Track your curriculum progress, view handwritten revision notes, and test your conceptual understanding in our active CBT exam arenas.
           </p>
           
           {/* Registered standard auto detection badge */}

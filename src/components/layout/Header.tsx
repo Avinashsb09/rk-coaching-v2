@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { BookOpen, Moon, Sun, Menu, X, ChevronDown, User, LogOut, Search, Flame, ShieldAlert, Bell, Check, Trash2 } from 'lucide-react';
+import { BookOpen, Moon, Sun, Menu, X, ChevronDown, User, LogOut, Flame, ShieldAlert, Bell, Check, Trash2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
@@ -122,17 +122,6 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             FAQs
           </button>
 
-          <button
-            onClick={() => setCurrentView('advanced-search')}
-            className={`text-sm font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
-              currentView === 'advanced-search'
-                ? 'text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400 pb-0.5'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
-            }`}
-          >
-            <Search className="w-4 h-4" />
-            <span>Advanced Search</span>
-          </button>
           
           <button
             onClick={() => setCurrentView('contact')}
@@ -332,19 +321,6 @@ export function Header({ onToggleSidebar }: HeaderProps) {
               }`}
             >
               FAQs
-            </button>
-            <button
-              onClick={() => {
-                setCurrentView('advanced-search');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-all ${
-                currentView === 'advanced-search'
-                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold'
-                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
-            >
-              Advanced Search
             </button>
             <button
               onClick={() => {

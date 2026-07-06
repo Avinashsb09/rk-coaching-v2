@@ -94,27 +94,15 @@ export default function PyqDashboard() {
         </div>
       </section>
 
-      {/* Profile Check Notice */}
-      {!user?.classId && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400 font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-md">
-          <span className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
-            Please update your academic standard in your profile to customize your dashboard experience.
-          </span>
-          <Button 
-            variant="warning" 
-            size="sm" 
-            onClick={() => setCurrentView('update-profile')} 
-            className="text-[10px] py-1 h-7 text-amber-900 bg-amber-500 hover:bg-amber-600 shrink-0 font-bold"
-          >
-            Update Profile
-          </Button>
-        </div>
-      )}
-
       {/* 2. Step Selector Panel Card */}
       <Card glassmorphism className="border-slate-200/40 dark:border-slate-800/40 p-6 space-y-6">
         
+        {!user?.classId && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-500 font-bold text-center leading-relaxed">
+            ⚠️ Profile standard is missing. Please select your Academic Standard in your profile to access tests.
+          </div>
+        )}
+
         {/* STEP 1: Academic Standard */}
         <div className="space-y-2">
           <label className="block text-slate-455 dark:text-slate-400 font-black text-xs uppercase tracking-wider">
@@ -124,7 +112,8 @@ export default function PyqDashboard() {
             <select 
               value={classId} 
               onChange={e => handleClassChange(e.target.value)}
-              className="w-full p-4 pr-10 rounded-2xl border border-slate-200 dark:border-slate-850 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl text-slate-800 dark:text-white outline-none text-xs font-bold shadow-lg focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+              disabled={!user?.classId}
+              className={`w-full p-4 pr-10 rounded-2xl border border-slate-200 dark:border-slate-850 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl text-slate-800 dark:text-white outline-none text-xs font-bold shadow-lg focus:border-indigo-500 transition-all appearance-none ${!user?.classId ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             >
               <option value="">-- Choose Standard --</option>
               {filteredClasses.map(c => (

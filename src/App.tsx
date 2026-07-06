@@ -20,7 +20,6 @@ import TeacherDashboard from './views/teacher/Dashboard';
 import AdminDashboard from './views/admin/Dashboard';
 import FAQPage from './views/home/FAQPage';
 import ContactPage from './views/home/ContactPage';
-import Leaderboard from './views/student/Leaderboard';
 import AuthPage from './views/home/AuthPage';
 
 // Complete Student Learning Experience Views
@@ -28,7 +27,6 @@ import ClassView from './views/lms/ClassView';
 import SubjectView from './views/lms/SubjectView';
 import CourseView from './views/lms/CourseView';
 import LessonView from './views/lms/LessonView';
-import AdvancedSearch from './views/lms/AdvancedSearch';
 import PurchasesInvoices from './views/student/PurchasesInvoices';
 import PyqView from './views/lms/PyqView';
 import QuizDashboard from './views/student/QuizDashboard';
@@ -114,12 +112,6 @@ function MainAppShell() {
       case 'auth-signup':
         setBreadcrumbs([{ label: 'Authentication Suite', view: 'auth' }]);
         break;
-      case 'leaderboard':
-        setBreadcrumbs([
-          { label: 'Gamified Center', view: 'student-dashboard' },
-          { label: 'Leaderboard Rankings' }
-        ]);
-        break;
       case 'quiz-dashboard':
         setBreadcrumbs([
           { label: 'Gamified Center', view: 'student-dashboard' },
@@ -136,12 +128,6 @@ function MainAppShell() {
         setBreadcrumbs([
           { label: 'Quiz Arena', view: 'quiz-dashboard' },
           { label: 'Quiz Result Scorecard' }
-        ]);
-        break;
-      case 'advanced-search':
-        setBreadcrumbs([
-          { label: 'Syllabus Catalog', view: 'catalog' },
-          { label: 'Advanced Search' }
         ]);
         break;
       case 'purchases-invoices':
@@ -311,23 +297,8 @@ function MainAppShell() {
         return <LessonView />;
       }
       
-      case 'advanced-search':
-        return <AdvancedSearch />;
-      
       case 'purchases-invoices':
         return <PurchasesInvoices />;
-      
-      case 'leaderboard':
-        if (role === 'visitor') {
-          return (
-            <ErrorState
-              title="Registered Users Only"
-              description="Leaderboards list relative ranking positions and learning scores. Please log in or switch your demo view to STUDENT to participate."
-              code="AUTH_401"
-            />
-          );
-        }
-        return <Leaderboard />;
       
       default:
         return (

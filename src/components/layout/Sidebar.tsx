@@ -7,20 +7,15 @@ import {
   LayoutDashboard,
   BookOpen,
   Trophy,
-  GraduationCap,
-  Settings,
   HelpCircle,
-  FolderOpen,
   PlusSquare,
-  Users,
   User,
   CreditCard,
-  MessageSquare,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   Flame,
-  Search
+  Settings
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -40,7 +35,7 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
         return [
           {
             id: 'student-dashboard',
-            label: 'My Dashboard',
+            label: 'Dashboard',
             icon: <LayoutDashboard className="w-5 h-5" />
           },
           {
@@ -62,16 +57,6 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed }: SidebarProps)
             id: 'catalog',
             label: 'All Courses',
             icon: <BookOpen className="w-5 h-5" />
-          },
-          {
-            id: 'leaderboard',
-            label: 'Leaderboard',
-            icon: <Trophy className="w-5 h-5" />
-          },
-          {
-            id: 'advanced-search',
-            label: 'Advanced Search',
-            icon: <Search className="w-5 h-5" />
           },
           {
             id: 'purchases-invoices',

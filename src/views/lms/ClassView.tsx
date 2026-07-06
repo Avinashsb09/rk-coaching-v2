@@ -6,7 +6,6 @@ import { Badge } from '../../components/ui/Badge';
 import { 
   ArrowLeft, 
   BookOpen, 
-  Users, 
   Layers, 
   Sparkles, 
   ArrowRight,
@@ -240,38 +239,12 @@ export default function ClassView() {
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Comprehensive Syllabus for {classObj.name}
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 max-w-xl leading-relaxed">
-            Access board-aligned curricula, verified handwritten revisions, chapterwise mock assessments, and step-by-step problem sets designed to boost your ranks.
-          </p>
-
-          <div className="flex flex-wrap gap-6 pt-2">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-400" />
-              <span className="text-xs font-bold text-slate-200">{studentCount} Enrolled Students</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-400" />
-              <span className="text-xs font-bold text-slate-200">{classSubjects.length} Active Subjects</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-indigo-400" />
-              <span className="text-xs font-bold text-slate-200">{classCourses.length} Learning Modules</span>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* 1. FREE HANDWRITTEN NOTES SECTION */}
       <section className="space-y-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            Free Handwritten Notes
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Completely free unit-wise formulas, board revision notes, and exam important questions.
-          </p>
-        </div>
+        
         
         {notes.filter(n => n.classId === classObj.id).length === 0 ? (
           <Card className="p-6 text-center border-dashed border-2 bg-slate-50/30 dark:bg-slate-900/10">
