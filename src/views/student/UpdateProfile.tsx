@@ -120,8 +120,25 @@ export default function UpdateProfile() {
       return;
     }
 
-    // Validate that the selected classId resolves to a known classes record
     const resolvedClass = classes.find(c => c.id === classId);
+
+    // Logging values immediately before validation for debugging
+    console.log('--- PROFILE SAVE FLOW DEBUG ---');
+    console.log('Current classId state:', classId);
+    console.log('Dropdown selected value (classId):', classId);
+    console.log('classes length:', classes.length);
+    console.log('Entire classes array:', classes);
+    console.log('resolvedClass:', resolvedClass);
+    console.log('Payload that would be sent:', {
+      fullName: fullName.trim(),
+      avatarUrl,
+      phone: phone.trim(),
+      classId: resolvedClass?.id,
+      schoolName: schoolName.trim()
+    });
+    console.log('Validation result:', !!resolvedClass);
+
+    // Validate that the selected classId resolves to a known classes record
     if (!resolvedClass) {
       addToast('Please select a valid Academic Standard before saving.', 'error');
       return;
@@ -363,6 +380,7 @@ export default function UpdateProfile() {
                   variant="primary" 
                   type="submit" 
                   isLoading={isSavingProfile}
+                  disabled={classes.length === 0}
                   className="text-xs font-bold"
                 >
                   Save Profile Changes
