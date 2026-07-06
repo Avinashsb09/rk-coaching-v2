@@ -129,29 +129,16 @@ export default function UpdateProfile() {
 
     setIsSavingProfile(true);
     try {
+      const updatedFields = {
+        fullName: fullName.trim(),
+        avatarUrl,
+        phone: phone.trim(),
+        classId: resolvedClass.id,   // verified FK value — always exists in classes table
+        schoolName: schoolName.trim()
+      };
+
       if (supabase && user?.id) {
-        // STEP 1: Clear any legacy/invalid classId that may be stored in the row.
-        // PostgreSQL re-validates ALL foreign key columns on every UPDATE, not just changed ones.
-        // If the existing stored classId is an old slug (e.g. 'class-6-9') that no longer
-        // exists in classes.id, any UPDATE to the row will fail with a FK constraint error —
-        // even when the new value we intend to write is perfectly valid.
-        // We therefore NULL it first so the row is in a clean state before the real update.
-        await (supabase.from('profiles') as any)
-          .update({ classId: null })
-          .eq('id', user.id)
-          .not('classId', 'is', null);   // no-op if classId is already null (avoids needless write)
-          // Note: we intentionally ignore errors here — if classId is already valid the FK
-          // re-validation above will not fail and the row will be updated correctly in STEP 2.
-
-        // STEP 2: Write the full validated payload
-        const updatedFields = {
-          fullName: fullName.trim(),
-          avatarUrl,
-          phone: phone.trim(),
-          classId: resolvedClass.id,   // verified FK value — always exists in classes table
-          schoolName: schoolName.trim()
-        };
-
+        // Perform a single, atomic update operation
         const { error: profileError } = await (supabase
           .from('profiles') as any)
           .update(updatedFields)
@@ -164,7 +151,7 @@ export default function UpdateProfile() {
           throw new Error(profileError.message || 'Failed to save profile. Please try again.');
         }
 
-        // STEP 3: Sync Auth metadata so session data stays consistent with the profile row
+        // Sync Auth metadata so session data stays consistent with the profile row
         const { error: authError } = await supabase.auth.updateUser({
           data: { fullName: updatedFields.fullName, classId: updatedFields.classId, avatarUrl }
         });
@@ -183,11 +170,7 @@ export default function UpdateProfile() {
           if (!prev) return null;
           return {
             ...prev,
-            fullName: fullName.trim(),
-            avatarUrl,
-            phone: phone.trim(),
-            classId: resolvedClass.id,
-            schoolName: schoolName.trim()
+            ...updatedFields
           };
         });
         addToast('Profile updated successfully!', 'success');
