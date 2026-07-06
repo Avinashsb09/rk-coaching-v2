@@ -148,7 +148,7 @@ function AppSyncController({
   currentView: string;
   setCurrentView: (view: string) => void;
 }) {
-  const { user, setUser, syncUserProfile, setInitializing } = useAuth();
+  const { user, setUser, role, initializing, syncUserProfile, setInitializing } = useAuth();
   const { loadBookmarks, setBookmarksList } = useBookmarks();
   const { loadProgress, setProgressList } = useProgress();
   const { loadNotifications, setNotifications } = useNotifications();
@@ -157,6 +157,57 @@ function AppSyncController({
   const { addToast } = useNotifications();
 
   const syncedUserIdRef = useRef<string | null>(null);
+
+  // Centralized Route Guards and Access Protection
+  useEffect(() => {
+    // Stop guards while auth context is establishing its startup session state
+    if (initializing) return;
+
+    const protectedViews = [
+      'student-dashboard',
+      'teacher-dashboard',
+      'teacher-content',
+      'admin-dashboard',
+      'admin-controls',
+      'quiz-dashboard',
+      'quiz-play',
+      'quiz-result',
+      'pyq-dashboard',
+      'pyq-play',
+      'pyq-result',
+      'class-view',
+      'subject-view',
+      'pyq-view',
+      'course-view',
+      'lesson-view',
+      'update-profile',
+      'purchases-invoices'
+    ];
+
+    const isAuthenticated = user && role !== 'visitor';
+
+    if (!isAuthenticated) {
+      // Guest trying to enter protected views
+      if (protectedViews.includes(currentView)) {
+        addToast('Please login or register to access this study resource.', 'warning');
+        sessionStorage.setItem('auth_redirect_target', currentView);
+        setCurrentView('auth');
+      }
+    } else {
+      // Logged-in user trying to enter auth pages
+      if (currentView === 'auth' || currentView === 'auth-signup') {
+        const redirectTarget = sessionStorage.getItem('auth_redirect_target');
+        if (redirectTarget && redirectTarget !== 'auth' && redirectTarget !== 'auth-signup') {
+          sessionStorage.removeItem('auth_redirect_target');
+          setCurrentView(redirectTarget);
+        } else {
+          if (role === 'student') setCurrentView('student-dashboard');
+          else if (role === 'teacher') setCurrentView('teacher-dashboard');
+          else if (role === 'admin') setCurrentView('admin-dashboard');
+        }
+      }
+    }
+  }, [role, user, currentView, initializing]);
 
   // Listen to Auth sessions reactively
   useEffect(() => {
@@ -174,9 +225,19 @@ function AppSyncController({
     const initSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user && syncedUserIdRef.current !== session.user.id) {
-          syncedUserIdRef.current = session.user.id;
-          await syncUserProfile(session.user.id, addToast, setCurrentView);
+        if (session?.user) {
+          if (syncedUserIdRef.current !== session.user.id) {
+            syncedUserIdRef.current = session.user.id;
+            await syncUserProfile(session.user.id, addToast, setCurrentView);
+          }
+        } else {
+          // If Supabase has no active session, but there are Supabase login tokens stored in localStorage,
+          // it means the session became invalid/expired. Clear state to force logout.
+          const hasSupabaseTokens = typeof window !== 'undefined' && 
+            Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+          if (hasSupabaseTokens) {
+            setUser(null);
+          }
         }
       } catch (err) {
         console.error('Session initialization failed:', err);

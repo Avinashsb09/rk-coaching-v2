@@ -22,10 +22,43 @@ export interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [role, setRoleState] = useState<UserRole>('visitor');
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [role, setRoleState] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rk_auth_role');
+      if (saved) return saved as UserRole;
+    }
+    return 'visitor';
+  });
+
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('rk_auth_user');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse saved user', e);
+        }
+      }
+    }
+    return null;
+  });
+
   const [initializing, setInitializing] = useState(true);
   const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
+
+  // Save auth state reactively to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (user) {
+        localStorage.setItem('rk_auth_user', JSON.stringify(user));
+        localStorage.setItem('rk_auth_role', role);
+      } else {
+        localStorage.removeItem('rk_auth_user');
+        localStorage.removeItem('rk_auth_role');
+      }
+    }
+  }, [user, role]);
 
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);
@@ -104,16 +137,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(userProfile);
                 setRoleState(userProfile.role);
                 
-                // Redirect
-                const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-                const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
-                if (isOnDefaultPage) {
-                  if (userProfile.role === 'student') setCurrentView('student-dashboard');
-                  else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
-                  else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
-                } else {
-                  setCurrentView(currentHash);
-                }
+                 // Redirect
+                 const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+                 const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+                 const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
+                 if (redirectTarget) {
+                   sessionStorage.removeItem('auth_redirect_target');
+                   setCurrentView(redirectTarget);
+                 } else if (isOnDefaultPage) {
+                   if (userProfile.role === 'student') setCurrentView('student-dashboard');
+                   else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
+                   else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+                 } else {
+                   setCurrentView(currentHash);
+                 }
                 return userProfile;
               } else {
                 console.error('Insert query failed during auto-creation:', insertError);
@@ -169,8 +206,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Transition router safely if not already on a deep link or specific view
         const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
         const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+        const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
 
-        if (isOnDefaultPage) {
+        if (redirectTarget) {
+          sessionStorage.removeItem('auth_redirect_target');
+          setCurrentView(redirectTarget);
+        } else if (isOnDefaultPage) {
           if (userProfile.role === 'student') {
             setCurrentView('student-dashboard');
           } else if (userProfile.role === 'teacher') {
@@ -240,12 +281,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(mockProfiles[targetRole]);
 
-      if (targetRole === 'student') {
-        setCurrentView('student-dashboard');
-      } else if (targetRole === 'teacher') {
-        setCurrentView('teacher-dashboard');
-      } else if (targetRole === 'admin') {
-        setCurrentView('admin-dashboard');
+      const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
+      if (redirectTarget) {
+        sessionStorage.removeItem('auth_redirect_target');
+        setCurrentView(redirectTarget);
+      } else {
+        if (targetRole === 'student') {
+          setCurrentView('student-dashboard');
+        } else if (targetRole === 'teacher') {
+          setCurrentView('teacher-dashboard');
+        } else if (targetRole === 'admin') {
+          setCurrentView('admin-dashboard');
+        }
       }
       addToast(`Successfully logged in as ${mockProfiles[targetRole].fullName} (${targetRole.toUpperCase()})`, 'success');
     }
@@ -255,6 +302,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabase();
     if (supabase) {
       await supabase.auth.signOut();
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('rk_auth_user');
+      localStorage.removeItem('rk_auth_role');
+      sessionStorage.removeItem('auth_redirect_target');
     }
     setRoleState('visitor');
     setUser(null);

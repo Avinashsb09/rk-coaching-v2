@@ -228,74 +228,31 @@ function MainAppShell() {
         return <SubjectView />;
       
       case 'pyq-view':
-        if (role === 'visitor') {
-          addToast('Please log in as student to access PYQ papers.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <PyqView />;
 
       case 'pyq-dashboard':
-        if (role === 'visitor') {
-          addToast('Please log in as student to access the PYQ Arena.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <PyqDashboard />;
       
       case 'pyq-play':
-        if (role === 'visitor') {
-          addToast('Please log in as student to launch CBT exams.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <PyqPlay />;
       
       case 'pyq-result':
-        if (role === 'visitor') {
-          addToast('Please log in as student to review CBT results.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <PyqResult />;
       
       case 'quiz-dashboard':
-        if (role === 'visitor') {
-          addToast('Please log in as student to access the Quiz Arena.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <QuizDashboard />;
       
       case 'quiz-play':
-        if (role === 'visitor') {
-          addToast('Please log in as student to launch quiz tests.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <QuizPlay />;
       
       case 'quiz-result':
-        if (role === 'visitor') {
-          addToast('Please log in as student to review results.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
         return <QuizResult />;
       
       case 'course-view':
         return <CourseView />;
       
-      case 'lesson-view': {
-        const appState = useApp();
-        const lesson = appState.lessons.find(l => l.id === appState.selectedLessonId);
-        if (role === 'visitor' && lesson?.isPremium) {
-          addToast('This is a Premium Lesson. Please register or log in to unlock.', 'warning');
-          setCurrentView('auth');
-          return <AuthPage />;
-        }
+      case 'lesson-view':
         return <LessonView />;
-      }
       
       case 'purchases-invoices':
         return <PurchasesInvoices />;
