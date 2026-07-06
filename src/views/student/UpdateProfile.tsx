@@ -124,18 +124,21 @@ export default function UpdateProfile() {
 
     // Logging values immediately before validation for debugging
     console.log('--- PROFILE SAVE FLOW DEBUG ---');
-    console.log('Current classId state:', classId);
-    console.log('Dropdown selected value (classId):', classId);
-    console.log('classes length:', classes.length);
-    console.log('Entire classes array:', classes);
+    console.log('classId:', classId);
+    console.log('typeof classId:', typeof classId);
+    console.log('classes.length:', classes.length);
     console.log('resolvedClass:', resolvedClass);
-    console.log('Payload that would be sent:', {
+    console.log('resolvedClass?.id:', resolvedClass?.id);
+    console.log('resolvedClass?.name:', resolvedClass?.name);
+    
+    const updatedFields = {
       fullName: fullName.trim(),
       avatarUrl,
       phone: phone.trim(),
-      classId: resolvedClass?.id,
+      classId: resolvedClass?.id || null,
       schoolName: schoolName.trim()
-    });
+    };
+    console.log('Complete update payload:', updatedFields);
     console.log('Validation result:', !!resolvedClass);
 
     // Validate that the selected classId resolves to a known classes record
@@ -146,14 +149,6 @@ export default function UpdateProfile() {
 
     setIsSavingProfile(true);
     try {
-      const updatedFields = {
-        fullName: fullName.trim(),
-        avatarUrl,
-        phone: phone.trim(),
-        classId: resolvedClass.id,   // verified FK value — always exists in classes table
-        schoolName: schoolName.trim()
-      };
-
       if (supabase && user?.id) {
         // Perform a single, atomic update operation
         const { error: profileError } = await (supabase
@@ -162,6 +157,12 @@ export default function UpdateProfile() {
           .eq('id', user.id);
 
         if (profileError) {
+          console.error('--- PROFILE SAVE SUPABASE ERROR ---');
+          console.error('error.code:', profileError.code);
+          console.error('error.message:', profileError.message);
+          console.error('error.details:', profileError.details);
+          console.error('error.hint:', profileError.hint);
+
           if (profileError.code === '23503') {
             throw new Error('Unable to update your Academic Standard. Please select a valid option and try again.');
           }
