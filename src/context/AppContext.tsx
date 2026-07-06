@@ -195,10 +195,10 @@ function AppSyncController({
         setCurrentView('auth');
       }
     } else {
-      // Logged-in user trying to enter auth pages
-      if (currentView === 'auth' || currentView === 'auth-signup') {
+      // Logged-in user trying to enter auth pages or landing pages
+      if (currentView === 'auth' || currentView === 'auth-signup' || currentView === 'home' || currentView === 'catalog') {
         const redirectTarget = sessionStorage.getItem('auth_redirect_target');
-        if (redirectTarget && redirectTarget !== 'auth' && redirectTarget !== 'auth-signup') {
+        if (redirectTarget && redirectTarget !== 'auth' && redirectTarget !== 'auth-signup' && redirectTarget !== 'home' && redirectTarget !== 'catalog') {
           sessionStorage.removeItem('auth_redirect_target');
           setCurrentView(redirectTarget);
         } else {
