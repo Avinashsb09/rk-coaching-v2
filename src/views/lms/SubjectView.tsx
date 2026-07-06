@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase';
 import { mockChapters, mockLessons } from '../../lib/mockData';
-import { AcademicChapter, Lesson, Course } from '../../types';
+import { AcademicChapter, Lesson, Course, Note, Video } from '../../types';
 import { 
   ArrowLeft, 
   Layers, 
@@ -35,6 +35,7 @@ export default function SubjectView() {
     chapters,
     lessons,
     notes,
+    videos,
     unlockSubjectNotes,
     hasSubjectNotesAccess,
     user
@@ -51,8 +52,16 @@ export default function SubjectView() {
     setCheckoutNotesOpen(true);
   };
 
+  // Content selection wizard states
+  const [materialCategory, setMaterialCategory] = useState<'free' | 'premium' | null>(null);
+  const [contentType, setContentType] = useState<'notes' | 'video' | null>(null);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+
+  // Sync / load dynamic database entities
   const [chaptersList, setChaptersList] = useState<AcademicChapter[]>(chapters);
   const [lessonsList, setLessonsList] = useState<Lesson[]>(lessons);
+  const [notesList, setNotesList] = useState<Note[]>(notes);
+  const [videosList, setVideosList] = useState<Video[]>(videos);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -63,7 +72,22 @@ export default function SubjectView() {
     setLessonsList(lessons);
   }, [lessons]);
 
+  useEffect(() => {
+    setNotesList(notes);
+  }, [notes]);
+
+  useEffect(() => {
+    setVideosList(videos);
+  }, [videos]);
+
   const subjectObj = subjects.find(s => s.id === selectedSubjectId);
+
+  // Reset category/contentType/chapter when subject changes
+  useEffect(() => {
+    setMaterialCategory(null);
+    setContentType(null);
+    setSelectedChapterId(null);
+  }, [selectedSubjectId]);
 
   // Sync / load dynamic chapters and lessons from Supabase if available
   useEffect(() => {
@@ -89,6 +113,20 @@ export default function SubjectView() {
             .select('*');
           if (dbLessons && dbLessons.length > 0) {
             setLessonsList(dbLessons as any);
+          }
+
+          const { data: dbVideos } = await supabase
+            .from('videos')
+            .select('*');
+          if (dbVideos && dbVideos.length > 0) {
+            setVideosList(dbVideos as any);
+          }
+
+          const { data: dbNotes } = await supabase
+            .from('notes')
+            .select('*');
+          if (dbNotes && dbNotes.length > 0) {
+            setNotesList(dbNotes as any);
           }
         } catch (err) {
           console.error('Failed to load subject detail tables from Supabase:', err);
@@ -134,6 +172,36 @@ export default function SubjectView() {
     experience: '18+ Years coaching boards & competitive streams.'
   };
 
+  const getChapterResources = (chapterId: string) => {
+    const isPremiumMatch = materialCategory === 'premium';
+    const chapterLessons = lessonsList.filter(
+      l => l.chapterId === chapterId && l.isPremium === isPremiumMatch
+    );
+    const lessonIds = chapterLessons.map(l => l.id);
+
+    if (contentType === 'notes') {
+      return notesList.filter(n => n.lessonId && lessonIds.includes(n.lessonId));
+    } else if (contentType === 'video') {
+      return videosList.filter(v => v.lessonId && lessonIds.includes(v.lessonId));
+    }
+    return [];
+  };
+
+  const handleSelectCategory = (cat: 'free' | 'premium') => {
+    if (cat === 'premium' && !hasSubjectNotesAccess(subjectObj.id)) {
+      setCheckoutNotesOpen(true);
+      return;
+    }
+    setMaterialCategory(cat);
+    setContentType(null);
+    setSelectedChapterId(null);
+  };
+
+  const handleSelectContentType = (type: 'notes' | 'video') => {
+    setContentType(type);
+    setSelectedChapterId(null);
+  };
+
   return (
     <div className="space-y-8 py-4 text-left">
       {/* Back button */}
@@ -175,189 +243,280 @@ export default function SubjectView() {
         </div>
       </section>
 
-      {/* Grid: Left chapters, Right teacher & courses */}
+      {/* Grid: Left chapters wizard, Right teacher & courses */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Chapters Section (Left column, spanning 2 grids) */}
+        {/* Chapters Section (Left column, wizard, spanning 2 grids) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Premium Subject Notes Card */}
-          <Card glassmorphism className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-amber-200/40 dark:border-amber-900/30">
-            <div className="space-y-2 text-left">
-              <Badge variant="warning" className="bg-amber-500/15 text-amber-500 border-amber-500/20 font-black">
-                PREMIUM REVISION NOTES
-              </Badge>
-              <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Lock className="w-4.5 h-4.5 text-amber-500" />
-                {subjectObj.name} Premium Notes Package
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
-                Unlock lifetime download access to high-yield handwritten revisions, formulas, and chapter exam papers compiled specifically for {subjectObj.name}.
-              </p>
-              
-              {/* Notes list preview */}
-              {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).length > 0 && (
-                <div className="pt-2 flex flex-wrap gap-2">
-                  {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).map(n => (
-                    <span key={n.id} className="text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50 font-bold flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5" />
-                      {n.title}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center shrink-0 w-full sm:w-44 gap-3">
-              {hasSubjectNotesAccess(subjectObj.id) ? (
-                <>
-                  <div className="h-9 w-9 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center shadow-inner">
-                    <UserCheck className="w-5 h-5" />
-                  </div>
-                  <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase">UNLOCKED</p>
-                  
-                  {/* Download links for unlocked premium notes */}
-                  {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).length > 0 ? (
-                    <div className="flex flex-col gap-1.5 w-full">
-                      {notes.filter(n => n.subjectId === subjectObj.id && n.isPremium).map(n => (
-                        <a 
-                          key={n.id}
-                          href={n.pdfUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="w-full text-center py-1 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold border border-emerald-200/50 dark:border-emerald-900/30 truncate"
-                        >
-                          Save Notes
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[9px] text-slate-400 font-semibold leading-tight">All materials ready to download.</span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-black text-slate-900 dark:text-white">₹30</span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase">LIFETIME</span>
-                  </div>
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-[10px] font-black py-2 shadow-md shadow-amber-500/20"
-                    onClick={handleBuyNotes}
-                  >
-                    Unlock Notes
-                  </Button>
-                  <span className="text-[9px] text-slate-400 font-semibold leading-tight">Razorpay Verification</span>
-                </>
-              )}
-            </div>
-          </Card>
-
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <Layers className="w-5 h-5 text-indigo-500" />
-              Syllabus Chapters ({filteredChapters.length})
-            </h2>
-            {isLoading && <span className="text-xs text-slate-400 animate-pulse">Syncing Supabase...</span>}
+          
+          {/* Step Progress Breadcrumb */}
+          <div className="flex items-center gap-2 p-3 bg-white/40 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl backdrop-blur-md overflow-x-auto text-[11px] font-black uppercase tracking-wider text-slate-400">
+            <button 
+              onClick={() => { setMaterialCategory(null); setContentType(null); setSelectedChapterId(null); }}
+              className={`px-3 py-1.5 rounded-lg transition-all ${!materialCategory ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-200/55 dark:hover:bg-slate-800/40 text-slate-500 dark:text-slate-400'}`}
+            >
+              1. Category
+            </button>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <button 
+              disabled={!materialCategory}
+              onClick={() => { setContentType(null); setSelectedChapterId(null); }}
+              className={`px-3 py-1.5 rounded-lg transition-all ${materialCategory && !contentType ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-200/55 dark:hover:bg-slate-800/40 text-slate-500 dark:text-slate-400'} disabled:opacity-50`}
+            >
+              2. Content Type
+            </button>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span 
+              className={`px-3 py-1.5 rounded-lg ${materialCategory && contentType ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-400/50'}`}
+            >
+              3. Chapters & Resources
+            </span>
           </div>
 
-          {filteredChapters.length === 0 ? (
-            <Card className="p-6 text-center border-dashed border-2">
-              <p className="text-slate-500 text-sm">No chapters registered for this subject yet. Dynamic chapters sync automatically.</p>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {filteredChapters.map((chapter) => {
-                const chapterLessons = lessonsList.filter(l => l.chapterId === chapter.id);
-                const freeCount = chapterLessons.filter(l => !l.isPremium).length;
-                const premiumCount = chapterLessons.filter(l => l.isPremium).length;
-
-                return (
-                  <Card key={chapter.id} className="border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div className="bg-slate-50/50 dark:bg-slate-900/40 p-5 border-b border-slate-100 dark:border-slate-800/80">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1">
-                          <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-snug">
-                            {chapter.name}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {chapter.description}
-                          </p>
-                        </div>
-                        <div className="flex flex-col gap-1 items-end shrink-0">
-                          <Badge variant="success" className="text-[10px] scale-90">
-                            {freeCount} Free Lesson{freeCount !== 1 && 's'}
-                          </Badge>
-                          {premiumCount > 0 && (
-                            <Badge variant="warning" className="text-[10px] scale-90">
-                              {premiumCount} Premium Lesson{premiumCount !== 1 && 's'}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+          {/* STEP 1: Choose Material Category */}
+          {!materialCategory && (
+            <section className="space-y-6 animate-fade-in">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Choose Material Category</h2>
+                <p className="text-xs text-slate-500 mt-1">Select the grade of study resources you would like to explore.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Free materials */}
+                <Card 
+                  hoverEffect 
+                  className="cursor-pointer border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between h-48 hover:border-emerald-500/40"
+                  onClick={() => handleSelectCategory('free')}
+                >
+                  <div className="space-y-3">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5" />
                     </div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-white">Free Study Materials</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Access board-aligned revision notes, solved keys, and starter video lectures.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span>Explore Free Revisions</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </Card>
 
-                    <CardContent className="p-0 text-left">
-                      {chapterLessons.length === 0 ? (
-                        <p className="text-xs text-slate-400 p-4 italic">No lessons published under this chapter yet.</p>
-                      ) : (
-                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {chapterLessons.map((lesson) => (
-                            <div 
-                              key={lesson.id} 
-                              className="p-4 flex items-center justify-between gap-4 hover:bg-slate-50/40 dark:hover:bg-slate-900/20 transition-all cursor-pointer"
-                              onClick={() => {
-                                // Match to course
-                                const associatedCourse = subjectCourses.find(c => c.id === lesson.courseId) || subjectCourses[0];
-                                if (associatedCourse) {
-                                  setSelectedCourseId(associatedCourse.id);
-                                }
-                                setSelectedLessonId(lesson.id);
-                                setCurrentView('lesson-view');
-                                addToast(`Opening: ${lesson.title}`, 'success');
-                              }}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="mt-0.5 text-blue-500">
-                                  {lesson.isPremium ? <Lock className="w-4 h-4 text-amber-500" /> : <PlayCircle className="w-4 h-4 text-emerald-500" />}
-                                </div>
-                                <div className="space-y-0.5">
-                                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                    {lesson.title}
-                                  </h4>
-                                  <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                                    {lesson.description}
-                                  </p>
-                                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 ${
-                                      lesson.isPremium 
-                                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/30' 
-                                        : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/30'
-                                    }`}>
-                                      <FileText className="w-3 h-3" />
-                                      {lesson.isPremium ? 'Premium Revision Notes' : 'Free Practice Notes'}
-                                    </span>
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/30 flex items-center gap-1">
-                                      <PlayCircle className="w-3 h-3" />
-                                      Chapter-wise Video Lecture
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-[10px] font-semibold text-slate-400 hidden sm:inline">PDF notes, video lecture available</span>
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
-                              </div>
-                            </div>
-                          ))}
+                {/* Premium materials */}
+                <Card 
+                  hoverEffect 
+                  className="cursor-pointer border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between h-48 hover:border-amber-500/40"
+                  onClick={() => handleSelectCategory('premium')}
+                >
+                  <div className="space-y-3">
+                    <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      {hasSubjectNotesAccess(subjectObj.id) ? <UserCheck className="w-5 h-5 text-emerald-500" /> : <Lock className="w-5 h-5 text-amber-500" />}
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-white">Premium Study Materials</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Unlock high-yield handwritten cheat sheets, formula lists, and exam papers.</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/30">
+                      {hasSubjectNotesAccess(subjectObj.id) ? 'UNLOCKED' : '₹30 LIFETIME'}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                      <span>Explore Premium Pack</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </section>
+          )}
+
+          {/* STEP 2: Choose Content Type */}
+          {materialCategory && !contentType && (
+            <section className="space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Choose Content Type</h2>
+                  <p className="text-xs text-slate-500 mt-1">Select the format of resources you want to load.</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-slate-400 hover:text-slate-600"
+                  onClick={() => { setMaterialCategory(null); }}
+                >
+                  ← Back to Categories
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Notes */}
+                <Card 
+                  hoverEffect 
+                  className="cursor-pointer border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between h-48 hover:border-blue-500/40"
+                  onClick={() => handleSelectContentType('notes')}
+                >
+                  <div className="space-y-3">
+                    <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-white">Handwritten Notes & PDFs</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Read comprehensive chapter revisions, worksheets, and pdf sheets.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400">
+                    <span>View Chapter Notes</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </Card>
+
+                {/* Videos */}
+                <Card 
+                  hoverEffect 
+                  className="cursor-pointer border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between h-48 hover:border-indigo-500/40"
+                  onClick={() => handleSelectContentType('video')}
+                >
+                  <div className="space-y-3">
+                    <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <PlayCircle className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-white">Video Lectures</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Watch topic walkthroughs, boards preparation guides, and classes.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                    <span>Watch Video Lectures</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </Card>
+              </div>
+            </section>
+          )}
+
+          {/* STEP 3 & 4: Chapters Syllabus & Selected Chapter Resources */}
+          {materialCategory && contentType && (
+            <section className="space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="text-left">
+                  <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-indigo-500" />
+                    Official Chapter Syllabus ({filteredChapters.length})
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Currently displaying: <span className="font-bold text-blue-600 dark:text-blue-400 capitalize">{materialCategory} Materials</span> ➔ <span className="font-bold text-indigo-600 dark:text-indigo-400 capitalize">{contentType === 'notes' ? 'Notes' : 'Videos'}</span>
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                    onClick={() => { setContentType(null); setSelectedChapterId(null); }}
+                  >
+                    ← Change Content Type
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                    onClick={() => { setMaterialCategory(null); setContentType(null); setSelectedChapterId(null); }}
+                  >
+                    Category Selection
+                  </Button>
+                </div>
+              </div>
+
+              {filteredChapters.length === 0 ? (
+                <Card className="p-6 text-center border-dashed border-2 bg-slate-50/10 dark:bg-slate-900/10">
+                  <p className="text-slate-500 text-sm">No chapters registered for this subject yet. Dynamic chapters sync automatically.</p>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {filteredChapters.map((chapter) => {
+                    const resources = getChapterResources(chapter.id);
+                    const isExpanded = selectedChapterId === chapter.id;
+
+                    return (
+                      <Card key={chapter.id} className="border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-300">
+                        {/* Chapter Accordion Bar */}
+                        <div 
+                          onClick={() => setSelectedChapterId(isExpanded ? null : chapter.id)}
+                          className="bg-slate-50/50 dark:bg-slate-900/40 p-5 border-b border-slate-100 dark:border-slate-800/80 cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/60 flex items-center justify-between gap-4 select-none"
+                        >
+                          <div className="space-y-1 text-left">
+                            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-snug">
+                              {chapter.name}
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {chapter.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <Badge variant={resources.length > 0 ? 'success' : 'secondary'} className="text-[10px] uppercase font-bold tracking-wide">
+                              {resources.length} {contentType === 'notes' ? 'Note' : 'Video'}{resources.length !== 1 && 's'}
+                            </Badge>
+                            <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-500' : ''}`} />
+                          </div>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+
+                        {/* Chapter Expanded Resources Panel */}
+                        {isExpanded && (
+                          <CardContent className="p-5 border-t border-slate-100 dark:border-slate-800/80 bg-white/30 dark:bg-slate-950/20 text-left animate-fade-in">
+                            {resources.length === 0 ? (
+                              <div className="text-slate-500 text-xs italic py-2">
+                                No study materials published under this chapter yet.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {resources.map((resource: any) => {
+                                  const isNotes = contentType === 'notes';
+                                  return (
+                                    <Card key={resource.id} className="bg-white/50 dark:bg-slate-900/40 border-slate-100 dark:border-slate-800 p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
+                                      <div className="space-y-2">
+                                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${isNotes ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600'}`}>
+                                          {isNotes ? <FileText className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                                        </div>
+                                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2">
+                                          {resource.title}
+                                        </h4>
+                                        <p className="text-[9px] text-slate-400 font-semibold uppercase">
+                                          {isNotes 
+                                            ? `Size: ${(resource.sizeBytes / 1024).toFixed(0)} KB` 
+                                            : `Duration: ${Math.floor(resource.durationSeconds / 60)} mins`}
+                                        </p>
+                                      </div>
+                                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 mt-3 flex justify-between items-center gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="text-[9px] h-7 px-2.5"
+                                          onClick={() => {
+                                            const associatedLesson = lessonsList.find(l => l.id === resource.lessonId);
+                                            const associatedCourse = associatedLesson ? subjectCourses.find(c => c.id === associatedLesson.courseId) : null;
+                                            if (associatedCourse) setSelectedCourseId(associatedCourse.id);
+                                            if (associatedLesson) setSelectedLessonId(associatedLesson.id);
+                                            setCurrentView('lesson-view');
+                                          }}
+                                        >
+                                          {isNotes ? 'Open in Reader' : 'Watch Lecture'}
+                                        </Button>
+                                        {isNotes && (
+                                          <a
+                                            href={resource.pdfUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-center px-2.5 py-1.5 h-7 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-extrabold transition-all shadow-sm"
+                                          >
+                                            Download PDF
+                                          </a>
+                                        )}
+                                      </div>
+                                    </Card>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </CardContent>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           )}
         </div>
 
