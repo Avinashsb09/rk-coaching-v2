@@ -20,6 +20,7 @@ interface AppContextType {
   // Authentication & Roles
   role: UserRole;
   user: UserProfile | null;
+  setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   setRole: (role: UserRole) => void;
   loginAs: (role: UserRole) => void;
   logout: () => void;
@@ -422,7 +423,7 @@ function AppContextInjector({
     loadSubjectNotesPurchases
   } = useCourses();
   const { orders, setOrders, payments, setPayments, paymentSettings, setPaymentSettings } = usePayments();
-  const { role, user, setRole, loginAs, logout, syncUserProfile, initializing } = useAuth();
+  const { role, user, setUser, setRole, loginAs, logout, syncUserProfile, initializing } = useAuth();
 
   const handleSyncUserProfile = async (userId: string) => {
     await syncUserProfile(userId, addToast, setCurrentView);
@@ -487,6 +488,7 @@ function AppContextInjector({
   const contextValue: AppContextType = {
     role,
     user,
+    setUser,
     setRole,
     loginAs: handleLoginAs,
     logout: handleLogout,

@@ -114,12 +114,15 @@ export default function UpdateProfile() {
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
+    console.log("STEP 1: Form submission triggered");
     e.preventDefault();
     if (!fullName.trim()) {
+      console.log("STEP 1a: Validation failed - Name empty");
       addToast('Full name is required', 'error');
       return;
     }
 
+    console.log("STEP 2: Resolving classes and validation");
     const resolvedClass = classes.find(c => c.id === classId);
 
     // Logging values immediately before validation for debugging
@@ -143,18 +146,32 @@ export default function UpdateProfile() {
 
     // Validate that the selected classId resolves to a known classes record
     if (!resolvedClass) {
+      console.log("STEP 2a: Validation failed - resolvedClass is falsy");
       addToast('Please select a valid Academic Standard before saving.', 'error');
       return;
     }
 
+    console.log("STEP 3: Preparing to save profile");
     setIsSavingProfile(true);
     try {
       if (supabase && user?.id) {
-        // Perform a single, atomic update operation
-        const { error: profileError } = await (supabase
-          .from('profiles') as any)
-          .update(updatedFields)
-          .eq('id', user.id);
+        console.log("STEP 4: Before Supabase Update");
+        
+        // Wrap update call in nested try-catch to print full stack
+        let profileError;
+        try {
+          const { error } = await (supabase
+            .from('profiles') as any)
+            .update(updatedFields)
+            .eq('id', user.id);
+          profileError = error;
+        } catch (dbErr: any) {
+          console.error("Database invocation threw raw error:", dbErr);
+          console.error(dbErr.stack);
+          throw dbErr;
+        }
+
+        console.log("STEP 5: After Supabase Update");
 
         if (profileError) {
           console.error('--- PROFILE SAVE SUPABASE ERROR ---');
@@ -169,34 +186,55 @@ export default function UpdateProfile() {
           throw new Error(profileError.message || 'Failed to save profile. Please try again.');
         }
 
-        // Sync Auth metadata so session data stays consistent with the profile row
-        const { error: authError } = await supabase.auth.updateUser({
-          data: { fullName: updatedFields.fullName, classId: updatedFields.classId, avatarUrl }
-        });
-        if (authError) console.warn('Auth metadata sync skipped:', authError.message);
+        console.log("STEP 6: Syncing Auth Metadata");
+        try {
+          const { error: authError } = await supabase.auth.updateUser({
+            data: { fullName: updatedFields.fullName, classId: updatedFields.classId, avatarUrl }
+          });
+          if (authError) console.warn('Auth metadata sync skipped:', authError.message);
+        } catch (authErr: any) {
+          console.error("Auth metadata sync threw error:", authErr);
+          console.error(authErr.stack);
+        }
 
-        // Update local state context
-        setUser((prev: any) => {
-          if (!prev) return null;
-          return { ...prev, ...updatedFields };
-        });
+        console.log("STEP 7: Updating local state context");
+        try {
+          setUser((prev: any) => {
+            if (!prev) return null;
+            return { ...prev, ...updatedFields };
+          });
+        } catch (userContextErr: any) {
+          console.error("setUser local state context threw error:", userContextErr);
+          console.error(userContextErr.stack);
+          throw userContextErr;
+        }
 
+        console.log("STEP 8: Toasting success");
         addToast('Profile updated successfully!', 'success');
       } else {
-        // Offline / no Supabase — update local state only
-        setUser((prev: any) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            ...updatedFields
-          };
-        });
+        console.log("STEP 4 (Simulated): Offline path");
+        try {
+          setUser((prev: any) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              ...updatedFields
+            };
+          });
+        } catch (userContextErr: any) {
+          console.error("setUser simulated local state context threw error:", userContextErr);
+          console.error(userContextErr.stack);
+          throw userContextErr;
+        }
         addToast('Profile updated successfully!', 'success');
       }
     } catch (err: any) {
+      console.error("Outer catch block caught profile save failure:", err);
+      console.error(err.stack);
       addToast(err.message || 'Failed to update profile. Please try again.', 'error');
     } finally {
       setIsSavingProfile(false);
+      console.log("STEP 9: Save operation finalized");
     }
   };
 
