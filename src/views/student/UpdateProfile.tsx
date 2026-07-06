@@ -20,31 +20,38 @@ const avatarPresets = [
 ];
 
 export default function UpdateProfile() {
-  const { user, setUser, classes, subjects, chapters, addToast, setCurrentView } = useApp();
+  const { user, setUser, classes, addToast, setCurrentView } = useApp();
   const supabase = getSupabase();
 
   // Profile fields state
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || avatarPresets[0]);
   const [phone, setPhone] = useState(user?.phone || '');
-  const [classId, setClassId] = useState(user?.classId || 'c10');
+  const [classId, setClassId] = useState<string>('');       // empty until validated against DB
   const [schoolName, setSchoolName] = useState(user?.schoolName || '');
+
+  // Tracks whether the stored classId could not be resolved — prompts re-selection
+  const [classIdError, setClassIdError] = useState(false);
 
   // Synchronize form state when user profile or classes load/change
   useEffect(() => {
-    if (user) {
-      setFullName(user.fullName || '');
-      setAvatarUrl(user.avatarUrl || avatarPresets[0]);
-      setPhone(user.phone || '');
-      setSchoolName(user.schoolName || '');
-      
-      // Resolve classId (handling legacy slugs/names to find correct primary key ID)
-      const matched = classes.find(c => c.id === user.classId || c.slug === user.classId);
-      if (matched) {
-        setClassId(matched.id);
-      } else {
-        setClassId(user.classId || 'c10');
-      }
+    if (!user || classes.length === 0) return;
+
+    setFullName(user.fullName || '');
+    setAvatarUrl(user.avatarUrl || avatarPresets[0]);
+    setPhone(user.phone || '');
+    setSchoolName(user.schoolName || '');
+
+    // Resolve stored classId against the live classes table.
+    // Accept both the primary key (e.g. 'c10') and legacy slugs (e.g. 'class-10').
+    const matched = classes.find(c => c.id === user.classId || c.slug === user.classId);
+    if (matched) {
+      setClassId(matched.id);
+      setClassIdError(false);
+    } else {
+      // Stored value does not exist in the classes table — reset and warn.
+      setClassId('');
+      setClassIdError(!!user.classId); // only warn if there was a stored value (legacy data)
     }
   }, [user, classes]);
 
@@ -113,10 +120,10 @@ export default function UpdateProfile() {
       return;
     }
 
-    // Validate that the selected classId exists in the loaded classes list
+    // Validate that the selected classId resolves to a known classes record
     const resolvedClass = classes.find(c => c.id === classId);
     if (!resolvedClass) {
-      addToast('Unable to update your Academic Standard. Please select a valid option and try again.', 'error');
+      addToast('Please select a valid Academic Standard before saving.', 'error');
       return;
     }
 
@@ -303,6 +310,12 @@ export default function UpdateProfile() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-400 font-bold mb-1.5">Academic Standard</label>
+                  {classIdError && (
+                    <div className="flex items-center gap-1.5 mb-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 text-[10px] font-semibold">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      Your previous Academic Standard is no longer valid. Please choose a new one.
+                    </div>
+                  )}
                   {classes.length === 0 ? (
                     <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 text-xs">
                       Loading standards from database...
@@ -310,9 +323,14 @@ export default function UpdateProfile() {
                   ) : (
                     <select 
                       value={classId} 
-                      onChange={e => setClassId(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs"
+                      onChange={e => { setClassId(e.target.value); setClassIdError(false); }}
+                      className={`w-full p-2.5 rounded-xl border bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 outline-none text-xs ${
+                        !classId ? 'border-amber-400 dark:border-amber-700' : 'border-slate-200 dark:border-slate-800'
+                      }`}
                     >
+                      {!classId && (
+                        <option value="" disabled>— Select your Academic Standard —</option>
+                      )}
                       {classes.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
