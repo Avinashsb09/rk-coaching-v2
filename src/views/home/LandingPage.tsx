@@ -53,21 +53,6 @@ export default function LandingPage({ showCatalog: initialShowCatalog = true }: 
           {homepageConfig.heroSubtitle || "Access high-yield handwritten PDF Notes, interactive conceptual quizzes, video lectures, and real-time gamified student leaderboards."}
         </p>
 
-        {/* Rapid stats overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 pt-6 max-w-2xl mx-auto text-center border-t border-slate-100 dark:border-slate-800/80">
-          <div className="px-3 py-2 sm:py-0">
-            <p className="text-xl sm:text-2xl font-extrabold text-blue-600 dark:text-blue-400 leading-tight mb-1">Class 6–12</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Supported Standards</p>
-          </div>
-          <div className="border-y sm:border-y-0 sm:border-x border-slate-100 dark:border-slate-800 px-3 py-4 sm:py-0">
-            <p className="text-xl sm:text-2xl font-extrabold text-emerald-500 leading-tight mb-1">Handwritten Notes</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Revision PDFs & Guides</p>
-          </div>
-          <div className="px-3 py-2 sm:py-0">
-            <p className="text-xl sm:text-2xl font-extrabold text-amber-500 leading-tight mb-1">NEET (Biology & Chemistry)</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Curriculum Coaching</p>
-          </div>
-        </div>
 
         {/* Quiz Arena and PYQ Arena Cards Stack */}
         <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto mb-6">

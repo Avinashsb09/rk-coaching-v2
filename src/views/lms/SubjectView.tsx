@@ -239,29 +239,6 @@ export default function SubjectView() {
         {/* Chapters Section (centered column, wizard) */}
         <div className="space-y-6">
           
-          {/* Step Progress Breadcrumb */}
-          <div className="flex items-center gap-2 p-3 bg-white/40 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-800/50 rounded-2xl backdrop-blur-md overflow-x-auto text-[11px] font-black uppercase tracking-wider text-slate-400">
-            <button 
-              onClick={() => { setMaterialCategory(null); setContentType(null); setSelectedChapterId(null); }}
-              className={`px-3 py-1.5 rounded-lg transition-all ${!materialCategory ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-200/55 dark:hover:bg-slate-800/40 text-slate-500 dark:text-slate-400'}`}
-            >
-              1. Category
-            </button>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <button 
-              disabled={!materialCategory}
-              onClick={() => { setContentType(null); setSelectedChapterId(null); }}
-              className={`px-3 py-1.5 rounded-lg transition-all ${materialCategory && !contentType ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'hover:bg-slate-200/55 dark:hover:bg-slate-800/40 text-slate-500 dark:text-slate-400'} disabled:opacity-50`}
-            >
-              2. Content Type
-            </button>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span 
-              className={`px-3 py-1.5 rounded-lg ${materialCategory && contentType ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-400/50'}`}
-            >
-              3. Chapters & Resources
-            </span>
-          </div>
 
           {/* STEP 1: Choose Material Category */}
           {!materialCategory && (
