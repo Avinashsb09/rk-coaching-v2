@@ -104,13 +104,19 @@ export default function StudentDashboard() {
           </div>
           
           <div className="space-y-1">
-            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-              {activeClass?.name || 'No Academic Standard Selected'}
-            </p>
-            {!activeClass && (
-              <p className="text-[11px] text-slate-450 dark:text-slate-400">
-                Please select your class standard in settings or explore all options below.
-              </p>
+            {classes.length === 0 ? (
+              <p className="text-xs text-slate-400 animate-pulse">Loading academic standard...</p>
+            ) : (
+              <>
+                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  {activeClass?.name || 'No Academic Standard Selected'}
+                </p>
+                {!activeClass && (
+                  <p className="text-[11px] text-slate-450 dark:text-slate-400">
+                    Please select your class standard in settings or explore all options below.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
