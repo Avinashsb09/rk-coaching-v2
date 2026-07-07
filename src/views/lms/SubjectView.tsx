@@ -21,6 +21,8 @@ import {
   UserCheck
 } from 'lucide-react';
 import { RazorpayGatewayModal } from '../../components/commerce/RazorpayGatewayModal';
+import { PremiumComingSoonModal } from '../../components/shared/PremiumComingSoonModal';
+import { isPremiumEnabled, isPaymentEnabled, PremiumConfig } from '../../lib/systemConfig';
 
 export default function SubjectView() {
   const { 
@@ -42,11 +44,17 @@ export default function SubjectView() {
   } = useApp();
 
   const [checkoutNotesOpen, setCheckoutNotesOpen] = useState(false);
+  const [premiumComingSoonOpen, setPremiumComingSoonOpen] = useState(false);
 
   const handleBuyNotes = () => {
     if (!user) {
       addToast('Please log in to purchase premium notes.', 'warning');
       setCurrentView('auth');
+      return;
+    }
+    // Feature flag: show coming soon modal instead of payment checkout
+    if (!isPremiumEnabled()) {
+      setPremiumComingSoonOpen(true);
       return;
     }
     setCheckoutNotesOpen(true);
@@ -189,6 +197,11 @@ export default function SubjectView() {
 
   const handleSelectCategory = (cat: 'free' | 'premium') => {
     if (cat === 'premium' && !hasSubjectNotesAccess(subjectObj.id)) {
+      // Feature flag: show coming soon modal instead of payment checkout
+      if (!isPremiumEnabled()) {
+        setPremiumComingSoonOpen(true);
+        return;
+      }
       setCheckoutNotesOpen(true);
       return;
     }
@@ -282,7 +295,7 @@ export default function SubjectView() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/30">
-                      {hasSubjectNotesAccess(subjectObj.id) ? 'UNLOCKED' : '₹30 LIFETIME'}
+                      {hasSubjectNotesAccess(subjectObj.id) ? 'UNLOCKED' : PremiumConfig.ui.notesUnlockLabel}
                     </span>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
                       <span>Explore Premium Pack</span>
@@ -479,29 +492,38 @@ export default function SubjectView() {
         </div>
       </div>
 
-      <RazorpayGatewayModal
-        isOpen={checkoutNotesOpen}
-        onClose={() => setCheckoutNotesOpen(false)}
-        courseTitle={`${subjectObj.name} Premium Notes Package`}
-        courseId={`notes_${subjectObj.id}`}
-        amount={30}
-        onSuccess={async (paymentId, orderId) => {
-          try {
-            await unlockSubjectNotes(subjectObj.id, paymentId, orderId);
-            setCheckoutNotesOpen(false);
-          } catch (err: any) {
-            addToast(err.message || 'Payment notes unlock failed', 'error');
-          }
-        }}
-        onFailure={(reason) => {
-          addToast(`Razorpay payment failed: ${reason}`, 'error');
-        }}
-        onCancel={() => {
-          addToast('Payment checkout cancelled.', 'info');
-        }}
-        userEmail={user?.email || undefined}
-        userFullName={user?.fullName || undefined}
+      {/* Premium Coming Soon Modal — shown when Premium System is disabled */}
+      <PremiumComingSoonModal
+        isOpen={premiumComingSoonOpen}
+        onClose={() => setPremiumComingSoonOpen(false)}
       />
+
+      {/* Razorpay Notes Checkout Modal — only mounted when payment system is active */}
+      {isPaymentEnabled() && (
+        <RazorpayGatewayModal
+          isOpen={checkoutNotesOpen}
+          onClose={() => setCheckoutNotesOpen(false)}
+          courseTitle={`${subjectObj.name} Premium Notes Package`}
+          courseId={`notes_${subjectObj.id}`}
+          amount={30}
+          onSuccess={async (paymentId, orderId) => {
+            try {
+              await unlockSubjectNotes(subjectObj.id, paymentId, orderId);
+              setCheckoutNotesOpen(false);
+            } catch (err: any) {
+              addToast(err.message || 'Payment notes unlock failed', 'error');
+            }
+          }}
+          onFailure={(reason) => {
+            addToast(`Razorpay payment failed: ${reason}`, 'error');
+          }}
+          onCancel={() => {
+            addToast('Payment checkout cancelled.', 'info');
+          }}
+          userEmail={user?.email || undefined}
+          userFullName={user?.fullName || undefined}
+        />
+      )}
     </div>
   );
 }

@@ -29,6 +29,8 @@ import {
   Printer,
   Lock
 } from 'lucide-react';
+import { PremiumComingSoonModal } from '../../components/shared/PremiumComingSoonModal';
+import { isPremiumEnabled, PremiumConfig } from '../../lib/systemConfig';
 
 export default function LessonView() {
   const { 
@@ -70,6 +72,7 @@ export default function LessonView() {
   const [studyTime, setStudyTime] = useState(0); // in seconds
   const [progressPercent, setProgressPercent] = useState(0); // simulated video watching percent
   const [notesTab, setNotesTab] = useState<'notes' | 'pyq' | 'practiceset'>('notes');
+  const [premiumComingSoonOpen, setPremiumComingSoonOpen] = useState(false);
 
   const videoRef = useRef<HTMLDivElement>(null);
   const studyTrackerInterval = useRef<any>(null);
@@ -410,22 +413,27 @@ export default function LessonView() {
                   </div>
                   <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Premium Handout Locked</h4>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-                    This study notes PDF is reserved for premium tier users. Buy notes for this subject to unlock all chapters.
+                    This study notes PDF is reserved for premium tier users. Unlock access once the Premium Learning System is activated.
                   </p>
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => {
                       if (user?.role === 'visitor' || !user) {
                         addToast('Please register or log in to unlock content.', 'warning');
                         setCurrentView('auth');
+                        return;
+                      }
+                      // Feature flag: show coming soon modal instead of redirecting to checkout
+                      if (!isPremiumEnabled()) {
+                        setPremiumComingSoonOpen(true);
                       } else {
                         setCurrentView('subject-view');
                       }
-                    }} 
+                    }}
                     className="text-xs font-bold bg-amber-500 border-none text-slate-950 hover:bg-amber-600"
                   >
-                    Unlock All Subject Notes
+                    {PremiumConfig.ui.notesCTALabel}
                   </Button>
                 </div>
               ) : (
@@ -503,6 +511,12 @@ export default function LessonView() {
           )}
         </div>
       </footer>
+
+      {/* Premium Coming Soon Modal — shown when Premium System is disabled */}
+      <PremiumComingSoonModal
+        isOpen={premiumComingSoonOpen}
+        onClose={() => setPremiumComingSoonOpen(false)}
+      />
     </div>
   );
 }

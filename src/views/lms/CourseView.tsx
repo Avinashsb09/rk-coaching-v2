@@ -7,6 +7,8 @@ import { getSupabase, isSupabaseConfigured } from '../../lib/supabase';
 import { mockChapters, mockLessons, mockNotes, mockVideos } from '../../lib/mockData';
 import { AcademicChapter, Lesson, Note, Video } from '../../types';
 import { RazorpayGatewayModal } from '../../components/commerce/RazorpayGatewayModal';
+import { PremiumComingSoonModal } from '../../components/shared/PremiumComingSoonModal';
+import { isPremiumEnabled, isPaymentEnabled, PremiumConfig } from '../../lib/systemConfig';
 import { 
   ArrowLeft, 
   Play, 
@@ -56,6 +58,7 @@ export default function CourseView() {
   useEffect(() => { setVideosList(videos); }, [videos]);
   
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [premiumComingSoonOpen, setPremiumComingSoonOpen] = useState(false);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -148,6 +151,11 @@ export default function CourseView() {
     }
 
     if (courseObj.isPremium) {
+      // Feature flag: show coming soon modal instead of payment checkout
+      if (!isPremiumEnabled()) {
+        setPremiumComingSoonOpen(true);
+        return;
+      }
       setCheckoutOpen(true);
     } else {
       setEnrollLoading(true);
@@ -372,7 +380,7 @@ export default function CourseView() {
                     isLoading={enrollLoading}
                     onClick={handleEnroll}
                   >
-                    {courseObj.isPremium ? 'Enroll & Pay via Razorpay' : 'Enroll Free Now'}
+                    {courseObj.isPremium ? PremiumConfig.ui.enrollButtonLabel : 'Enroll Free Now'}
                   </Button>
                 )}
                 <p className="text-[10px] text-slate-400 text-center leading-relaxed font-semibold">
@@ -386,30 +394,38 @@ export default function CourseView() {
 
       </div>
 
-      {/* Razorpay Checkout Modal */}
-      <RazorpayGatewayModal
-        isOpen={checkoutOpen}
-        onClose={() => setCheckoutOpen(false)}
-        courseTitle={courseObj.title}
-        courseId={courseObj.id}
-        amount={courseObj.discountPrice || courseObj.price || 499}
-        userEmail={user?.email}
-        userFullName={user?.fullName}
-        onSuccess={async (paymentId, orderId) => {
-          try {
-            await enrollInCourse(courseObj.id, true, paymentId, orderId);
-            setCheckoutOpen(false);
-          } catch (err: any) {
-            addToast(err.message || 'Payment enrollment sync failed', 'error');
-          }
-        }}
-        onFailure={(reason) => {
-          addToast(`Razorpay payment failed: ${reason}`, 'error');
-        }}
-        onCancel={() => {
-          addToast('Payment checkout cancelled.', 'info');
-        }}
+      {/* Premium Coming Soon Modal — shown when Premium System is disabled */}
+      <PremiumComingSoonModal
+        isOpen={premiumComingSoonOpen}
+        onClose={() => setPremiumComingSoonOpen(false)}
       />
+
+      {/* Razorpay Checkout Modal — only mounted when payment system is active */}
+      {isPaymentEnabled() && (
+        <RazorpayGatewayModal
+          isOpen={checkoutOpen}
+          onClose={() => setCheckoutOpen(false)}
+          courseTitle={courseObj.title}
+          courseId={courseObj.id}
+          amount={courseObj.discountPrice || courseObj.price || 499}
+          userEmail={user?.email}
+          userFullName={user?.fullName}
+          onSuccess={async (paymentId, orderId) => {
+            try {
+              await enrollInCourse(courseObj.id, true, paymentId, orderId);
+              setCheckoutOpen(false);
+            } catch (err: any) {
+              addToast(err.message || 'Payment enrollment sync failed', 'error');
+            }
+          }}
+          onFailure={(reason) => {
+            addToast(`Razorpay payment failed: ${reason}`, 'error');
+          }}
+          onCancel={() => {
+            addToast('Payment checkout cancelled.', 'info');
+          }}
+        />
+      )}
     </div>
   );
 }
