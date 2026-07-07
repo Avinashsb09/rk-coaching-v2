@@ -110,6 +110,19 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed, onClose }: Side
             icon: <BookOpen className="w-5 h-5" />
           }
         ];
+      case 'super_admin':
+        return [
+          {
+            id: 'super-admin-dashboard',
+            label: 'Super Admin Panel',
+            icon: <LayoutDashboard className="w-5 h-5" />
+          },
+          {
+            id: 'home',
+            label: 'View Website',
+            icon: <BookOpen className="w-5 h-5" />
+          }
+        ];
       default:
         return [];
     }
@@ -117,7 +130,8 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed, onClose }: Side
 
   const navLinks = getNavLinks();
 
-  if (role === 'visitor') return null;
+  // Super Admin has its own embedded sidebar — don't render this one
+  if (role === 'visitor' || role === 'super_admin') return null;
 
   return (
     <aside

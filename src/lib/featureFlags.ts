@@ -74,9 +74,9 @@ export const FEATURE_FLAGS = {
 
   /**
    * Super Admin — master controller of the entire platform.
-   * NOT YET BUILT. Set to true only after the Super Admin sprint is complete.
+   * Foundation sprint is complete. Full feature sprints follow.
    */
-  SUPER_ADMIN_PANEL_ENABLED: false,
+  SUPER_ADMIN_PANEL_ENABLED: true,
 
   // ── Advanced / AI Features ────────────────────────────────────────────────
   /**

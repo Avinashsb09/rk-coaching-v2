@@ -276,6 +276,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           totalXp: 99999,
           badges: ['founder', 'mod_supreme'],
           avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80'
+        },
+        super_admin: {
+          id: '00000000-0000-0000-0000-000000000004',
+          email: 'superadmin@rkcoaching.com',
+          fullName: 'RK Super Admin',
+          role: 'super_admin',
+          dailyStreak: 365,
+          totalXp: 999999,
+          badges: ['founder', 'platform_owner', 'super_controller'],
+          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'
         }
       };
 
@@ -287,12 +297,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCurrentView(redirectTarget);
       } else {
         if (targetRole === 'student') {
-          setCurrentView('student-dashboard');
-        } else if (targetRole === 'teacher') {
-          setCurrentView('teacher-dashboard');
-        } else if (targetRole === 'admin') {
-          setCurrentView('admin-dashboard');
-        }
+            setCurrentView('student-dashboard');
+          } else if (targetRole === 'teacher') {
+            setCurrentView('teacher-dashboard');
+          } else if (targetRole === 'admin') {
+            setCurrentView('admin-dashboard');
+          } else if (targetRole === 'super_admin') {
+            setCurrentView('super-admin-dashboard');
+          }
       }
       addToast(`Successfully logged in as ${mockProfiles[targetRole].fullName} (${targetRole.toUpperCase()})`, 'success');
     }

@@ -36,6 +36,7 @@ import PyqDashboard from './views/student/PyqDashboard';
 import PyqPlay from './views/student/PyqPlay';
 import PyqResult from './views/student/PyqResult';
 import UpdateProfile from './views/student/UpdateProfile';
+import SuperAdminDashboard from './views/super-admin/SuperAdminDashboard';
 
 function MainAppShell() {
   const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast, initializing } = useApp();
@@ -126,6 +127,12 @@ function MainAppShell() {
         setBreadcrumbs([
           { label: 'Admin Enterprise Control', view: 'admin-dashboard' },
           { label: 'CMS Announcements & Payments' }
+        ]);
+        break;
+      case 'super-admin-dashboard':
+        setBreadcrumbs([
+          { label: 'Super Admin', view: 'super-admin-dashboard' },
+          { label: 'Master Control Center' }
         ]);
         break;
       case 'faq':
@@ -226,7 +233,7 @@ function MainAppShell() {
       
       case 'admin-dashboard':
       case 'admin-controls':
-        if (role !== 'admin') {
+        if (role !== 'admin' && role !== 'super_admin') {
           return (
             <ErrorState
               title="Access Refused - Admin restricted"
@@ -236,6 +243,18 @@ function MainAppShell() {
           );
         }
         return <AdminDashboard />;
+
+      case 'super-admin-dashboard':
+        if (role !== 'super_admin') {
+          return (
+            <ErrorState
+              title="Access Refused - Super Admin Only"
+              description="This panel is restricted to the platform owner (Super Admin). It provides full control over all roles, content, payments, and system configuration."
+              code="AUTH_403_SUPER_ADMIN"
+            />
+          );
+        }
+        return <SuperAdminDashboard />;
       
       case 'faq':
         return <FAQPage />;
@@ -294,7 +313,7 @@ function MainAppShell() {
     }
   };
 
-  const isSidebarVisible = role !== 'visitor';
+  const isSidebarVisible = role !== 'visitor' && role !== 'super_admin';
 
   if (initializing) {
     return (
