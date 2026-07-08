@@ -20,6 +20,14 @@ export interface UserProfile {
   address?: string | null;
   state?: string | null;
   district?: string | null;
+  status?: 'pending' | 'active' | 'inactive' | 'verified' | 'suspended' | 'archived';
+  isVerified?: boolean;
+  isSuspended?: boolean;
+  isPremium?: boolean;
+  isActive?: boolean;
+  archivedAt?: string | null;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 export interface AcademicClass {

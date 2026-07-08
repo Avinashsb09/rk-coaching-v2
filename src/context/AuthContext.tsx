@@ -184,6 +184,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const profileData = profile as any;
+        if (profileData.isSuspended || profileData.status === 'suspended') {
+          addToast('Your account has been suspended. Please contact platform support.', 'error');
+          // Sign out
+          const supabase = getSupabase();
+          if (supabase) {
+            supabase.auth.signOut().catch(() => {});
+          }
+          setUser(null);
+          setRoleState('visitor');
+          setCurrentView('auth');
+          return null;
+        }
+
         const userProfile: UserProfile = {
           id: profileData.id,
           email: profileData.email,

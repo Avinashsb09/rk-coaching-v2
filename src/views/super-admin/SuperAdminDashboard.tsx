@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import AcademicManagement from './modules/academic/AcademicManagement';
 import ContentManagement from './modules/content/ContentManagement';
+import UserManagement from './modules/user/UserManagement';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Navigation Config
@@ -550,6 +551,18 @@ export default function SuperAdminDashboard() {
     }
     if (activeView === 'sa-quiz') {
       return <ContentManagement initialTab="quiz" />;
+    }
+    if (activeView === 'sa-students') {
+      return <UserManagement initialRoleFilter="student" />;
+    }
+    if (activeView === 'sa-premium-students') {
+      return <UserManagement initialRoleFilter="student" initialPremiumFilter="premium" />;
+    }
+    if (activeView === 'sa-teachers') {
+      return <UserManagement initialRoleFilter="teacher" />;
+    }
+    if (activeView === 'sa-admins') {
+      return <UserManagement initialRoleFilter="admin" />;
     }
 
     return <ModulePlaceholder id={activeView} label={activeLabel} />;
