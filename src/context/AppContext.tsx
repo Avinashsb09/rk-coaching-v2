@@ -519,19 +519,29 @@ function AppContextInjector({
     toasts,
     addToast,
     dismissToast,
-    classes,
+    classes: (role === 'admin' || role === 'super_admin' || role === 'teacher')
+      ? classes
+      : classes.filter(c => c.isActive !== false),
     setClasses,
-    subjects,
+    subjects: (role === 'admin' || role === 'super_admin' || role === 'teacher')
+      ? subjects
+      : subjects.filter(s => s.isActive !== false),
     setSubjects,
     courses,
     setCourses,
-    chapters,
+    chapters: (role === 'admin' || role === 'super_admin' || role === 'teacher')
+      ? chapters
+      : chapters.filter(c => c.isActive !== false),
     setChapters,
     lessons,
     setLessons,
-    videos,
+    videos: (role === 'admin' || role === 'super_admin' || role === 'teacher')
+      ? videos
+      : videos.filter(v => v.status === 'published' || !v.status),
     setVideos,
-    notes,
+    notes: (role === 'admin' || role === 'super_admin' || role === 'teacher')
+      ? notes
+      : notes.filter(n => n.status === 'published' || !n.status),
     setNotes,
     announcements,
     setAnnouncements,
@@ -561,7 +571,9 @@ function AppContextInjector({
     unlockedSubjectNoteIds,
     unlockSubjectNotes: handleUnlockSubjectNotes,
     hasSubjectNotesAccess: handleHasSubjectNotesAccess,
-    quizzes,
+    quizzes: (role === 'admin' || role === 'super_admin' || role === 'teacher')
+      ? quizzes
+      : quizzes.filter(q => q.status === 'published' || !q.status),
     setQuizzes,
     quizQuestions,
     setQuizQuestions,

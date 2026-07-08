@@ -14,6 +14,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../../../context/AppContext';
 import { academicService, generateSlug } from '../../../../services/academic.service';
+import { orderingService } from '../../../../services/content.service';
 import { PermissionGuard } from '../../../../components/shared/PermissionGuard';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
@@ -105,6 +106,43 @@ function StandardsPanel() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [sortField, setSortField] = useState<'name' | 'priority'>('priority');
   const [sortAsc, setSortAsc] = useState(true);
+
+  // Drag and Drop states
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) return;
+
+    const updated = [...filtered];
+    const [draggedItem] = updated.splice(draggedIdx, 1);
+    updated.splice(targetIdx, 0, draggedItem);
+
+    const orders = updated.map((item, idx) => ({
+      id: item.id,
+      displayOrder: idx + 1
+    }));
+
+    const stateMap = new Map(orders.map(o => [o.id, o.displayOrder]));
+    setItems(prev => prev.map(c => stateMap.has(c.id) ? { ...c, priority: stateMap.get(c.id)! } : c).sort((a,b) => a.priority - b.priority));
+    setDraggedIdx(null);
+
+    const { error } = await orderingService.updateOrder('standards', orders);
+    if (error) addToast(error, 'error');
+    else addToast('Academic standards reordered.', 'success');
+
+    const { data: fresh } = await academicService.classes.list();
+    if (fresh) setClasses(fresh);
+  };
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -263,9 +301,18 @@ function StandardsPanel() {
                 <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400 text-xs">Loading...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={6}><EmptyTable label="Standard" onAdd={openCreate} /></td></tr>
-              ) : filtered.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                  <td className="px-4 py-3 text-slate-300 dark:text-slate-700"><GripVertical className="w-3.5 h-3.5" /></td>
+              ) : filtered.map((item, idx) => (
+                <tr 
+                  key={item.id}
+                  draggable
+                  onDragStart={e => handleDragStart(e, idx)}
+                  onDragOver={e => handleDragOver(e, idx)}
+                  onDrop={e => handleDrop(e, idx)}
+                  className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors ${
+                    draggedIdx === idx ? 'opacity-40 bg-slate-100 dark:bg-slate-800' : ''
+                  }`}
+                >
+                  <td className="px-4 py-3 text-slate-300 dark:text-slate-700 cursor-grab active:cursor-grabbing"><GripVertical className="w-3.5 h-3.5" /></td>
                   <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200">{item.name}</td>
                   <td className="px-4 py-3 font-mono text-slate-500 text-[10px]">{item.slug}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{item.priority}</td>
@@ -400,6 +447,43 @@ function SubjectsPanel() {
   const [deleteItem, setDeleteItem] = useState<AcademicSubject | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Drag and Drop states
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) return;
+
+    const updated = [...filtered];
+    const [draggedItem] = updated.splice(draggedIdx, 1);
+    updated.splice(targetIdx, 0, draggedItem);
+
+    const orders = updated.map((item, idx) => ({
+      id: item.id,
+      displayOrder: idx + 1
+    }));
+
+    const stateMap = new Map(orders.map(o => [o.id, o.displayOrder]));
+    setItems(prev => prev.map(s => stateMap.has(s.id) ? { ...s, displayOrder: stateMap.get(s.id)! } : s).sort((a,b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    setDraggedIdx(null);
+
+    const { error } = await orderingService.updateOrder('subjects', orders);
+    if (error) addToast(error, 'error');
+    else addToast('Subjects reordered successfully.', 'success');
+
+    const { data: fresh } = await academicService.subjects.list();
+    if (fresh) setSubjects(fresh);
+  };
+
   const [formClassId, setFormClassId] = useState('');
   const [formName, setFormName] = useState('');
   const [formIcon, setFormIcon] = useState('📚');
@@ -514,6 +598,15 @@ function SubjectsPanel() {
             <option value="">All Standards</option>
             {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+          {filterClassId ? (
+            <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded-full">
+              ⚡ Drag handle active
+            </span>
+          ) : (
+            <span className="text-[10px] text-amber-500 dark:text-amber-400 font-bold bg-amber-500/10 px-2 py-1 rounded-full">
+              💡 Select Standard to reorder
+            </span>
+          )}
           <PermissionGuard permission="academic:write">
             <Button variant="primary" size="sm" onClick={openCreate} id="create-subject-btn">
               <Plus className="w-3.5 h-3.5 mr-1.5" />Add Subject
@@ -530,6 +623,7 @@ function SubjectsPanel() {
           <table className="w-full text-xs">
             <thead className="bg-slate-50/80 dark:bg-slate-900/80">
               <tr>
+                {filterClassId && <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider w-6"><GripVertical className="w-3.5 h-3.5" /></th>}
                 <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Icon</th>
                 <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Subject</th>
                 <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Standard</th>
@@ -541,11 +635,21 @@ function SubjectsPanel() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">Loading...</td></tr>
+                <tr><td colSpan={filterClassId ? 8 : 7} className="px-4 py-12 text-center text-slate-400">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7}><EmptyTable label="Subject" onAdd={openCreate} /></td></tr>
-              ) : filtered.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                <tr><td colSpan={filterClassId ? 8 : 7}><EmptyTable label="Subject" onAdd={openCreate} /></td></tr>
+              ) : filtered.map((item, idx) => (
+                <tr 
+                  key={item.id}
+                  draggable={!!filterClassId}
+                  onDragStart={e => handleDragStart(e, idx)}
+                  onDragOver={e => handleDragOver(e, idx)}
+                  onDrop={e => handleDrop(e, idx)}
+                  className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors ${
+                    draggedIdx === idx ? 'opacity-40 bg-slate-100 dark:bg-slate-800' : ''
+                  }`}
+                >
+                  {filterClassId && <td className="px-4 py-3 text-slate-300 dark:text-slate-700 cursor-grab active:cursor-grabbing"><GripVertical className="w-3.5 h-3.5" /></td>}
                   <td className="px-4 py-3 text-xl">{item.icon}</td>
                   <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200">{item.name}</td>
                   <td className="px-4 py-3">
@@ -653,6 +757,43 @@ function ChaptersPanel() {
   const [editItem, setEditItem] = useState<AcademicChapter | null>(null);
   const [deleteItem, setDeleteItem] = useState<AcademicChapter | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Drag and Drop states
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) return;
+
+    const updated = [...filtered];
+    const [draggedItem] = updated.splice(draggedIdx, 1);
+    updated.splice(targetIdx, 0, draggedItem);
+
+    const orders = updated.map((item, idx) => ({
+      id: item.id,
+      displayOrder: idx + 1
+    }));
+
+    const stateMap = new Map(orders.map(o => [o.id, o.displayOrder]));
+    setItems(prev => prev.map(c => stateMap.has(c.id) ? { ...c, orderIndex: stateMap.get(c.id)! } : c).sort((a,b) => (a.orderIndex || 0) - (b.orderIndex || 0)));
+    setDraggedIdx(null);
+
+    const { error } = await orderingService.updateOrder('chapters', orders);
+    if (error) addToast(error, 'error');
+    else addToast('Chapters reordered successfully.', 'success');
+
+    const { data: fresh } = await academicService.chapters.list();
+    if (fresh) setChapters(fresh);
+  };
 
   const [formSubjectId, setFormSubjectId] = useState('');
   const [formName, setFormName] = useState('');
@@ -773,6 +914,15 @@ function ChaptersPanel() {
             <option value="">All Subjects</option>
             {filteredSubjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
+          {filterSubjectId ? (
+            <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded-full">
+              ⚡ Drag handle active
+            </span>
+          ) : (
+            <span className="text-[10px] text-amber-500 dark:text-amber-400 font-bold bg-amber-500/10 px-2 py-1 rounded-full">
+              💡 Select Subject to reorder
+            </span>
+          )}
           <PermissionGuard permission="academic:write">
             <Button variant="primary" size="sm" onClick={openCreate} id="create-chapter-btn">
               <Plus className="w-3.5 h-3.5 mr-1.5" />Add Chapter
@@ -789,6 +939,7 @@ function ChaptersPanel() {
           <table className="w-full text-xs">
             <thead className="bg-slate-50/80 dark:bg-slate-900/80">
               <tr>
+                {filterSubjectId && <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider w-6"><GripVertical className="w-3.5 h-3.5" /></th>}
                 <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Chapter</th>
                 <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Subject</th>
                 <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Description</th>
@@ -799,11 +950,21 @@ function ChaptersPanel() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400">Loading...</td></tr>
+                <tr><td colSpan={filterSubjectId ? 7 : 6} className="px-4 py-12 text-center text-slate-400">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6}><EmptyTable label="Chapter" onAdd={openCreate} /></td></tr>
-              ) : filtered.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                <tr><td colSpan={filterSubjectId ? 7 : 6}><EmptyTable label="Chapter" onAdd={openCreate} /></td></tr>
+              ) : filtered.map((item, idx) => (
+                <tr 
+                  key={item.id}
+                  draggable={!!filterSubjectId}
+                  onDragStart={e => handleDragStart(e, idx)}
+                  onDragOver={e => handleDragOver(e, idx)}
+                  onDrop={e => handleDrop(e, idx)}
+                  className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors ${
+                    draggedIdx === idx ? 'opacity-40 bg-slate-100 dark:bg-slate-800' : ''
+                  }`}
+                >
+                  {filterSubjectId && <td className="px-4 py-3 text-slate-300 dark:text-slate-700 cursor-grab active:cursor-grabbing"><GripVertical className="w-3.5 h-3.5" /></td>}
                   <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200">{item.name}</td>
                   <td className="px-4 py-3"><Badge variant="info" size="sm">{getSubjectName(item.subjectId)}</Badge></td>
                   <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{item.description}</td>

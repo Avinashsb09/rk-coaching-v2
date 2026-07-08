@@ -89,6 +89,16 @@ export interface Video {
   provider: 'youtube' | 'gdrive' | 'vimeo' | 'supabase' | 'r2';
   videoIdOrUrl: string;
   durationSeconds: number;
+  displayOrder?: number;
+  classId?: string | null;
+  subjectId?: string | null;
+  chapterId?: string | null;
+  status?: 'draft' | 'review' | 'published' | 'archived';
+  description?: string;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Note {
@@ -96,12 +106,22 @@ export interface Note {
   lessonId?: string | null;
   classId?: string | null;
   subjectId?: string | null;
+  chapterId?: string | null;
   type?: 'notes' | 'pyq' | 'practiceset';
   title: string;
   pdfUrl: string;
   sizeBytes: number;
   isPremium: boolean;
   price?: number | null;
+  displayOrder?: number;
+  status?: 'draft' | 'review' | 'published' | 'archived';
+  examName?: string;
+  year?: number;
+  solvedStatus?: 'solved' | 'unsolved';
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Quiz {
@@ -110,6 +130,15 @@ export interface Quiz {
   title: string;
   passingScorePct: number;
   timerSeconds: number;
+  classId?: string | null;
+  subjectId?: string | null;
+  chapterId?: string | null;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  status?: 'draft' | 'review' | 'published' | 'archived';
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface QuizQuestion {

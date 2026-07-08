@@ -49,6 +49,7 @@ import {
   Bell,
 } from 'lucide-react';
 import AcademicManagement from './modules/academic/AcademicManagement';
+import ContentManagement from './modules/content/ContentManagement';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Navigation Config
@@ -537,6 +538,18 @@ export default function SuperAdminDashboard() {
     }
     if (activeView === 'sa-chapters') {
       return <AcademicManagement initialTab="chapters" />;
+    }
+    if (activeView === 'sa-notes') {
+      return <ContentManagement initialTab="notes" />;
+    }
+    if (activeView === 'sa-videos') {
+      return <ContentManagement initialTab="videos" />;
+    }
+    if (activeView === 'sa-pyq') {
+      return <ContentManagement initialTab="pyq" />;
+    }
+    if (activeView === 'sa-quiz') {
+      return <ContentManagement initialTab="quiz" />;
     }
 
     return <ModulePlaceholder id={activeView} label={activeLabel} />;
