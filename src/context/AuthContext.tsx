@@ -70,7 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log(`[${new Date().toISOString()}] INIT SESSION START`);
       try {
         console.log(`[${new Date().toISOString()}] BEFORE getSession`);
-        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // Timeout getSession request to 2500ms
+        const getSessionPromise = supabase.auth.getSession();
+        const getSessionTimeout = new Promise<{ data: { session: null }, error: any }>((_, reject) => 
+          setTimeout(() => reject(new Error('Supabase getSession request timed out')), 2500)
+        );
+        const { data: { session }, error } = await Promise.race([getSessionPromise, getSessionTimeout]) as any;
         console.log(`[${new Date().toISOString()}] AFTER getSession`);
         
         if (error) {
@@ -82,7 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log(`[${new Date().toISOString()}] SESSION FOUND`, { userId: session.user.id });
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
-            await syncUserProfile(session.user.id, addToast, null);
+            
+            // Timeout syncUserProfile fetch to 2500ms
+            const syncPromise = syncUserProfile(session.user.id, addToast, null);
+            const syncTimeout = new Promise<null>((_, reject) => 
+              setTimeout(() => reject(new Error('Profile sync request timed out')), 2500)
+            );
+            await Promise.race([syncPromise, syncTimeout]);
           }
         } else {
           console.log(`[${new Date().toISOString()}] NO SESSION FOUND`);
