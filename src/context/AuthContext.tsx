@@ -54,7 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
-  const [initializing, setInitializing] = useState(true);
+  const [initializing, setInitializingState] = useState(true);
+  const setInitializing = (val: boolean) => {
+    console.log(`[${new Date().toISOString()}] LOADING ${val ? 'TRUE' : 'FALSE'}`);
+    setInitializingState(val);
+  };
   const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
   const syncedUserIdRef = React.useRef<string | null>(null);
 
@@ -86,29 +90,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (session?.user) {
           console.log(`[${new Date().toISOString()}] SESSION FOUND`, { userId: session.user.id });
+          console.log(`[${new Date().toISOString()}] AUTH READY`);
+          
+          // Decouple: immediately set temporary user profile
+          const tempUserProfile: UserProfile = {
+            id: session.user.id,
+            email: session.user.email!,
+            fullName: session.user.user_metadata?.fullName || session.user.user_metadata?.name || 'Scholar',
+            role: session.user.user_metadata?.role || 'student',
+            avatarUrl: session.user.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.user.email || 'Scholar')}`,
+            dailyStreak: 1,
+            totalXp: 0,
+            badges: ['streak_1'],
+            classId: session.user.user_metadata?.classId || null,
+          };
+          setUser(tempUserProfile);
+          setRoleState(tempUserProfile.role);
+          setInitializing(false);
+
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
-            
-            // Timeout syncUserProfile fetch to 2500ms
-            const syncPromise = syncUserProfile(session.user.id, addToast, null, session.user);
-            const syncTimeout = new Promise<null>((_, reject) => 
-              setTimeout(() => reject(new Error('Profile sync request timed out')), 2500)
-            );
-            await Promise.race([syncPromise, syncTimeout]);
+            // Kick off background profile fetch
+            syncUserProfile(session.user.id, addToast, null, session.user).catch(err => {
+              console.error('Background sync failed:', err);
+            });
           }
         } else {
           console.log(`[${new Date().toISOString()}] NO SESSION FOUND`);
-          // If Supabase has no active session, but there are Supabase login tokens stored in localStorage,
-          // it means the session became invalid/expired. Clear state to force logout.
           const hasSupabaseTokens = typeof window !== 'undefined' && 
             Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
           if (hasSupabaseTokens) {
             setUser(null);
           }
+          setInitializing(false);
         }
       } catch (err) {
         console.error('Session initialization failed:', err);
-      } finally {
         setInitializing(false);
       }
     };
@@ -120,13 +137,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_IN' && session?.user) {
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
-            setInitializing(true);
+            console.log(`[${new Date().toISOString()}] AUTH READY`);
 
-            try {
-              await syncUserProfile(session.user.id, addToast, null, session.user);
-            } finally {
-              setInitializing(false);
-            }
+            // Decouple: immediately set temporary user profile
+            const tempUserProfile: UserProfile = {
+              id: session.user.id,
+              email: session.user.email!,
+              fullName: session.user.user_metadata?.fullName || session.user.user_metadata?.name || 'Scholar',
+              role: session.user.user_metadata?.role || 'student',
+              avatarUrl: session.user.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(session.user.email || 'Scholar')}`,
+              dailyStreak: 1,
+              totalXp: 0,
+              badges: ['streak_1'],
+              classId: session.user.user_metadata?.classId || null,
+            };
+            setUser(tempUserProfile);
+            setRoleState(tempUserProfile.role);
+            setInitializing(false);
+
+            // Kick off background sync
+            syncUserProfile(session.user.id, addToast, null, session.user).catch(err => {
+              console.error('Background sync failed:', err);
+            });
           }
         } else if (event === 'SIGNED_OUT') {
           syncedUserIdRef.current = null;
@@ -173,103 +205,111 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const supabase = getSupabase();
       if (!supabase) return null;
 
+      console.log(`[${new Date().toISOString()}] PROFILE FETCH START`);
+
       try {
         let profile: any = null;
         let fetchError: any = null;
 
-      try {
-        const selectPromise = supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        const timeoutPromise = new Promise<{ data: null, error: any }>((_, reject) => 
-          setTimeout(() => reject(new Error('Profile select query timed out')), 2500)
-        );
-
-        const res = await Promise.race([selectPromise, timeoutPromise]) as any;
-        profile = res.data;
-        fetchError = res.error;
-      } catch (err) {
-        console.warn('Select query failed or timed out. Attempting fallback user generation:', err);
-        fetchError = err;
-      }
-
-      if (fetchError || !profile) {
-        console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', fetchError);
-        
-        // Try to auto-create the profile row dynamically as a fallback!
         try {
-          const { data: { user: authUser } } = await supabase.auth.getUser();
-          if (authUser) {
-            console.log('Missing profile row or DB timeout detected. Attempting fallback profile creation/sync...');
-            const newProfile = {
-              id: authUser.id,
-              email: authUser.email!,
-              fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
-              role: authUser.user_metadata?.role || 'student',
-              avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
-              classId: authUser.user_metadata?.classId || null,
-              dailyStreak: 1,
-              totalXp: 0
-            };
+          const selectPromise = supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
 
-            const insertPromise = (supabase.from('profiles') as any).insert(newProfile).select('*').single();
-            const insertTimeout = new Promise<{ data: null, error: any }>((_, reject) => 
-              setTimeout(() => reject(new Error('Profile insert query timed out')), 2500)
-            );
-            const { data: insertedProfile, error: insertError } = await Promise.race([insertPromise, insertTimeout]) as any;
+          const timeoutPromise = new Promise<{ data: null, error: any }>((_, reject) => 
+            setTimeout(() => reject(new Error('Profile select query timed out')), 2500)
+          );
 
-            if (!insertError && insertedProfile) {
-              console.log('Successfully auto-created user profile fallback:', insertedProfile);
-              const profileData = insertedProfile as any;
-              const userProfile: UserProfile = {
-                id: profileData.id,
-                email: profileData.email,
-                fullName: profileData.fullName || 'Scholar',
-                role: (profileData.role as any) || 'student',
-                avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
-                dailyStreak: profileData.dailyStreak || 1,
-                totalXp: profileData.totalXp || 0,
-                badges: ['streak_1'],
-                classId: profileData.classId || null,
-                phone: profileData.phone || null,
-                schoolName: profileData.schoolName || null,
-                address: profileData.address || null,
-                state: profileData.state || null,
-                district: profileData.district || null
-              };
-              setUser(userProfile);
-              setRoleState(userProfile.role);
-              
-              // Redirect
-              const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-              const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
-              const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
-              if (redirectTarget && setCurrentView) {
-                sessionStorage.removeItem('auth_redirect_target');
-                setCurrentView(redirectTarget);
-              } else if (isOnDefaultPage && setCurrentView) {
-                if (userProfile.role === 'student') setCurrentView('student-dashboard');
-                else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
-                else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
-                else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
-              } else if (setCurrentView) {
-                setCurrentView(currentHash);
-              }
-              return userProfile;
-            } else {
-              console.error('Insert query failed during auto-creation:', insertError);
-            }
-          }
-        } catch (e) {
-          console.error('Exception during profile auto-creation fallback:', e);
+          const res = await Promise.race([selectPromise, timeoutPromise]) as any;
+          profile = res.data;
+          fetchError = res.error;
+        } catch (err) {
+          console.warn('Select query failed or timed out. Attempting fallback user generation:', err);
+          fetchError = err;
         }
 
-        // Local Memory Fallback - if database insert also fails or times out
-        try {
-          const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (fetchError || !profile) {
+          console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', fetchError);
+          console.log(`[${new Date().toISOString()}] PROFILE FETCH FAILED`);
+          
+          // Try to auto-create the profile row dynamically as a fallback!
+          try {
+            const authUser = authUserPayload;
+            if (authUser) {
+              console.log('Missing profile row or DB timeout detected. Attempting fallback profile creation/sync...');
+              const newProfile = {
+                id: authUser.id,
+                email: authUser.email!,
+                fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
+                role: authUser.user_metadata?.role || 'student',
+                avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
+                classId: authUser.user_metadata?.classId || null,
+                dailyStreak: 1,
+                totalXp: 0
+              };
+
+              const insertPromise = (supabase.from('profiles') as any).insert(newProfile).select('*').single();
+              const insertTimeout = new Promise<{ data: null, error: any }>((_, reject) => 
+                setTimeout(() => reject(new Error('Profile insert query timed out')), 2500)
+              );
+              const { data: insertedProfile, error: insertError } = await Promise.race([insertPromise, insertTimeout]) as any;
+
+              if (!insertError && insertedProfile) {
+                console.log('Successfully auto-created user profile fallback:', insertedProfile);
+                const profileData = insertedProfile as any;
+                const userProfile: UserProfile = {
+                  id: profileData.id,
+                  email: profileData.email,
+                  fullName: profileData.fullName || 'Scholar',
+                  role: (profileData.role as any) || 'student',
+                  avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
+                  dailyStreak: profileData.dailyStreak || 1,
+                  totalXp: profileData.totalXp || 0,
+                  badges: ['streak_1'],
+                  classId: profileData.classId || null,
+                  phone: profileData.phone || null,
+                  schoolName: profileData.schoolName || null,
+                  address: profileData.address || null,
+                  state: profileData.state || null,
+                  district: profileData.district || null
+                };
+                setUser(userProfile);
+                setRoleState(userProfile.role);
+                console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
+                
+                // Redirect
+                const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+                const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+                const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
+                if (redirectTarget && setCurrentView) {
+                  console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { target: redirectTarget });
+                  sessionStorage.removeItem('auth_redirect_target');
+                  setCurrentView(redirectTarget);
+                  console.log(`[${new Date().toISOString()}] ROUTE READY`);
+                } else if (isOnDefaultPage && setCurrentView) {
+                  console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { role: userProfile.role });
+                  if (userProfile.role === 'student') setCurrentView('student-dashboard');
+                  else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
+                  else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+                  else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
+                  console.log(`[${new Date().toISOString()}] ROUTE READY`);
+                } else if (setCurrentView) {
+                  setCurrentView(currentHash);
+                  console.log(`[${new Date().toISOString()}] ROUTE READY`);
+                }
+                return userProfile;
+              } else {
+                console.error('Insert query failed during auto-creation:', insertError);
+              }
+            }
+          } catch (e) {
+            console.error('Exception during profile auto-creation fallback:', e);
+          }
+
+          // Local Memory Fallback - if database insert also fails or times out
+          const authUser = authUserPayload;
           if (authUser) {
             console.log('Database writes unavailable. Using Local Memory Fallback profile from authenticated JWT payload.');
             const userProfile: UserProfile = {
@@ -291,6 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log(`[${new Date().toISOString()}] ROLE VERIFIED`, { role: userProfile.role });
             console.log(`[${new Date().toISOString()}] LOGIN SUCCESS`, { userId: userProfile.id, email: userProfile.email });
             console.log(`[${new Date().toISOString()}] RBAC PASSED`, { role: userProfile.role });
+            console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
 
             // Redirection logic
             const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
@@ -301,43 +342,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { target: redirectTarget });
               sessionStorage.removeItem('auth_redirect_target');
               setCurrentView(redirectTarget);
+              console.log(`[${new Date().toISOString()}] ROUTE READY`);
             } else if (isOnDefaultPage && setCurrentView) {
               console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { role: userProfile.role });
               if (userProfile.role === 'student') setCurrentView('student-dashboard');
               else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
               else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
               else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
+              console.log(`[${new Date().toISOString()}] ROUTE READY`);
             } else if (setCurrentView) {
               setCurrentView(currentHash);
+              console.log(`[${new Date().toISOString()}] ROUTE READY`);
             }
 
             return userProfile;
           }
-        } catch (fallbackErr) {
-          console.error('Local memory fallback auth user retrieval failed:', fallbackErr);
-        }
 
-        const err = fetchError as any;
-        const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
-        if (isAuthErr) {
-          console.warn('Session is invalid or expired. Signing out automatically.');
-          await supabase.auth.signOut().catch(() => {});
-          try {
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
-                localStorage.removeItem(key);
+          const err = fetchError as any;
+          const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
+          if (isAuthErr) {
+            console.warn('Session is invalid or expired. Signing out automatically.');
+            await supabase.auth.signOut().catch(() => {});
+            try {
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+                  localStorage.removeItem(key);
+                }
               }
-            }
-          } catch (e) {}
-        } else {
-          addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
+            } catch (e) {}
+          } else {
+            addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
+          }
+          
+          setUser(null);
+          setRoleState('visitor');
+          return null;
         }
-        
-        setUser(null);
-        setRoleState('visitor');
-        return null;
-      }
 
         const profileData = profile as any;
         if (profileData.isSuspended || profileData.status === 'suspended') {
@@ -350,6 +391,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setRoleState('visitor');
           setCurrentView('auth');
+          console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
           return null;
         }
 
@@ -368,6 +410,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setRoleState('visitor');
           if (setCurrentView) setCurrentView('auth');
+          console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
           return null;
         }
 
@@ -395,6 +438,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         console.log(`[${new Date().toISOString()}] LOGIN SUCCESS`, { userId: userProfile.id, email: userProfile.email });
         console.log(`[${new Date().toISOString()}] RBAC PASSED`, { role: userProfile.role });
+        console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
 
         // Transition router safely if not already on a deep link or specific view
         const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
@@ -405,6 +449,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { target: redirectTarget });
           sessionStorage.removeItem('auth_redirect_target');
           setCurrentView(redirectTarget);
+          console.log(`[${new Date().toISOString()}] ROUTE READY`);
         } else if (isOnDefaultPage && setCurrentView) {
           console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { role: userProfile.role });
           if (userProfile.role === 'student') {
@@ -418,14 +463,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
              console.error('[DEBUG] ROUTE NOT FOUND for role:', userProfile.role);
           }
+          console.log(`[${new Date().toISOString()}] ROUTE READY`);
         } else if (setCurrentView) {
           // Keeps user exactly on their current deep-linked view
           setCurrentView(currentHash);
+          console.log(`[${new Date().toISOString()}] ROUTE READY`);
         }
 
         return userProfile;
       } catch (err) {
         console.error('Failed to synchronize user profile:', err);
+        console.log(`[${new Date().toISOString()}] PROFILE FETCH FAILED`);
         return null;
       }
     })();
