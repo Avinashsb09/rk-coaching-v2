@@ -33,6 +33,11 @@ export interface CourseContextType {
 
 export const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
+let courseLastNotesLoadedUserId: string | null = null;
+let courseLoadingNotesUserId: string | null = null;
+let courseLastEnrollmentsLoadedUserId: string | null = null;
+let courseLoadingEnrollmentsUserId: string | null = null;
+
 export function CourseProvider({ children }: { children: ReactNode }) {
   const [selectedClassSlug, setSelectedClassSlug] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
@@ -40,22 +45,18 @@ export function CourseProvider({ children }: { children: ReactNode }) {
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const [unlockedSubjectNoteIds, setUnlockedSubjectNoteIds] = useState<string[]>([]);
-  const lastNotesLoadedUserRef = useRef<string | null>(null);
-  const loadingNotesUserRef = useRef<string | null>(null);
-  const lastEnrollmentsLoadedUserRef = useRef<string | null>(null);
-  const loadingEnrollmentsUserRef = useRef<string | null>(null);
 
   const loadSubjectNotesPurchases = async (userId: string) => {
     if (!userId) {
-      lastNotesLoadedUserRef.current = null;
-      loadingNotesUserRef.current = null;
+      courseLastNotesLoadedUserId = null;
+      courseLoadingNotesUserId = null;
       setUnlockedSubjectNoteIds([]);
       return;
     }
-    if (lastNotesLoadedUserRef.current === userId || loadingNotesUserRef.current === userId) {
+    if (courseLastNotesLoadedUserId === userId || courseLoadingNotesUserId === userId) {
       return;
     }
-    loadingNotesUserRef.current = userId;
+    courseLoadingNotesUserId = userId;
 
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
@@ -69,12 +70,12 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         if (data) {
           setUnlockedSubjectNoteIds(data.map((e: any) => e.subjectId));
         }
-        lastNotesLoadedUserRef.current = userId;
+        courseLastNotesLoadedUserId = userId;
       } catch (err) {
         console.error('Failed to load subject notes purchases:', err);
-        lastNotesLoadedUserRef.current = userId;
+        courseLastNotesLoadedUserId = userId;
       } finally {
-        loadingNotesUserRef.current = null;
+        courseLoadingNotesUserId = null;
       }
     } else {
       const saved = localStorage.getItem(`rk_subject_notes_${userId}`);
@@ -83,8 +84,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       } else {
         setUnlockedSubjectNoteIds([]);
       }
-      lastNotesLoadedUserRef.current = userId;
-      loadingNotesUserRef.current = null;
+      courseLastNotesLoadedUserId = userId;
+      courseLoadingNotesUserId = null;
     }
   };
 
@@ -163,15 +164,15 @@ export function CourseProvider({ children }: { children: ReactNode }) {
 
   const loadEnrollments = async (userId: string) => {
     if (!userId) {
-      lastEnrollmentsLoadedUserRef.current = null;
-      loadingEnrollmentsUserRef.current = null;
+      courseLastEnrollmentsLoadedUserId = null;
+      courseLoadingEnrollmentsUserId = null;
       setEnrolledCourseIds([]);
       return;
     }
-    if (lastEnrollmentsLoadedUserRef.current === userId || loadingEnrollmentsUserRef.current === userId) {
+    if (courseLastEnrollmentsLoadedUserId === userId || courseLoadingEnrollmentsUserId === userId) {
       return;
     }
-    loadingEnrollmentsUserRef.current = userId;
+    courseLoadingEnrollmentsUserId = userId;
 
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
@@ -185,12 +186,12 @@ export function CourseProvider({ children }: { children: ReactNode }) {
         if (data) {
           setEnrolledCourseIds(data.map((e: any) => e.courseId));
         }
-        lastEnrollmentsLoadedUserRef.current = userId;
+        courseLastEnrollmentsLoadedUserId = userId;
       } catch (err) {
         console.error('Failed to load enrollments:', err);
-        lastEnrollmentsLoadedUserRef.current = userId;
+        courseLastEnrollmentsLoadedUserId = userId;
       } finally {
-        loadingEnrollmentsUserRef.current = null;
+        courseLoadingEnrollmentsUserId = null;
       }
     } else {
       const saved = localStorage.getItem(`rk_enrollments_${userId}`);
@@ -199,8 +200,8 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       } else {
         setEnrolledCourseIds([]);
       }
-      lastEnrollmentsLoadedUserRef.current = userId;
-      loadingEnrollmentsUserRef.current = null;
+      courseLastEnrollmentsLoadedUserId = userId;
+      courseLoadingEnrollmentsUserId = null;
     }
   };
 

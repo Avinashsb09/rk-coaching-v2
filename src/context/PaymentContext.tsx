@@ -28,13 +28,14 @@ export interface PaymentContextType {
 
 export const PaymentContext = createContext<PaymentContextType | undefined>(undefined);
 
+let payLastLoadedUserId: string | null = null;
+let payLoadingUserId: string | null = null;
+
 export function PaymentProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseRecord[]>([]);
   const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
-  const lastLoadedUserIdRef = useRef<string | null>(null);
-  const loadingUserIdRef = useRef<string | null>(null);
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(() => {
     if (typeof window !== 'undefined') {
@@ -66,18 +67,18 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
 
   const loadPaymentData = async (userId: string) => {
     if (!userId) {
-      lastLoadedUserIdRef.current = null;
-      loadingUserIdRef.current = null;
+      payLastLoadedUserId = null;
+      payLoadingUserId = null;
       setActiveStudentId(null);
       setOrders([]);
       setPayments([]);
       setPurchaseHistory([]);
       return;
     }
-    if (lastLoadedUserIdRef.current === userId || loadingUserIdRef.current === userId) {
+    if (payLastLoadedUserId === userId || payLoadingUserId === userId) {
       return;
     }
-    loadingUserIdRef.current = userId;
+    payLoadingUserId = userId;
 
     setActiveStudentId(userId);
     if (isSupabaseConfigured() && getSupabase()) {
@@ -106,12 +107,12 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       // Load new Enterprise Purchases
       const history = await PaymentService.getPurchaseHistory(userId);
       setPurchaseHistory(history);
-      lastLoadedUserIdRef.current = userId;
+      payLastLoadedUserId = userId;
     } catch (err) {
       console.error('Failed to load purchase history:', err);
-      lastLoadedUserIdRef.current = userId;
+      payLastLoadedUserId = userId;
     } finally {
-      loadingUserIdRef.current = null;
+      payLoadingUserId = null;
     }
   };
 

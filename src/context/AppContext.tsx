@@ -143,6 +143,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+let appLastLoadedUserId: string | null = null;
+let appLoadingUserId: string | null = null;
+
 function AppSyncController({
   currentView,
   setCurrentView
@@ -157,8 +160,6 @@ function AppSyncController({
   const { loadPaymentData, setOrders, setPayments } = usePayments();
   const { loadEnrollments, setEnrolledCourseIds, loadSubjectNotesPurchases, setUnlockedSubjectNoteIds } = useCourses();
   const { addToast } = useNotifications();
-  const lastLoadedUserIdRef = useRef<string | null>(null);
-  const loadingUserIdRef = useRef<string | null>(null);
 
   // Centralized Route Guards and Access Protection
   useEffect(() => {
@@ -230,10 +231,10 @@ function AppSyncController({
 
   useEffect(() => {
     if (user) {
-      if (lastLoadedUserIdRef.current === user.id || loadingUserIdRef.current === user.id) {
+      if (appLastLoadedUserId === user.id || appLoadingUserId === user.id) {
         return;
       }
-      loadingUserIdRef.current = user.id;
+      appLoadingUserId = user.id;
 
       (async () => {
         try {
@@ -245,18 +246,18 @@ function AppSyncController({
             loadEnrollments(user.id),
             loadSubjectNotesPurchases(user.id)
           ]);
-          lastLoadedUserIdRef.current = user.id;
+          appLastLoadedUserId = user.id;
           console.log(`[${new Date().toISOString()}] PAYMENT INITIALIZED`);
           console.log(`[${new Date().toISOString()}] APPLICATION READY`);
         } catch (e) {
           console.error("Relational data loading failed, continuing application startup:", e);
         } finally {
-          loadingUserIdRef.current = null;
+          appLoadingUserId = null;
         }
       })();
     } else {
-      lastLoadedUserIdRef.current = null;
-      loadingUserIdRef.current = null;
+      appLastLoadedUserId = null;
+      appLoadingUserId = null;
       setBookmarksList([]);
       setProgressList([]);
       setNotifications([]);
