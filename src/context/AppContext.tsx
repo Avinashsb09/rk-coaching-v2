@@ -26,6 +26,7 @@ interface AppContextType {
   logout: () => void;
   syncUserProfile: (userId: string) => Promise<void>;
   initializing: boolean;
+  profileSyncing: boolean;
 
   // View Routing (Simulated SPA App Router)
   currentView: string;
@@ -372,7 +373,7 @@ function AppContextInjector({
     loadSubjectNotesPurchases
   } = useCourses();
   const { orders, setOrders, payments, setPayments, paymentSettings, setPaymentSettings } = usePayments();
-  const { role, user, setUser, setRole, loginAs, logout, syncUserProfile, initializing } = useAuth();
+  const { role, user, setUser, setRole, loginAs, logout, syncUserProfile, initializing, profileSyncing } = useAuth();
 
   const handleSyncUserProfile = async (userId: string) => {
     await syncUserProfile(userId, addToast, setCurrentView);
@@ -443,6 +444,7 @@ function AppContextInjector({
     logout: handleLogout,
     syncUserProfile: handleSyncUserProfile,
     initializing,
+    profileSyncing,
     currentView,
     setCurrentView,
     breadcrumbs,

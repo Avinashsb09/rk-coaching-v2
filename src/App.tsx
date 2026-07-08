@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { UserRole } from './types';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
@@ -39,7 +40,7 @@ import UpdateProfile from './views/student/UpdateProfile';
 import SuperAdminDashboard from './views/super-admin/SuperAdminDashboard';
 
 function MainAppShell() {
-  const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast, initializing } = useApp();
+  const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast, initializing, profileSyncing } = useApp();
   
   // Dashboard drawer states
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -184,9 +185,76 @@ function MainAppShell() {
   useEffect(() => {
     setSidebarOpen(false);
   }, [currentView]);
-
   // Client-Side Simulated View Router + Protection Guards
   const renderActiveView = () => {
+    // 1. Role-based view protection mapping
+    const VIEW_ROLES: Record<string, UserRole[]> = {
+      'student-dashboard': ['student', 'admin'],
+      'teacher-dashboard': ['teacher', 'admin'],
+      'teacher-content': ['teacher', 'admin'],
+      'admin-dashboard': ['admin', 'super_admin'],
+      'admin-controls': ['admin', 'super_admin'],
+      'super-admin-dashboard': ['super_admin'],
+      'quiz-dashboard': ['student', 'admin'],
+      'quiz-play': ['student', 'admin'],
+      'quiz-result': ['student', 'admin'],
+      'pyq-dashboard': ['student', 'admin'],
+      'pyq-play': ['student', 'admin'],
+      'pyq-result': ['student', 'admin'],
+      'purchases-invoices': ['student', 'admin'],
+      'update-profile': ['student', 'admin'],
+      'class-view': ['student', 'admin'],
+      'subject-view': ['student', 'admin'],
+      'course-view': ['student', 'admin'],
+      'lesson-view': ['student', 'admin'],
+    };
+
+    const allowedRoles = VIEW_ROLES[currentView];
+    if (allowedRoles) {
+      // If we are in the middle of a background profile sync, do not render protected dashboards
+      // or print RBAC failures, because the user's active role is a temporary default.
+      if (profileSyncing) {
+        return null;
+      }
+
+      // If the current role doesn't have access, short-circuit immediately.
+      // If we are transitioning or initializing, return null to avoid flashing 403.
+      if (!allowedRoles.includes(role)) {
+        console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access ${currentView}`);
+        
+        // Return appropriate ErrorState
+        let title = "Access Refused";
+        let description = "You do not have permission to access this page.";
+        let code = "AUTH_403";
+        
+        if (currentView === 'student-dashboard' || currentView === 'update-profile') {
+          title = "Access Refused - Student Restricted";
+          description = "This student console segments course histories and reward badges. Please switch your active role to STUDENT via the top-right simulation toolbar to test.";
+          code = "AUTH_403_STUDENT";
+        } else if (currentView === 'teacher-dashboard' || currentView === 'teacher-content') {
+          title = "Access Refused - Teacher restricted";
+          description = "This teacher segment publishes handwritten lecture revisions and schedules interactive exams. Please switch your active role to TEACHER via the top-right simulation toolbar to test.";
+          code = "AUTH_403_TEACHER";
+        } else if (currentView === 'admin-dashboard' || currentView === 'admin-controls') {
+          title = "Access Refused - Admin restricted";
+          description = "This administrator section is restricted to site owners to configure sliders, approve orders, and schedule notifications. Please switch your active role to ADMIN via the top-right simulation toolbar to test.";
+          code = "AUTH_403_ADMIN";
+        } else if (currentView === 'super-admin-dashboard') {
+          title = "Access Refused - Super Admin Restricted";
+          description = "This section is restricted to Super Admins only.";
+          code = "AUTH_403_SUPER_ADMIN";
+        }
+        
+        return (
+          <ErrorState
+            title={title}
+            description={description}
+            code={code}
+          />
+        );
+      }
+    }
+
     switch (currentView) {
       case 'home':
         return <LandingPage showCatalog={false} />;
@@ -195,72 +263,23 @@ function MainAppShell() {
         return <LandingPage showCatalog={true} />;
       
       case 'student-dashboard':
-        if (role !== 'student' && role !== 'admin') {
-          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Student Dashboard`);
-          return (
-            <ErrorState
-              title="Access Refused - Student Restricted"
-              description="This student console segments course histories and reward badges. Please switch your active role to STUDENT via the top-right simulation toolbar to test."
-              code="AUTH_403_STUDENT"
-            />
-          );
-        }
         console.log('[DEBUG] RBAC PASSED - Accessing Student Dashboard');
         return <StudentDashboard />;
       
       case 'update-profile':
-        if (role !== 'student' && role !== 'admin') {
-          return (
-            <ErrorState
-              title="Access Refused - Student Restricted"
-              description="This student console segments course histories and reward badges. Please switch your active role to STUDENT via the top-right simulation toolbar to test."
-              code="AUTH_403_STUDENT"
-            />
-          );
-        }
         return <UpdateProfile />;
       
       case 'teacher-dashboard':
       case 'teacher-content':
-        if (role !== 'teacher' && role !== 'admin') {
-          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Teacher Dashboard`);
-          return (
-            <ErrorState
-              title="Access Refused - Teacher restricted"
-              description="This teacher segment publishes handwritten lecture revisions and schedules interactive exams. Please switch your active role to TEACHER via the top-right simulation toolbar to test."
-              code="AUTH_403_TEACHER"
-            />
-          );
-        }
         console.log('[DEBUG] RBAC PASSED - Accessing Teacher Dashboard');
         return <TeacherDashboard />;
       
       case 'admin-dashboard':
       case 'admin-controls':
-        if (role !== 'admin' && role !== 'super_admin') {
-          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Admin Dashboard`);
-          return (
-            <ErrorState
-              title="Access Refused - Admin restricted"
-              description="This administrator section is restricted to site owners to configure sliders, approve orders, and schedule notifications. Please switch your active role to ADMIN via the top-right simulation toolbar to test."
-              code="AUTH_403_ADMIN"
-            />
-          );
-        }
         console.log('[DEBUG] RBAC PASSED - Accessing Admin Dashboard');
         return <AdminDashboard />;
-
+ 
       case 'super-admin-dashboard':
-        if (role !== 'super_admin') {
-          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Super Admin Dashboard`);
-          return (
-            <ErrorState
-              title="Access Refused - Super Admin Restricted"
-              description="This section is restricted to Super Admins only."
-              code="AUTH_403_SUPER_ADMIN"
-            />
-          );
-        }
         console.log('[DEBUG] RBAC PASSED - Accessing Super Admin Dashboard');
         return <SuperAdminDashboard />;
       
@@ -269,7 +288,7 @@ function MainAppShell() {
       
       case 'contact':
         return <ContactPage />;
-
+ 
       case 'auth':
       case 'auth-signup':
         return <AuthPage />;
@@ -282,7 +301,7 @@ function MainAppShell() {
       
       case 'pyq-view':
         return <PyqView />;
-
+ 
       case 'pyq-dashboard':
         return <PyqDashboard />;
       

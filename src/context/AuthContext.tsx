@@ -19,6 +19,7 @@ export interface AuthContextType {
   syncUserProfile: (userId: string, addToast: any, setCurrentView: any, authUserPayload?: any) => Promise<UserProfile | null>;
   initializing: boolean;
   setInitializing: (initializing: boolean) => void;
+  profileSyncing: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`[${new Date().toISOString()}] LOADING ${val ? 'TRUE' : 'FALSE'}`);
     setInitializingState(val);
   };
+  const [profileSyncing, setProfileSyncing] = useState(false);
   const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
   const syncedUserIdRef = React.useRef<string | null>(null);
   const authGenRef = React.useRef(0);
@@ -142,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
+            setProfileSyncing(true);
             // Kick off background profile fetch
             syncUserProfile(session.user.id, addToast, null, session.user).catch(err => {
               console.error('Background sync failed:', err);
@@ -201,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setInitializing(false);
             }
 
+            setProfileSyncing(true);
             // Kick off background sync
             syncUserProfile(session.user.id, addToast, null, session.user).catch(err => {
               console.error('Background sync failed:', err);
@@ -213,6 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(null);
             setRoleState('visitor');
             setInitializing(false);
+            setProfileSyncing(false);
             console.log(`[${new Date().toISOString()}] CACHE CLEARED`);
             console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
             console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
@@ -571,6 +576,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await syncPromise;
     } finally {
       delete syncPromisesRef.current[userId];
+      setProfileSyncing(false);
     }
   };
 
@@ -754,7 +760,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         syncUserProfile,
         initializing,
-        setInitializing
+        setInitializing,
+        profileSyncing
       }}
     >
       {children}
