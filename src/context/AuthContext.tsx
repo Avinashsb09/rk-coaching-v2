@@ -16,7 +16,7 @@ export interface AuthContextType {
   setRole: (role: UserRole) => void;
   loginAs: (role: UserRole, addToast: any, setCurrentView: any) => void;
   logout: (addToast: any, setCurrentView: any, setBreadcrumbs: any) => Promise<void>;
-  syncUserProfile: (userId: string, addToast: any, setCurrentView: any) => Promise<UserProfile | null>;
+  syncUserProfile: (userId: string, addToast: any, setCurrentView: any, authUserPayload?: any) => Promise<UserProfile | null>;
   initializing: boolean;
   setInitializing: (initializing: boolean) => void;
 }
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             syncedUserIdRef.current = session.user.id;
             
             // Timeout syncUserProfile fetch to 2500ms
-            const syncPromise = syncUserProfile(session.user.id, addToast, null);
+            const syncPromise = syncUserProfile(session.user.id, addToast, null, session.user);
             const syncTimeout = new Promise<null>((_, reject) => 
               setTimeout(() => reject(new Error('Profile sync request timed out')), 2500)
             );
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setInitializing(true);
 
             try {
-              await syncUserProfile(session.user.id, addToast, null);
+              await syncUserProfile(session.user.id, addToast, null, session.user);
             } finally {
               setInitializing(false);
             }
@@ -162,7 +162,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncUserProfile = async (
     userId: string,
     addToast: any,
-    setCurrentView: any
+    setCurrentView: any,
+    authUserPayload?: any
   ): Promise<UserProfile | null> => {
     if (syncPromisesRef.current[userId]) {
       return syncPromisesRef.current[userId];

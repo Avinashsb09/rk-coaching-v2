@@ -76,7 +76,7 @@ export default function AuthPage() {
         // Retrieve and sync user profile role
         console.log('[DEBUG] LOGIN SUCCESS - User authenticated via Supabase');
         console.log('[DEBUG] SESSION CREATED - Proceeding to Profile Fetch');
-        await syncUserProfile(data.user?.id, addToast, setCurrentView);
+        await syncUserProfile(data.user?.id, addToast, setCurrentView, data.user);
       } else {
         // Fallback demo mode
         addToast('No Supabase credentials. Simulating authentic verification...', 'info');
