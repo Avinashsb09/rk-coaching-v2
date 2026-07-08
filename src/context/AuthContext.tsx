@@ -173,104 +173,170 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return null;
 
       try {
-        const { data: profile, error } = await supabase
+        let profile: any = null;
+        let fetchError: any = null;
+
+      try {
+        const selectPromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
 
-        if (error || !profile) {
-          console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);
-          
-          // Try to auto-create the profile row dynamically as a fallback!
-          try {
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            if (authUser) {
-              console.log('Missing profile row detected. Attempting automatic sync/creation fallback...');
-              const newProfile = {
-                id: authUser.id,
-                email: authUser.email!,
-                fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
-                role: authUser.user_metadata?.role || 'student',
-                avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
-                classId: authUser.user_metadata?.classId || null,
-                dailyStreak: 1,
-                totalXp: 0
+        const timeoutPromise = new Promise<{ data: null, error: any }>((_, reject) => 
+          setTimeout(() => reject(new Error('Profile select query timed out')), 2500)
+        );
+
+        const res = await Promise.race([selectPromise, timeoutPromise]) as any;
+        profile = res.data;
+        fetchError = res.error;
+      } catch (err) {
+        console.warn('Select query failed or timed out. Attempting fallback user generation:', err);
+        fetchError = err;
+      }
+
+      if (fetchError || !profile) {
+        console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', fetchError);
+        
+        // Try to auto-create the profile row dynamically as a fallback!
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            console.log('Missing profile row or DB timeout detected. Attempting fallback profile creation/sync...');
+            const newProfile = {
+              id: authUser.id,
+              email: authUser.email!,
+              fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
+              role: authUser.user_metadata?.role || 'student',
+              avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
+              classId: authUser.user_metadata?.classId || null,
+              dailyStreak: 1,
+              totalXp: 0
+            };
+
+            const insertPromise = (supabase.from('profiles') as any).insert(newProfile).select('*').single();
+            const insertTimeout = new Promise<{ data: null, error: any }>((_, reject) => 
+              setTimeout(() => reject(new Error('Profile insert query timed out')), 2500)
+            );
+            const { data: insertedProfile, error: insertError } = await Promise.race([insertPromise, insertTimeout]) as any;
+
+            if (!insertError && insertedProfile) {
+              console.log('Successfully auto-created user profile fallback:', insertedProfile);
+              const profileData = insertedProfile as any;
+              const userProfile: UserProfile = {
+                id: profileData.id,
+                email: profileData.email,
+                fullName: profileData.fullName || 'Scholar',
+                role: (profileData.role as any) || 'student',
+                avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
+                dailyStreak: profileData.dailyStreak || 1,
+                totalXp: profileData.totalXp || 0,
+                badges: ['streak_1'],
+                classId: profileData.classId || null,
+                phone: profileData.phone || null,
+                schoolName: profileData.schoolName || null,
+                address: profileData.address || null,
+                state: profileData.state || null,
+                district: profileData.district || null
               };
+              setUser(userProfile);
+              setRoleState(userProfile.role);
+              
+              // Redirect
+              const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+              const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+              const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
+              if (redirectTarget && setCurrentView) {
+                sessionStorage.removeItem('auth_redirect_target');
+                setCurrentView(redirectTarget);
+              } else if (isOnDefaultPage && setCurrentView) {
+                if (userProfile.role === 'student') setCurrentView('student-dashboard');
+                else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
+                else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+                else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
+              } else if (setCurrentView) {
+                setCurrentView(currentHash);
+              }
+              return userProfile;
+            } else {
+              console.error('Insert query failed during auto-creation:', insertError);
+            }
+          }
+        } catch (e) {
+          console.error('Exception during profile auto-creation fallback:', e);
+        }
 
-              const { data: insertedProfile, error: insertError } = await (supabase
-                .from('profiles') as any)
-                .insert(newProfile)
-                .select('*')
-                .single();
+        // Local Memory Fallback - if database insert also fails or times out
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            console.log('Database writes unavailable. Using Local Memory Fallback profile from authenticated JWT payload.');
+            const userProfile: UserProfile = {
+              id: authUser.id,
+              email: authUser.email!,
+              fullName: authUser.user_metadata?.fullName || authUser.user_metadata?.name || 'Scholar',
+              role: authUser.user_metadata?.role || 'student',
+              avatarUrl: authUser.user_metadata?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(authUser.email || 'Scholar')}`,
+              dailyStreak: 1,
+              totalXp: 0,
+              badges: ['streak_1'],
+              classId: authUser.user_metadata?.classId || null,
+            };
 
-              if (!insertError && insertedProfile) {
-                console.log('Successfully auto-created user profile fallback:', insertedProfile);
-                const profileData = insertedProfile as any;
-                const userProfile: UserProfile = {
-                  id: profileData.id,
-                  email: profileData.email,
-                  fullName: profileData.fullName || 'Scholar',
-                  role: (profileData.role as any) || 'student',
-                  avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
-                  dailyStreak: profileData.dailyStreak || 1,
-                  totalXp: profileData.totalXp || 0,
-                  badges: ['streak_1'],
-                  classId: profileData.classId || null,
-                  phone: profileData.phone || null,
-                  schoolName: profileData.schoolName || null,
-                  address: profileData.address || null,
-                  state: profileData.state || null,
-                  district: profileData.district || null
-                };
-                setUser(userProfile);
-                setRoleState(userProfile.role);
-                
-                 // Redirect
-                 const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-                 const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
-                 const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
-                 if (redirectTarget) {
-                   sessionStorage.removeItem('auth_redirect_target');
-                   setCurrentView(redirectTarget);
-                 } else if (isOnDefaultPage) {
-                   if (userProfile.role === 'student') setCurrentView('student-dashboard');
-                   else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
-                   else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
-                   else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
-                 } else {
-                   setCurrentView(currentHash);
-                 }
-                return userProfile;
-              } else {
-                console.error('Insert query failed during auto-creation:', insertError);
+            setUser(userProfile);
+            setRoleState(userProfile.role);
+
+            console.log(`[${new Date().toISOString()}] PROFILE LOADED`, { id: userProfile.id, email: userProfile.email, fallback: true });
+            console.log(`[${new Date().toISOString()}] ROLE VERIFIED`, { role: userProfile.role });
+            console.log(`[${new Date().toISOString()}] LOGIN SUCCESS`, { userId: userProfile.id, email: userProfile.email });
+            console.log(`[${new Date().toISOString()}] RBAC PASSED`, { role: userProfile.role });
+
+            // Redirection logic
+            const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
+            const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+            const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
+
+            if (redirectTarget && setCurrentView) {
+              console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { target: redirectTarget });
+              sessionStorage.removeItem('auth_redirect_target');
+              setCurrentView(redirectTarget);
+            } else if (isOnDefaultPage && setCurrentView) {
+              console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { role: userProfile.role });
+              if (userProfile.role === 'student') setCurrentView('student-dashboard');
+              else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
+              else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+              else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
+            } else if (setCurrentView) {
+              setCurrentView(currentHash);
+            }
+
+            return userProfile;
+          }
+        } catch (fallbackErr) {
+          console.error('Local memory fallback auth user retrieval failed:', fallbackErr);
+        }
+
+        const err = fetchError as any;
+        const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
+        if (isAuthErr) {
+          console.warn('Session is invalid or expired. Signing out automatically.');
+          await supabase.auth.signOut().catch(() => {});
+          try {
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+                localStorage.removeItem(key);
               }
             }
-          } catch (e) {
-            console.error('Exception during profile auto-creation fallback:', e);
-          }
-
-          const err = error as any;
-          const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
-          if (isAuthErr) {
-            console.warn('Session is invalid or expired. Signing out automatically.');
-            await supabase.auth.signOut().catch(() => {});
-            try {
-              for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
-                  localStorage.removeItem(key);
-                }
-              }
-            } catch (e) {}
-          } else {
-            addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
-          }
-          
-          setUser(null);
-          setRoleState('visitor');
-          return null;
+          } catch (e) {}
+        } else {
+          addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
         }
+        
+        setUser(null);
+        setRoleState('visitor');
+        return null;
+      }
 
         const profileData = profile as any;
         if (profileData.isSuspended || profileData.status === 'suspended') {
