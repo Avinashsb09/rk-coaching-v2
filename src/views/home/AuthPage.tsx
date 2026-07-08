@@ -52,6 +52,15 @@ export default function AuthPage() {
     }
   }, [classes, selectedClass]);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('rk_remember_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+    }
+  }, []);
+
   const supabase = getSupabase();
   const configured = isSupabaseConfigured();
 
@@ -65,6 +74,13 @@ export default function AuthPage() {
 
     setIsLoading(true);
     try {
+      if (typeof window !== 'undefined') {
+        if (rememberMe) {
+          localStorage.setItem('rk_remember_email', email);
+        } else {
+          localStorage.removeItem('rk_remember_email');
+        }
+      }
       if (configured && supabase) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,

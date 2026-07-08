@@ -161,10 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
           }
         } else if (event === 'SIGNED_OUT') {
+          console.log(`[${new Date().toISOString()}] SIGNED_OUT EVENT RECEIVED`);
           syncedUserIdRef.current = null;
           setUser(null);
           setRoleState('visitor');
           setInitializing(false);
+          console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
+          console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
+          console.log(`[${new Date().toISOString()}] AUTH STATE RESET`);
         }
       }
     );
@@ -558,19 +562,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async (addToast: any, setCurrentView: any, setBreadcrumbs: any) => {
+    console.log(`[${new Date().toISOString()}] LOGOUT START`);
     const supabase = getSupabase();
+    
     if (supabase) {
-      await supabase.auth.signOut();
+      try {
+        console.log(`[${new Date().toISOString()}] SUPABASE SIGNOUT START`);
+        const signOutPromise = supabase.auth.signOut({ scope: "global" });
+        const signOutTimeout = new Promise<void>((resolve) => setTimeout(resolve, 1500));
+        await Promise.race([signOutPromise, signOutTimeout]);
+        console.log(`[${new Date().toISOString()}] SUPABASE SIGNOUT SUCCESS`);
+      } catch (err) {
+        console.error('Supabase signOut request failed/timed out, clearing local session anyway:', err);
+      }
     }
+
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('rk_auth_user');
-      localStorage.removeItem('rk_auth_role');
-      sessionStorage.removeItem('auth_redirect_target');
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('supabase.auth') || key.startsWith('rk_auth_'))) {
+            localStorage.removeItem(key);
+          }
+        }
+        console.log(`[${new Date().toISOString()}] LOCAL STORAGE CLEARED`);
+      } catch (e) {
+        console.error('Error clearing localStorage:', e);
+      }
+
+      try {
+        sessionStorage.removeItem('auth_redirect_target');
+        console.log(`[${new Date().toISOString()}] SESSION STORAGE CLEARED`);
+      } catch (e) {}
     }
-    setRoleState('visitor');
+
+    syncedUserIdRef.current = null;
     setUser(null);
-    setCurrentView('home');
-    setBreadcrumbs([{ label: 'Home', view: 'home' }]);
+    setRoleState('visitor');
+    console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
+    console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
+    console.log(`[${new Date().toISOString()}] AUTH STATE RESET`);
+
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log(`[${new Date().toISOString()}] GETSESSION AFTER LOGOUT = ${session ? 'NOT_NULL' : 'NULL'}`);
+      } catch (e) {}
+    }
+
+    console.log(`[${new Date().toISOString()}] REDIRECT LOGIN`);
+    setCurrentView('auth');
+    setBreadcrumbs([{ label: 'Home', view: 'home' }, { label: 'Authentication Suite', view: 'auth' }]);
     addToast('Logged out successfully', 'success');
   };
 
