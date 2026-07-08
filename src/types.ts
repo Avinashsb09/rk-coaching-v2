@@ -101,6 +101,7 @@ export interface Video {
   classId?: string | null;
   subjectId?: string | null;
   chapterId?: string | null;
+  isPremium: boolean;
   status?: 'draft' | 'review' | 'published' | 'archived';
   description?: string;
   createdBy?: string | null;
@@ -254,10 +255,37 @@ export interface UserProgress {
   lastAccessedAt: string;
 }
 
+export type PurchaseType = 'Lifetime' | 'Monthly' | 'Yearly' | 'Trial';
+
+export interface SubjectPricing {
+  id: string;
+  subjectId: string;
+  price: number;
+  currency: string;
+  purchaseType: PurchaseType;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PurchaseRecord {
+  id: string;
+  studentId: string;
+  academicStandard?: string;
+  subjectId: string;
+  purchaseType: PurchaseType;
+  purchaseDate: string;
+  transactionId: string;
+  status: 'success' | 'pending' | 'failed' | 'refunded';
+  provider: string;
+  expiry?: string | null;
+}
+
 export interface Order {
   id: string; // Razorpay Order ID or UUID
   userId: string;
-  courseId: string;
+  courseId?: string; // Legacy
+  subjectId?: string;
   amount: number;
   currency: string;
   status: 'pending' | 'completed' | 'failed';
@@ -268,6 +296,7 @@ export interface Payment {
   id: string; // Razorpay Payment ID or UUID
   orderId: string;
   userId: string;
+  subjectId?: string;
   amount: number;
   method: string;
   status: string;

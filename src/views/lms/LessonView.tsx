@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { PremiumComingSoonModal } from '../../components/shared/PremiumComingSoonModal';
 import { isPremiumEnabled, PremiumConfig } from '../../lib/systemConfig';
+import { usePayments } from '../../context/PaymentContext';
 
 export default function LessonView() {
   const { 
@@ -51,9 +52,10 @@ export default function LessonView() {
     lessons,
     videos,
     notes,
-    subjects,
-    hasSubjectNotesAccess
+    subjects
   } = useApp();
+
+  const { hasSubjectAccess } = usePayments();
 
   // Load datasets (syncing Supabase if present)
   const [chaptersList, setChaptersList] = useState<AcademicChapter[]>(chapters);
@@ -406,8 +408,8 @@ export default function LessonView() {
           {/* PDF Embed Sandbox Canvas */}
           <div className="bg-slate-200 dark:bg-slate-950 flex-1 min-h-[300px] lg:min-h-[auto] relative flex flex-col">
             {selectedTabNote ? (
-              (selectedTabNote.isPremium && !hasSubjectNotesAccess(subjectObj?.id || '')) ? (
-                <div className="m-auto p-6 text-center space-y-4">
+              (selectedTabNote.isPremium && !hasSubjectAccess(subjectObj?.id || '') && user?.role === 'student') ? (
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center mt-6 space-y-4">
                   <div className="h-14 w-14 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 mx-auto shadow-inner">
                     <Lock className="w-6 h-6" />
                   </div>

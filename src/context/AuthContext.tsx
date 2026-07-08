@@ -197,11 +197,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return null;
         }
 
+        console.log('[DEBUG] PROFILE FOUND', { id: profileData.id, rawRole: profileData.role });
+        
+        const rawRole = profileData.role;
+        const validRoles = ['visitor', 'student', 'teacher', 'admin', 'super_admin'];
+        
+        if (!rawRole || !validRoles.includes(rawRole)) {
+          console.error(`[DEBUG] INVALID ROLE - The role '${rawRole}' is not recognized by the application.`);
+          if (addToast) addToast(`Invalid role detected: ${rawRole}. Authentication aborted.`, 'error');
+          const supabase = getSupabase();
+          if (supabase) {
+            await supabase.auth.signOut().catch(() => {});
+          }
+          setUser(null);
+          setRoleState('visitor');
+          if (setCurrentView) setCurrentView('auth');
+          return null;
+        }
+
+        console.log(`[DEBUG] ROLE VALIDATED - User has valid role: ${rawRole}`);
+
         const userProfile: UserProfile = {
           id: profileData.id,
           email: profileData.email,
           fullName: profileData.fullName || 'Scholar',
-          role: (profileData.role as any) || 'student',
+          role: rawRole as UserRole,
           avatarUrl: profileData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profileData.fullName || 'Scholar')}`,
           dailyStreak: profileData.dailyStreak || 1,
           totalXp: profileData.totalXp || 0,
@@ -222,20 +242,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
         const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
 
-        if (redirectTarget) {
+        if (redirectTarget && setCurrentView) {
           sessionStorage.removeItem('auth_redirect_target');
+          console.log(`[DEBUG] REDIRECT → Deep Link target: ${redirectTarget}`);
           setCurrentView(redirectTarget);
-        } else if (isOnDefaultPage) {
+        } else if (isOnDefaultPage && setCurrentView) {
           if (userProfile.role === 'student') {
+            console.log('[DEBUG] REDIRECT → Student Dashboard');
             setCurrentView('student-dashboard');
           } else if (userProfile.role === 'teacher') {
+            console.log('[DEBUG] REDIRECT → Teacher Dashboard');
             setCurrentView('teacher-dashboard');
           } else if (userProfile.role === 'admin') {
+            console.log('[DEBUG] REDIRECT → Admin Dashboard');
             setCurrentView('admin-dashboard');
           } else if (userProfile.role === 'super_admin') {
+            console.log('[DEBUG] REDIRECT → Super Admin Dashboard');
             setCurrentView('super-admin-dashboard');
+          } else {
+             console.error('[DEBUG] ROUTE NOT FOUND for role:', userProfile.role);
           }
-        } else {
+        } else if (setCurrentView) {
           // Keeps user exactly on their current deep-linked view
           setCurrentView(currentHash);
         }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { usePayments } from '../../context/PaymentContext';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -38,21 +39,57 @@ export default function SubjectView() {
     lessons,
     notes,
     videos,
-    unlockSubjectNotes,
-    hasSubjectNotesAccess,
     user
   } = useApp();
 
+  const { hasSubjectAccess, grantSubjectAccess, getSubjectPricing } = usePayments();
+
   const [checkoutNotesOpen, setCheckoutNotesOpen] = useState(false);
   const [premiumComingSoonOpen, setPremiumComingSoonOpen] = useState(false);
+  const [pendingResource, setPendingResource] = useState<any>(null);
+  const [subjectPrice, setSubjectPrice] = useState<number>(99);
 
-  const handleBuyNotes = () => {
+  const handleResourceClick = async (resource: any) => {
     if (!user) {
-      addToast('Please log in to purchase premium notes.', 'warning');
+      addToast('Please log in to view content.', 'warning');
       setCurrentView('auth');
       return;
     }
-    // Feature flag: show coming soon modal instead of payment checkout
+
+    if (materialCategory === 'premium' || resource.isPremium) {
+      if (hasSubjectAccess(subjectObj!.id) || user.role === 'super_admin' || user.role === 'admin' || user.role === 'teacher') {
+        openResource(resource);
+      } else {
+        // Feature flag: show coming soon modal instead of payment checkout
+        if (!isPremiumEnabled()) {
+          setPremiumComingSoonOpen(true);
+          return;
+        }
+        
+        const pricing = await getSubjectPricing(subjectObj!.id);
+        setSubjectPrice(pricing?.price || 99);
+        setPendingResource(resource);
+        setCheckoutNotesOpen(true);
+      }
+    } else {
+      openResource(resource);
+    }
+  };
+
+  const openResource = (resource: any) => {
+    const associatedLesson = lessonsList.find(l => l.id === resource.lessonId);
+    if (associatedLesson) {
+      setSelectedLessonId(associatedLesson.id);
+    }
+    setCurrentView('lesson-view');
+  };
+
+  const handleBuyNotes = () => {
+    if (!user) {
+      addToast('Please log in to purchase premium content.', 'warning');
+      setCurrentView('auth');
+      return;
+    }
     if (!isPremiumEnabled()) {
       setPremiumComingSoonOpen(true);
       return;
@@ -196,15 +233,6 @@ export default function SubjectView() {
   };
 
   const handleSelectCategory = (cat: 'free' | 'premium') => {
-    if (cat === 'premium' && !hasSubjectNotesAccess(subjectObj.id)) {
-      // Feature flag: show coming soon modal instead of payment checkout
-      if (!isPremiumEnabled()) {
-        setPremiumComingSoonOpen(true);
-        return;
-      }
-      setCheckoutNotesOpen(true);
-      return;
-    }
     setMaterialCategory(cat);
     setContentType(null);
     setSelectedChapterId(null);
@@ -288,14 +316,14 @@ export default function SubjectView() {
                 >
                   <div className="space-y-3">
                     <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                      {hasSubjectNotesAccess(subjectObj.id) ? <UserCheck className="w-5 h-5 text-emerald-500" /> : <Lock className="w-5 h-5 text-amber-500" />}
+                      {hasSubjectAccess(subjectObj.id) ? <UserCheck className="w-5 h-5 text-emerald-500" /> : <Lock className="w-5 h-5 text-amber-500" />}
                     </div>
                     <h3 className="text-base font-bold text-slate-800 dark:text-white">Premium Study Materials</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Unlock high-yield handwritten cheat sheets, formula lists, and exam papers.</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900/30">
-                      {hasSubjectNotesAccess(subjectObj.id) ? 'UNLOCKED' : PremiumConfig.ui.notesUnlockLabel}
+                      {hasSubjectAccess(subjectObj.id) ? 'UNLOCKED' : PremiumConfig.ui.notesUnlockLabel}
                     </span>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
                       <span>Explore Premium Pack</span>
@@ -465,13 +493,7 @@ export default function SubjectView() {
                                         variant="primary"
                                         size="sm"
                                         className={`text-[10px] font-black h-7 px-4 shrink-0 border-none ${isNotes ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-emerald-550 hover:bg-emerald-600 text-slate-950'}`}
-                                        onClick={() => {
-                                          const associatedLesson = lessonsList.find(l => l.id === resource.lessonId);
-                                          if (associatedLesson) {
-                                            setSelectedLessonId(associatedLesson.id);
-                                          }
-                                          setCurrentView('lesson-view');
-                                        }}
+                                        onClick={() => handleResourceClick(resource)}
                                       >
                                         {isNotes ? 'Open Notes' : 'Watch Lecture'}
                                       </Button>
@@ -498,27 +520,34 @@ export default function SubjectView() {
         onClose={() => setPremiumComingSoonOpen(false)}
       />
 
-      {/* Razorpay Notes Checkout Modal — only mounted when payment system is active */}
+      {/* Razorpay Checkout Modal — dynamically loads pricing */}
       {isPaymentEnabled() && (
         <RazorpayGatewayModal
           isOpen={checkoutNotesOpen}
-          onClose={() => setCheckoutNotesOpen(false)}
-          courseTitle={`${subjectObj.name} Premium Notes Package`}
-          courseId={`notes_${subjectObj.id}`}
-          amount={30}
+          onClose={() => { setCheckoutNotesOpen(false); setPendingResource(null); }}
+          courseTitle={`${subjectObj.name} Subject Premium Access`}
+          courseId={subjectObj.id}
+          amount={subjectPrice}
           onSuccess={async (paymentId, orderId) => {
             try {
-              await unlockSubjectNotes(subjectObj.id, paymentId, orderId);
+              await grantSubjectAccess(subjectObj.id, paymentId, 'Lifetime', 'Razorpay');
               setCheckoutNotesOpen(false);
+              addToast('Subject Premium Access unlocked successfully!', 'success');
+              if (pendingResource) {
+                openResource(pendingResource);
+                setPendingResource(null);
+              }
             } catch (err: any) {
-              addToast(err.message || 'Payment notes unlock failed', 'error');
+              addToast(err.message || 'Payment unlock failed', 'error');
             }
           }}
           onFailure={(reason) => {
-            addToast(`Razorpay payment failed: ${reason}`, 'error');
+            addToast(`Payment failed: ${reason}`, 'error');
           }}
           onCancel={() => {
-            addToast('Payment checkout cancelled.', 'info');
+            setCheckoutNotesOpen(false);
+            setPendingResource(null);
+            addToast('Payment cancelled by user', 'info');
           }}
           userEmail={user?.email || undefined}
           userFullName={user?.fullName || undefined}

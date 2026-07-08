@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Order, Payment, PaymentSettings } from '../types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { Order, Payment, PaymentSettings, PurchaseRecord, SubjectPricing } from '../types';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
+import { PaymentService } from '../services/payment.service';
 
 export interface PaymentContextType {
   orders: Order[];
@@ -15,6 +16,14 @@ export interface PaymentContextType {
   paymentSettings: PaymentSettings;
   setPaymentSettings: React.Dispatch<React.SetStateAction<PaymentSettings>>;
   loadPaymentData: (userId: string) => Promise<void>;
+  
+  // New Enterprise Subject Access Methods
+  hasSubjectAccess: (subjectId: string) => boolean;
+  initiatePayment: (subjectId: string, amount: number) => Promise<string>;
+  verifyPayment: (subjectId: string, transactionDetails: any) => Promise<boolean>;
+  grantSubjectAccess: (subjectId: string, transactionId: string, purchaseType?: any, provider?: string) => Promise<void>;
+  getPurchaseHistory: () => PurchaseRecord[];
+  getSubjectPricing: (subjectId: string) => Promise<SubjectPricing | null>;
 }
 
 export const PaymentContext = createContext<PaymentContextType | undefined>(undefined);
@@ -22,6 +31,8 @@ export const PaymentContext = createContext<PaymentContextType | undefined>(unde
 export function PaymentProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [purchaseHistory, setPurchaseHistory] = useState<PurchaseRecord[]>([]);
+  const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(() => {
     if (typeof window !== 'undefined') {
@@ -40,7 +51,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       businessLogo: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=80&h=80&q=80',
       supportEmail: 'support@rkcoaching.com',
       supportPhone: '+91 98765 43210',
-      successMessage: 'Congratulations! Payment verified and course content unlocked instantly.',
+      successMessage: 'Congratulations! Payment verified and subject content unlocked instantly.',
       failureMessage: 'Your bank declined the UPI transaction or session timed out. Please try again.'
     };
   });
@@ -52,6 +63,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   }, [paymentSettings]);
 
   const loadPaymentData = async (userId: string) => {
+    setActiveStudentId(userId);
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
       try {
@@ -69,6 +81,38 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       setOrders(savedOrders ? JSON.parse(savedOrders) : []);
       setPayments(savedPayments ? JSON.parse(savedPayments) : []);
     }
+    
+    // Load new Enterprise Purchases
+    const history = await PaymentService.getPurchaseHistory(userId);
+    setPurchaseHistory(history);
+  };
+
+  const hasSubjectAccess = useCallback((subjectId: string) => {
+    return purchaseHistory.some(p => p.subjectId === subjectId && p.status === 'success');
+  }, [purchaseHistory]);
+
+  const initiatePayment = async (subjectId: string, amount: number) => {
+    if (!activeStudentId) throw new Error('User not authenticated');
+    return PaymentService.initiatePayment(activeStudentId, subjectId, amount);
+  };
+
+  const verifyPayment = async (subjectId: string, transactionDetails: any) => {
+    if (!activeStudentId) throw new Error('User not authenticated');
+    return PaymentService.verifyPayment(activeStudentId, subjectId, transactionDetails);
+  };
+
+  const grantSubjectAccess = async (subjectId: string, transactionId: string, purchaseType: any = 'Lifetime', provider: string = 'Razorpay') => {
+    if (!activeStudentId) throw new Error('User not authenticated');
+    await PaymentService.grantSubjectAccess(activeStudentId, subjectId, transactionId, purchaseType, provider);
+    // Reload state
+    const history = await PaymentService.getPurchaseHistory(activeStudentId);
+    setPurchaseHistory(history);
+  };
+
+  const getPurchaseHistoryContext = () => purchaseHistory;
+  
+  const getSubjectPricing = async (subjectId: string) => {
+    return PaymentService.getSubjectPricing(subjectId);
   };
 
   return (
@@ -80,7 +124,13 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
         setPayments,
         paymentSettings,
         setPaymentSettings,
-        loadPaymentData
+        loadPaymentData,
+        hasSubjectAccess,
+        initiatePayment,
+        verifyPayment,
+        grantSubjectAccess,
+        getPurchaseHistory: getPurchaseHistoryContext,
+        getSubjectPricing
       }}
     >
       {children}

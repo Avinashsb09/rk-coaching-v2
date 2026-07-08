@@ -321,7 +321,8 @@ mockClasses.forEach((cls) => {
           title: `Core video lecture: ${sub.name} Concepts`,
           provider: 'youtube',
           videoIdOrUrl: 'h7gh96X69Gs',
-          durationSeconds: 900
+          durationSeconds: 900,
+          isPremium: false
         });
 
         videosData.push({
@@ -330,7 +331,8 @@ mockClasses.forEach((cls) => {
           title: `High-Yield Revision Guide for ${sub.name}`,
           provider: 'youtube',
           videoIdOrUrl: 'sfSId8A98y8',
-          durationSeconds: 1200
+          durationSeconds: 1200,
+          isPremium: true
         });
 
         // 6. Add PDF Notes (Free and Premium)
@@ -366,6 +368,17 @@ export const mockChapters: AcademicChapter[] = chaptersData;
 export const mockLessons: Lesson[] = lessonsData;
 export const mockVideos: Video[] = videosData;
 export const mockNotes: Note[] = notesData;
+
+import { SubjectPricing } from '../types';
+export const mockSubjectPricing: SubjectPricing[] = subjectsData.map(subject => ({
+  id: `pricing_${subject.id}`,
+  subjectId: subject.id,
+  price: 99,
+  currency: 'INR',
+  purchaseType: 'Lifetime',
+  isActive: true,
+  createdAt: new Date().toISOString()
+}));
 
 export const mockAnnouncements: Announcement[] = [
   {

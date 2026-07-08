@@ -77,6 +77,7 @@ export default function TeacherDashboard() {
   const [formVideoProvider, setFormVideoProvider] = useState<'youtube' | 'gdrive' | 'vimeo' | 'supabase'>('youtube');
   const [formQuizScore, setFormQuizScore] = useState('40');
   const [formQuizTimer, setFormQuizTimer] = useState('1800');
+  const [formIsPremium, setFormIsPremium] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadTeacherData = async () => {
@@ -97,6 +98,7 @@ export default function TeacherDashboard() {
   const openUploadModal = (type: 'notes' | 'videos' | 'quizzes' | 'pyq') => {
     setUploadType(type);
     setFormTitle(''); setFormDesc(''); setFormMediaUrl('');
+    setFormIsPremium(false);
     setFormClassId(assignments[0]?.classId || '');
     setFormSubjectId(assignments[0]?.subjectId || '');
     setFormChapterId('');
@@ -127,7 +129,7 @@ export default function TeacherDashboard() {
           type: uploadType,
           pdfUrl: formMediaUrl,
           sizeBytes: 150000,
-          isPremium: false,
+          isPremium: formIsPremium,
         };
         const { error } = await contentService.notes.create(noteData);
         if (error) throw new Error(error);
@@ -140,6 +142,7 @@ export default function TeacherDashboard() {
           provider: formVideoProvider,
           videoIdOrUrl: formMediaUrl,
           durationSeconds: 3600,
+          isPremium: formIsPremium,
         };
         const { error } = await contentService.videos.create(videoData);
         if (error) throw new Error(error);
@@ -441,7 +444,18 @@ export default function TeacherDashboard() {
             </div>
           </div>
 
-          <Input label={`${uploadType.toUpperCase()} Title *`} value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder={`e.g. Important concepts for ${uploadType}...`} required />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="md:col-span-3">
+              <Input label={`${uploadType.toUpperCase()} Title *`} value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder={`e.g. Important concepts for ${uploadType}...`} required />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Access Tier *</label>
+              <select value={formIsPremium ? 'premium' : 'free'} onChange={e => setFormIsPremium(e.target.value === 'premium')} className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-indigo-500 font-bold" required>
+                <option value="free">Free Access</option>
+                <option value="premium">Premium Access</option>
+              </select>
+            </div>
+          </div>
           
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Description (Optional)</label>

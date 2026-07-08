@@ -195,6 +195,7 @@ const videosService = {
       status: payload.status || 'draft',
       displayOrder: payload.displayOrder ?? 0,
       description: payload.description || '',
+      isPremium: payload.isPremium || false,
       createdBy: userId || null,
       updatedBy: userId || null,
       createdAt: new Date().toISOString(),

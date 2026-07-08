@@ -196,6 +196,7 @@ function MainAppShell() {
       
       case 'student-dashboard':
         if (role !== 'student' && role !== 'admin') {
+          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Student Dashboard`);
           return (
             <ErrorState
               title="Access Refused - Student Restricted"
@@ -204,6 +205,7 @@ function MainAppShell() {
             />
           );
         }
+        console.log('[DEBUG] RBAC PASSED - Accessing Student Dashboard');
         return <StudentDashboard />;
       
       case 'update-profile':
@@ -221,6 +223,7 @@ function MainAppShell() {
       case 'teacher-dashboard':
       case 'teacher-content':
         if (role !== 'teacher' && role !== 'admin') {
+          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Teacher Dashboard`);
           return (
             <ErrorState
               title="Access Refused - Teacher restricted"
@@ -229,11 +232,13 @@ function MainAppShell() {
             />
           );
         }
+        console.log('[DEBUG] RBAC PASSED - Accessing Teacher Dashboard');
         return <TeacherDashboard />;
       
       case 'admin-dashboard':
       case 'admin-controls':
         if (role !== 'admin' && role !== 'super_admin') {
+          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Admin Dashboard`);
           return (
             <ErrorState
               title="Access Refused - Admin restricted"
@@ -242,18 +247,21 @@ function MainAppShell() {
             />
           );
         }
+        console.log('[DEBUG] RBAC PASSED - Accessing Admin Dashboard');
         return <AdminDashboard />;
 
       case 'super-admin-dashboard':
         if (role !== 'super_admin') {
+          console.error(`[DEBUG] RBAC FAILED - User role '${role}' attempted to access Super Admin Dashboard`);
           return (
             <ErrorState
-              title="Access Refused - Super Admin Only"
-              description="This panel is restricted to the platform owner (Super Admin). It provides full control over all roles, content, payments, and system configuration."
+              title="Access Refused - Super Admin Restricted"
+              description="This section is restricted to Super Admins only."
               code="AUTH_403_SUPER_ADMIN"
             />
           );
         }
+        console.log('[DEBUG] RBAC PASSED - Accessing Super Admin Dashboard');
         return <SuperAdminDashboard />;
       
       case 'faq':
