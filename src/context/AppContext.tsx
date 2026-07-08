@@ -157,8 +157,6 @@ function AppSyncController({
   const { loadEnrollments, setEnrolledCourseIds, loadSubjectNotesPurchases, setUnlockedSubjectNoteIds } = useCourses();
   const { addToast } = useNotifications();
 
-  const syncedUserIdRef = useRef<string | null>(null);
-
   // Centralized Route Guards and Access Protection
   useEffect(() => {
     // Stop guards while auth context is establishing its startup session state
@@ -212,66 +210,7 @@ function AppSyncController({
   }, [role, user, currentView, initializing]);
 
   // Listen to Auth sessions reactively
-  useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      setInitializing(false);
-      return;
-    }
 
-    const initSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          console.log(`[${new Date().toISOString()}] SESSION FOUND`, { userId: session.user.id });
-          if (syncedUserIdRef.current !== session.user.id) {
-            syncedUserIdRef.current = session.user.id;
-            await syncUserProfile(session.user.id, addToast, setCurrentView);
-          }
-        } else {
-          // If Supabase has no active session, but there are Supabase login tokens stored in localStorage,
-          // it means the session became invalid/expired. Clear state to force logout.
-          const hasSupabaseTokens = typeof window !== 'undefined' && 
-            Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
-          if (hasSupabaseTokens) {
-            setUser(null);
-          }
-        }
-      } catch (err) {
-        console.error('Session initialization failed:', err);
-      } finally {
-        setInitializing(false);
-      }
-    };
-
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          if (syncedUserIdRef.current !== session.user.id) {
-            syncedUserIdRef.current = session.user.id;
-            setInitializing(true);
-
-            try {
-              await syncUserProfile(session.user.id, addToast, setCurrentView);
-            } finally {
-              setInitializing(false);
-            }
-          }
-        } else if (event === 'SIGNED_OUT') {
-          syncedUserIdRef.current = null;
-          setUser(null);
-          setCurrentView('home');
-          setInitializing(false);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     if (user) {

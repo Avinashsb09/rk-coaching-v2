@@ -7,6 +7,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { UserRole, UserProfile } from '../types';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 
+import { useNotifications } from './NotificationContext';
+
 export interface AuthContextType {
   role: UserRole;
   user: UserProfile | null;
@@ -22,6 +24,14 @@ export interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log(`[${new Date().toISOString()}] AUTH CONTEXT INITIALIZED`);
+
+  const { addToast } = useNotifications();
+
+  useEffect(() => {
+    console.log(`[${new Date().toISOString()}] AUTH PROVIDER MOUNTED`);
+  }, []);
+
   const [role, setRoleState] = useState<UserRole>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('rk_auth_role');
@@ -46,6 +56,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [initializing, setInitializing] = useState(true);
   const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
+  const syncedUserIdRef = React.useRef<string | null>(null);
+
+  // Listen to Auth sessions reactively inside AuthProvider
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setInitializing(false);
+      return;
+    }
+
+    const initSession = async () => {
+      console.log(`[${new Date().toISOString()}] INIT SESSION START`);
+      try {
+        console.log(`[${new Date().toISOString()}] BEFORE getSession`);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log(`[${new Date().toISOString()}] AFTER getSession`);
+        
+        if (error) {
+          console.error(`[${new Date().toISOString()}] AUTH ERROR`, error);
+          throw error;
+        }
+
+        if (session?.user) {
+          console.log(`[${new Date().toISOString()}] SESSION FOUND`, { userId: session.user.id });
+          if (syncedUserIdRef.current !== session.user.id) {
+            syncedUserIdRef.current = session.user.id;
+            await syncUserProfile(session.user.id, addToast, null);
+          }
+        } else {
+          console.log(`[${new Date().toISOString()}] NO SESSION FOUND`);
+          // If Supabase has no active session, but there are Supabase login tokens stored in localStorage,
+          // it means the session became invalid/expired. Clear state to force logout.
+          const hasSupabaseTokens = typeof window !== 'undefined' && 
+            Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+          if (hasSupabaseTokens) {
+            setUser(null);
+          }
+        }
+      } catch (err) {
+        console.error('Session initialization failed:', err);
+      } finally {
+        setInitializing(false);
+      }
+    };
+
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          if (syncedUserIdRef.current !== session.user.id) {
+            syncedUserIdRef.current = session.user.id;
+            setInitializing(true);
+
+            try {
+              await syncUserProfile(session.user.id, addToast, null);
+            } finally {
+              setInitializing(false);
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          syncedUserIdRef.current = null;
+          setUser(null);
+          setRoleState('visitor');
+          setInitializing(false);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Save auth state reactively to localStorage
   useEffect(() => {
