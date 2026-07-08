@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Notification } from '../types';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured, deduplicateRequest } from '../lib/supabase';
 
 export interface ToastMessage {
   id: string;
@@ -67,11 +67,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured() && getSupabase() && isUuid(userId)) {
       const supabase = getSupabase()!;
       try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('userId', userId)
-          .order('createdAt', { ascending: false });
+        const { data, error } = await deduplicateRequest(`notifications_${userId}`, async () =>
+          await supabase
+            .from('notifications')
+            .select('*')
+            .eq('userId', userId)
+            .order('createdAt', { ascending: false })
+        );
         
         if (error) {
           console.warn('Failed to load notifications from DB:', error.message);

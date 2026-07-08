@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured, deduplicateRequest } from '../lib/supabase';
 import { SubjectPricing, PurchaseRecord } from '../types';
 import { mockSubjectPricing } from '../lib/mockData';
 
@@ -64,11 +64,13 @@ export class PaymentService {
   static async getPurchaseHistory(studentId: string): Promise<PurchaseRecord[]> {
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
-      const { data, error } = await supabase
-        .from('purchase_records')
-        .select('*')
-        .eq('studentId', studentId)
-        .order('purchaseDate', { ascending: false });
+      const { data, error } = await deduplicateRequest(`purchase_history_${studentId}`, async () =>
+        await supabase
+          .from('purchase_records')
+          .select('*')
+          .eq('studentId', studentId)
+          .order('purchaseDate', { ascending: false })
+      );
 
       if (!error && data) {
         return data as PurchaseRecord[];

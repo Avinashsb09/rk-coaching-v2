@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { Order, Payment, PaymentSettings, PurchaseRecord, SubjectPricing } from '../types';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured, deduplicateRequest } from '../lib/supabase';
 import { PaymentService } from '../services/payment.service';
 
 export interface PaymentContextType {
@@ -83,11 +83,15 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
       try {
-        const { data: oData } = await supabase.from('orders').select('*').eq('userId', userId);
-        if (oData) setOrders(oData as any);
+        const oRes = await deduplicateRequest(`orders_${userId}`, async () =>
+          await supabase.from('orders').select('*').eq('userId', userId)
+        );
+        if (oRes.data) setOrders(oRes.data as any);
 
-        const { data: payData } = await supabase.from('payments').select('*').eq('userId', userId);
-        if (payData) setPayments(payData as any);
+        const payRes = await deduplicateRequest(`payments_${userId}`, async () =>
+          await supabase.from('payments').select('*').eq('userId', userId)
+        );
+        if (payRes.data) setPayments(payRes.data as any);
       } catch (err) {
         console.error('Failed to load payments details:', err);
       }

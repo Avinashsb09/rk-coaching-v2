@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserRole, UserProfile } from '../types';
-import { getSupabase, isSupabaseConfigured, resetSupabaseInstance } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured, resetSupabaseInstance, deduplicateRequest } from '../lib/supabase';
 
 import { useNotifications } from './NotificationContext';
 
@@ -277,11 +277,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let fetchError: any = null;
 
         try {
-          const selectPromise = supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+          const selectPromise = deduplicateRequest(`profile_${userId}`, async () =>
+            await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single()
+          );
 
           const timeoutPromise = new Promise<{ data: null, error: any }>((_, reject) => 
             setTimeout(() => reject(new Error('Profile select query timed out')), 2500)

@@ -66,6 +66,22 @@ export function getSupabaseConfigDetails() {
   };
 }
 
+const activePromises = new Map<string, Promise<any>>();
+
+/**
+ * Deduplicates in-flight API requests by key to prevent parallel query flooding.
+ */
+export function deduplicateRequest<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+  if (activePromises.has(key)) {
+    return activePromises.get(key)!;
+  }
+  const promise = fetchFn().finally(() => {
+    activePromises.delete(key);
+  });
+  activePromises.set(key, promise);
+  return promise;
+}
+
 /**
  * Tests connection to the Supabase database.
  * Returns success or the detailed error message.

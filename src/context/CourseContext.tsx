@@ -5,7 +5,7 @@
 
 import React, { createContext, useContext, useState, useRef, ReactNode } from 'react';
 import { Course } from '../types';
-import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabase, isSupabaseConfigured, deduplicateRequest } from '../lib/supabase';
 
 export interface CourseContextType {
   selectedClassSlug: string | null;
@@ -60,10 +60,12 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
       try {
-        const { data } = await supabase
-          .from('subject_notes_purchases')
-          .select('subjectId')
-          .eq('userId', userId);
+        const { data } = await deduplicateRequest(`subject_notes_purchases_${userId}`, async () =>
+          await supabase
+            .from('subject_notes_purchases')
+            .select('subjectId')
+            .eq('userId', userId)
+        );
         if (data) {
           setUnlockedSubjectNoteIds(data.map((e: any) => e.subjectId));
         }
@@ -174,10 +176,12 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
       try {
-        const { data } = await supabase
-          .from('enrollments')
-          .select('courseId')
-          .eq('userId', userId);
+        const { data } = await deduplicateRequest(`enrollments_${userId}`, async () =>
+          await supabase
+            .from('enrollments')
+            .select('courseId')
+            .eq('userId', userId)
+        );
         if (data) {
           setEnrolledCourseIds(data.map((e: any) => e.courseId));
         }
