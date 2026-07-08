@@ -44,6 +44,7 @@ export function getSupabase() {
           storage: window.localStorage,
         },
       });
+      console.log(`[${new Date().toISOString()}] SUPABASE INITIALIZED`);
     } catch (err) {
       console.error('Failed to initialize Supabase client:', err);
       return null;

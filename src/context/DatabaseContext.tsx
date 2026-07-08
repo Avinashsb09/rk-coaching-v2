@@ -11,6 +11,7 @@ import {
 import { 
   initialQuizzes, initialQuestions, initialOptions, initialAttempts, initialLeaderboards 
 } from '../lib/quizMockData';
+import { useAuth } from './AuthContext';
 
 export interface DatabaseContextType {
   classes: AcademicClass[];
@@ -63,6 +64,7 @@ export interface DatabaseContextType {
 export const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
+  const { initializing } = useAuth();
   const [classes, setClasses] = useState<AcademicClass[]>([]);
   const [subjects, setSubjects] = useState<AcademicSubject[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -138,9 +140,14 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       if (isSupabaseConfigured()) {
         const supabase = getSupabase();
         if (supabase) {
-          (supabase as any).from('admin_settings').upsert({ id: 'homepage_config', value: next }).catch((err: any) => {
-            console.error("Error background syncing homepage config:", err);
-          });
+          (async () => {
+            try {
+              const { error } = await (supabase as any).from('admin_settings').upsert({ id: 'homepage_config', value: next });
+              if (error) throw error;
+            } catch (err) {
+              console.error("Error background syncing homepage config:", err);
+            }
+          })();
         }
       }
       return next;
@@ -166,12 +173,42 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           s.from('profiles').select('*').neq('role', 'visitor'),
           s.from('admin_settings').select('*').eq('id', 'homepage_config').single(),
           
-          // Quiz fallbacks
-          s.from('quizzes').select('*').catch(() => ({ data: null })),
-          s.from('quiz_questions').select('*').catch(() => ({ data: null })),
-          s.from('quiz_options').select('*').catch(() => ({ data: null })),
-          s.from('quiz_attempts').select('*').catch(() => ({ data: null })),
-          s.from('leaderboards').select('*').catch(() => ({ data: null }))
+          // Quiz fallbacks wrapped in proper async/await error isolation wrappers
+          (async () => {
+            try {
+              return await s.from('quizzes').select('*');
+            } catch {
+              return { data: null };
+            }
+          })(),
+          (async () => {
+            try {
+              return await s.from('quiz_questions').select('*');
+            } catch {
+              return { data: null };
+            }
+          })(),
+          (async () => {
+            try {
+              return await s.from('quiz_options').select('*');
+            } catch {
+              return { data: null };
+            }
+          })(),
+          (async () => {
+            try {
+              return await s.from('quiz_attempts').select('*');
+            } catch {
+              return { data: null };
+            }
+          })(),
+          (async () => {
+            try {
+              return await s.from('leaderboards').select('*');
+            } catch {
+              return { data: null };
+            }
+          })()
         ]);
 
         const authError = results.slice(0, 11).find(
@@ -347,11 +384,14 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         }
       ]);
     }
+    console.log(`[${new Date().toISOString()}] CATALOG INITIALIZED`);
   };
 
   useEffect(() => {
-    loadCatalogData();
-  }, []);
+    if (!initializing) {
+      loadCatalogData();
+    }
+  }, [initializing]);
 
   return (
     <DatabaseContext.Provider

@@ -396,6 +396,10 @@ function MainAppShell() {
 }
 
 export default function App() {
+  useEffect(() => {
+    console.log(`[${new Date().toISOString()}] APP START`);
+  }, []);
+
   return (
     <AppProvider>
       <MainAppShell />

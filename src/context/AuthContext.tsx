@@ -78,17 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return null;
 
       try {
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Profile sync timed out')), 3500)
-        );
-
-        const fetchPromise = supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .single();
-
-        const { data: profile, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
         if (error || !profile) {
           console.error('Failed to retrieve user profile from Supabase profiles table. Please make sure database trigger handles synchronization:', error);
@@ -197,7 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return null;
         }
 
-        console.log('[DEBUG] PROFILE FOUND', { id: profileData.id, rawRole: profileData.role });
+        console.log(`[${new Date().toISOString()}] PROFILE LOADED`, { id: profileData.id, email: profileData.email });
         
         const rawRole = profileData.role;
         const validRoles = ['visitor', 'student', 'teacher', 'admin', 'super_admin'];
@@ -215,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return null;
         }
 
-        console.log(`[DEBUG] ROLE VALIDATED - User has valid role: ${rawRole}`);
+        console.log(`[${new Date().toISOString()}] ROLE VERIFIED`, { role: rawRole });
 
         const userProfile: UserProfile = {
           id: profileData.id,
@@ -237,27 +231,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userProfile);
         setRoleState(userProfile.role);
 
+        console.log(`[${new Date().toISOString()}] LOGIN SUCCESS`, { userId: userProfile.id, email: userProfile.email });
+        console.log(`[${new Date().toISOString()}] RBAC PASSED`, { role: userProfile.role });
+
         // Transition router safely if not already on a deep link or specific view
         const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
         const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
         const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
 
         if (redirectTarget && setCurrentView) {
+          console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { target: redirectTarget });
           sessionStorage.removeItem('auth_redirect_target');
-          console.log(`[DEBUG] REDIRECT → Deep Link target: ${redirectTarget}`);
           setCurrentView(redirectTarget);
         } else if (isOnDefaultPage && setCurrentView) {
+          console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { role: userProfile.role });
           if (userProfile.role === 'student') {
-            console.log('[DEBUG] REDIRECT → Student Dashboard');
             setCurrentView('student-dashboard');
           } else if (userProfile.role === 'teacher') {
-            console.log('[DEBUG] REDIRECT → Teacher Dashboard');
             setCurrentView('teacher-dashboard');
           } else if (userProfile.role === 'admin') {
-            console.log('[DEBUG] REDIRECT → Admin Dashboard');
             setCurrentView('admin-dashboard');
           } else if (userProfile.role === 'super_admin') {
-            console.log('[DEBUG] REDIRECT → Super Admin Dashboard');
             setCurrentView('super-admin-dashboard');
           } else {
              console.error('[DEBUG] ROUTE NOT FOUND for role:', userProfile.role);

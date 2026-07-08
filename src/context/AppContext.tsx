@@ -219,15 +219,11 @@ function AppSyncController({
       return;
     }
 
-    const safetyTimeout = setTimeout(() => {
-      console.warn('Authentication session sync timed out. Forcing fallback initialization.');
-      setInitializing(false);
-    }, 3000);
-
     const initSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          console.log(`[${new Date().toISOString()}] SESSION FOUND`, { userId: session.user.id });
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
             await syncUserProfile(session.user.id, addToast, setCurrentView);
@@ -245,13 +241,10 @@ function AppSyncController({
         console.error('Session initialization failed:', err);
       } finally {
         setInitializing(false);
-        clearTimeout(safetyTimeout);
       }
     };
 
     initSession();
-
-    let authTimeout: NodeJS.Timeout | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -259,17 +252,11 @@ function AppSyncController({
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
             setInitializing(true);
-            
-            if (authTimeout) clearTimeout(authTimeout);
-            authTimeout = setTimeout(() => {
-              setInitializing(false);
-            }, 3000);
 
             try {
               await syncUserProfile(session.user.id, addToast, setCurrentView);
             } finally {
               setInitializing(false);
-              if (authTimeout) clearTimeout(authTimeout);
             }
           }
         } else if (event === 'SIGNED_OUT') {
@@ -277,27 +264,33 @@ function AppSyncController({
           setUser(null);
           setCurrentView('home');
           setInitializing(false);
-          if (authTimeout) clearTimeout(authTimeout);
         }
       }
     );
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(safetyTimeout);
-      if (authTimeout) clearTimeout(authTimeout);
     };
   }, []);
 
-  // Listen to user entity changes to fetch relational tables
   useEffect(() => {
     if (user) {
-      loadBookmarks(user.id);
-      loadProgress(user.id);
-      loadNotifications(user.id);
-      loadPaymentData(user.id);
-      loadEnrollments(user.id);
-      loadSubjectNotesPurchases(user.id);
+      (async () => {
+        try {
+          await Promise.all([
+            loadBookmarks(user.id),
+            loadProgress(user.id),
+            loadNotifications(user.id),
+            loadPaymentData(user.id),
+            loadEnrollments(user.id),
+            loadSubjectNotesPurchases(user.id)
+          ]);
+          console.log(`[${new Date().toISOString()}] PAYMENT INITIALIZED`);
+          console.log(`[${new Date().toISOString()}] APPLICATION READY`);
+        } catch (e) {
+          console.error("Relational data loading failed, continuing application startup:", e);
+        }
+      })();
     } else {
       setBookmarksList([]);
       setProgressList([]);
@@ -306,8 +299,11 @@ function AppSyncController({
       setPayments([]);
       setEnrolledCourseIds([]);
       setUnlockedSubjectNoteIds([]);
+      if (!initializing) {
+        console.log(`[${new Date().toISOString()}] APPLICATION READY`);
+      }
     }
-  }, [user]);
+  }, [user, initializing]);
 
   return null;
 }
@@ -351,12 +347,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <NotificationProvider>
-        <DatabaseProvider>
-          <BookmarkProvider>
-            <ProgressProvider>
-              <CourseProvider>
-                <PaymentProvider>
-                  <AuthProvider>
+        <AuthProvider>
+          <DatabaseProvider>
+            <BookmarkProvider>
+              <ProgressProvider>
+                <CourseProvider>
+                  <PaymentProvider>
                     <AppSyncController currentView={currentView} setCurrentView={setCurrentView} />
                     <AppContextInjector
                       currentView={currentView}
@@ -366,12 +362,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     >
                       {children}
                     </AppContextInjector>
-                  </AuthProvider>
-                </PaymentProvider>
-              </CourseProvider>
-            </ProgressProvider>
-          </BookmarkProvider>
-        </DatabaseProvider>
+                  </PaymentProvider>
+                </CourseProvider>
+              </ProgressProvider>
+            </BookmarkProvider>
+          </DatabaseProvider>
+        </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>
   );
