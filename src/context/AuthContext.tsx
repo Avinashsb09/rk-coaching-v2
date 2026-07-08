@@ -40,12 +40,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return 'visitor';
   });
 
+  const authUserIdRef = React.useRef<string | null>(null);
+
   const [user, setUser] = useState<UserProfile | null>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('rk_auth_user');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.id) {
+            authUserIdRef.current = parsed.id;
+            return parsed;
+          }
         } catch (e) {
           console.error('Failed to parse saved user', e);
         }
@@ -84,10 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initSession = async () => {
-      authGenRef.current += 1;
-      const currentGenId = authGenRef.current;
+      const activeGenId = authGenRef.current;
       console.log(`[${new Date().toISOString()}] AUTH INITIALIZED`);
-      console.log(`[${new Date().toISOString()}] INIT SESSION START (Gen ID: ${currentGenId})`);
+      console.log(`[${new Date().toISOString()}] INIT SESSION START (Gen ID: ${activeGenId})`);
       try {
         console.log(`[${new Date().toISOString()}] BEFORE getSession`);
         
@@ -103,6 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error(`[${new Date().toISOString()}] AUTH ERROR`, error);
           throw error;
         }
+
+        const sessionUserId = session?.user?.id || null;
+        if (sessionUserId !== authUserIdRef.current) {
+          authGenRef.current += 1;
+          authUserIdRef.current = sessionUserId;
+          console.log(`[${new Date().toISOString()}] AUTH SESSION TRANSITION: ${authUserIdRef.current} (Gen ID: ${authGenRef.current})`);
+        }
+        const currentGenId = authGenRef.current;
 
         if (session?.user) {
           console.log(`[${new Date().toISOString()}] SESSION FOUND`, { userId: session.user.id });
@@ -147,9 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('Session initialization failed:', err);
-        if (currentGenId === authGenRef.current) {
-          setInitializing(false);
-        }
+        setInitializing(false);
       }
     };
 
@@ -157,7 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        authGenRef.current += 1;
+        const sessionUserId = session?.user?.id || null;
+        if (sessionUserId !== authUserIdRef.current) {
+          authGenRef.current += 1;
+          authUserIdRef.current = sessionUserId;
+          console.log(`[${new Date().toISOString()}] AUTH SESSION TRANSITION (Event: ${event}): ${authUserIdRef.current} (Gen ID: ${authGenRef.current})`);
+        }
         const currentGenId = authGenRef.current;
         console.log(`[${new Date().toISOString()}] Supabase Auth Event Received: ${event}`, session?.user?.id, `(Gen ID: ${currentGenId})`);
         
@@ -201,6 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
             console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
             console.log(`[${new Date().toISOString()}] AUTH STATE RESET`);
+          }
+        } else {
+          // For other events like INITIAL_SESSION with session = null, release initializing state
+          if (currentGenId === authGenRef.current && !session?.user) {
+            setInitializing(false);
           }
         }
       }
@@ -558,55 +579,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentGenId = authGenRef.current;
     console.log(`[${new Date().toISOString()}] loginAs CALLED (Gen ID: ${currentGenId})`);
     
+    const mockProfiles: Record<Exclude<UserRole, 'visitor'>, UserProfile> = {
+      student: {
+        id: '00000000-0000-0000-0000-000000000001',
+        email: 'student@rkcoaching.com',
+        fullName: 'Aarav Sharma',
+        role: 'student',
+        dailyStreak: 5,
+        totalXp: 1250,
+        badges: ['streak_5', 'quiz_master', 'speed_learner'],
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'
+      },
+      teacher: {
+        id: '00000000-0000-0000-0000-000000000002',
+        email: 'teacher@rkcoaching.com',
+        fullName: 'Prof. Rajesh Khanna',
+        role: 'teacher',
+        dailyStreak: 12,
+        totalXp: 5400,
+        badges: ['pioneer', 'mentor_lvl_3'],
+        avatarUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&h=150&q=80'
+      },
+      admin: {
+        id: '00000000-0000-0000-0000-000000000003',
+        email: 'admin@rkcoaching.com',
+        fullName: 'RK Admin Control',
+        role: 'admin',
+        dailyStreak: 154,
+        totalXp: 99999,
+        badges: ['founder', 'mod_supreme'],
+        avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80'
+      },
+      super_admin: {
+        id: '00000000-0000-0000-0000-000000000004',
+        email: 'superadmin@rkcoaching.com',
+        fullName: 'RK Super Admin',
+        role: 'super_admin',
+        dailyStreak: 365,
+        totalXp: 999999,
+        badges: ['founder', 'platform_owner', 'super_controller'],
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'
+      }
+    };
+
+    authUserIdRef.current = targetRole === 'visitor' ? null : mockProfiles[targetRole].id;
+    
     setRoleState(targetRole);
     if (targetRole === 'visitor') {
       setUser(null);
       setCurrentView('home');
       addToast('Browsing as Guest Visitor', 'info');
     } else {
-      const mockProfiles: Record<Exclude<UserRole, 'visitor'>, UserProfile> = {
-        student: {
-          id: '00000000-0000-0000-0000-000000000001',
-          email: 'student@rkcoaching.com',
-          fullName: 'Aarav Sharma',
-          role: 'student',
-          dailyStreak: 5,
-          totalXp: 1250,
-          badges: ['streak_5', 'quiz_master', 'speed_learner'],
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'
-        },
-        teacher: {
-          id: '00000000-0000-0000-0000-000000000002',
-          email: 'teacher@rkcoaching.com',
-          fullName: 'Prof. Rajesh Khanna',
-          role: 'teacher',
-          dailyStreak: 12,
-          totalXp: 5400,
-          badges: ['pioneer', 'mentor_lvl_3'],
-          avatarUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&h=150&q=80'
-        },
-        admin: {
-          id: '00000000-0000-0000-0000-000000000003',
-          email: 'admin@rkcoaching.com',
-          fullName: 'RK Admin Control',
-          role: 'admin',
-          dailyStreak: 154,
-          totalXp: 99999,
-          badges: ['founder', 'mod_supreme'],
-          avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&h=150&q=80'
-        },
-        super_admin: {
-          id: '00000000-0000-0000-0000-000000000004',
-          email: 'superadmin@rkcoaching.com',
-          fullName: 'RK Super Admin',
-          role: 'super_admin',
-          dailyStreak: 365,
-          totalXp: 999999,
-          badges: ['founder', 'platform_owner', 'super_controller'],
-          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80'
-        }
-      };
-
       setUser(mockProfiles[targetRole]);
 
       const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
@@ -631,6 +654,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async (addToast: any, setCurrentView: any, setBreadcrumbs: any) => {
     authGenRef.current += 1;
     const currentGenId = authGenRef.current;
+    authUserIdRef.current = null;
     console.log(`[${new Date().toISOString()}] REMOTE LOGOUT START (Gen ID: ${currentGenId})`);
     console.log(`[${new Date().toISOString()}] SIGNED_OUT`);
 
