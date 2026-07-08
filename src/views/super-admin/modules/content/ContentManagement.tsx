@@ -14,6 +14,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../../../context/AppContext';
 import { contentService, orderingService } from '../../../../services/content.service';
 import { PermissionGuard } from '../../../../components/shared/PermissionGuard';
+import { UploadEngine } from '../../../../components/shared/UploadEngine';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
@@ -388,8 +389,21 @@ function NotesPanel() {
               {activeChapters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          <Input label="PDF File URL *" value={formPdfUrl} onChange={e => setFormPdfUrl(e.target.value)} placeholder="https://example.com/notes.pdf" required />
+          <UploadEngine
+            bucket="notes"
+            folderPath="pdfs"
+            accept="application/pdf"
+            initialUrl={formPdfUrl}
+            label="Upload Note PDF *"
+            helperText="PDF format only (Max 20MB)"
+            maxSizeMB={20}
+            onUploadSuccess={(url, path, sizeBytes) => {
+              setFormPdfUrl(url);
+              if (sizeBytes > 0) setFormSizeBytes(String(sizeBytes));
+            }}
+          />
           <div className="grid grid-cols-2 gap-3">
+            <Input label="Manual URL Override" value={formPdfUrl} onChange={e => setFormPdfUrl(e.target.value)} placeholder="https://example.com/notes.pdf" />
             <Input label="File Size (Bytes)" type="number" value={formSizeBytes} onChange={e => setFormSizeBytes(e.target.value)} />
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Resource Category</label>
@@ -1188,8 +1202,19 @@ function PYQPanel() {
               {activeChapters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          <Input label="PDF Document URL *" value={formPdfUrl} onChange={e => setFormPdfUrl(e.target.value)} placeholder="https://example.com/solved_pyq.pdf" required />
-          
+          <UploadEngine
+            bucket="pyqs"
+            folderPath="pdfs"
+            accept="application/pdf"
+            initialUrl={formPdfUrl}
+            label="Upload PYQ PDF *"
+            helperText="PDF format only (Max 20MB)"
+            maxSizeMB={20}
+            onUploadSuccess={(url, path, sizeBytes) => {
+              setFormPdfUrl(url);
+            }}
+          />
+          <Input label="Manual URL Override" value={formPdfUrl} onChange={e => setFormPdfUrl(e.target.value)} placeholder="https://example.com/solved_pyq.pdf" />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Solved Status</label>
