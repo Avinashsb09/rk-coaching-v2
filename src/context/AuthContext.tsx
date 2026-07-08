@@ -61,6 +61,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   const syncPromisesRef = React.useRef<Record<string, Promise<UserProfile | null>>>({});
   const syncedUserIdRef = React.useRef<string | null>(null);
+  const authGenRef = React.useRef(0);
+
+  // Monitor session reactively for logging
+  useEffect(() => {
+    console.log(`[${new Date().toISOString()}] SESSION UPDATED`, {
+      userId: user?.id || null,
+      role: role,
+      hasSession: !!user
+    });
+    console.log(`[${new Date().toISOString()}] CURRENT USER:`, user?.id || null);
+    console.log(`[${new Date().toISOString()}] CURRENT ROLE:`, role);
+    console.log(`[${new Date().toISOString()}] CURRENT SESSION:`, user?.id || null);
+  }, [user, role]);
 
   // Listen to Auth sessions reactively inside AuthProvider
   useEffect(() => {
@@ -71,7 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const initSession = async () => {
-      console.log(`[${new Date().toISOString()}] INIT SESSION START`);
+      authGenRef.current += 1;
+      const currentGenId = authGenRef.current;
+      console.log(`[${new Date().toISOString()}] AUTH INITIALIZED`);
+      console.log(`[${new Date().toISOString()}] INIT SESSION START (Gen ID: ${currentGenId})`);
       try {
         console.log(`[${new Date().toISOString()}] BEFORE getSession`);
         
@@ -104,9 +120,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             badges: ['streak_1'],
             classId: session.user.user_metadata?.classId || null,
           };
-          setUser(tempUserProfile);
-          setRoleState(tempUserProfile.role);
-          setInitializing(false);
+          
+          if (currentGenId === authGenRef.current) {
+            setUser(tempUserProfile);
+            setRoleState(tempUserProfile.role);
+            setInitializing(false);
+          }
 
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
@@ -119,14 +138,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log(`[${new Date().toISOString()}] NO SESSION FOUND`);
           const hasSupabaseTokens = typeof window !== 'undefined' && 
             Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
-          if (hasSupabaseTokens) {
+          if (hasSupabaseTokens && currentGenId === authGenRef.current) {
             setUser(null);
           }
-          setInitializing(false);
+          if (currentGenId === authGenRef.current) {
+            setInitializing(false);
+          }
         }
       } catch (err) {
         console.error('Session initialization failed:', err);
-        setInitializing(false);
+        if (currentGenId === authGenRef.current) {
+          setInitializing(false);
+        }
       }
     };
 
@@ -134,9 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log(`[${new Date().toISOString()}] Supabase Auth Event Received: ${event}`, session?.user?.id);
+        authGenRef.current += 1;
+        const currentGenId = authGenRef.current;
+        console.log(`[${new Date().toISOString()}] Supabase Auth Event Received: ${event}`, session?.user?.id, `(Gen ID: ${currentGenId})`);
         
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log(`[${new Date().toISOString()}] SIGNED_IN`, session.user.id);
           if (syncedUserIdRef.current !== session.user.id) {
             syncedUserIdRef.current = session.user.id;
             console.log(`[${new Date().toISOString()}] AUTH READY`);
@@ -153,9 +179,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               badges: ['streak_1'],
               classId: session.user.user_metadata?.classId || null,
             };
-            setUser(tempUserProfile);
-            setRoleState(tempUserProfile.role);
-            setInitializing(false);
+            if (currentGenId === authGenRef.current) {
+              setUser(tempUserProfile);
+              setRoleState(tempUserProfile.role);
+              setInitializing(false);
+            }
 
             // Kick off background sync
             syncUserProfile(session.user.id, addToast, null, session.user).catch(err => {
@@ -164,13 +192,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else if (event === 'SIGNED_OUT') {
           console.log(`[${new Date().toISOString()}] SIGNED_OUT EVENT RECEIVED`);
-          syncedUserIdRef.current = null;
-          setUser(null);
-          setRoleState('visitor');
-          setInitializing(false);
-          console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
-          console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
-          console.log(`[${new Date().toISOString()}] AUTH STATE RESET`);
+          if (currentGenId === authGenRef.current) {
+            syncedUserIdRef.current = null;
+            setUser(null);
+            setRoleState('visitor');
+            setInitializing(false);
+            console.log(`[${new Date().toISOString()}] CACHE CLEARED`);
+            console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
+            console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
+            console.log(`[${new Date().toISOString()}] AUTH STATE RESET`);
+          }
         }
       }
     );
@@ -203,6 +234,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentView: any,
     authUserPayload?: any
   ): Promise<UserProfile | null> => {
+    const activeGenId = authGenRef.current;
+
     if (syncPromisesRef.current[userId]) {
       return syncPromisesRef.current[userId];
     }
@@ -281,13 +314,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   state: profileData.state || null,
                   district: profileData.district || null
                 };
+                
+                if (activeGenId !== authGenRef.current) {
+                  console.log(`[${new Date().toISOString()}] syncUserProfile DISCARDED due to state generation mismatch`);
+                  return null;
+                }
                 setUser(userProfile);
                 setRoleState(userProfile.role);
+                console.log(`[${new Date().toISOString()}] PROFILE UPDATED`, userProfile);
+                console.log(`[${new Date().toISOString()}] ROLE UPDATED`, userProfile.role);
                 console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
                 
                 // Redirect
                 const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-                const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+                const dashboardViews = ['student-dashboard', 'teacher-dashboard', 'admin-dashboard', 'super-admin-dashboard'];
+                const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth' || dashboardViews.includes(currentHash);
                 const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
                 if (redirectTarget && setCurrentView) {
                   console.log(`[${new Date().toISOString()}] REDIRECT STARTED`, { target: redirectTarget });
@@ -330,9 +371,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               classId: authUser.user_metadata?.classId || null,
             };
 
+            if (activeGenId !== authGenRef.current) {
+              console.log(`[${new Date().toISOString()}] syncUserProfile DISCARDED due to state generation mismatch`);
+              return null;
+            }
             setUser(userProfile);
             setRoleState(userProfile.role);
 
+            console.log(`[${new Date().toISOString()}] PROFILE UPDATED`, userProfile);
+            console.log(`[${new Date().toISOString()}] ROLE UPDATED`, userProfile.role);
             console.log(`[${new Date().toISOString()}] PROFILE LOADED`, { id: userProfile.id, email: userProfile.email, fallback: true });
             console.log(`[${new Date().toISOString()}] ROLE VERIFIED`, { role: userProfile.role });
             console.log(`[${new Date().toISOString()}] LOGIN SUCCESS`, { userId: userProfile.id, email: userProfile.email });
@@ -341,7 +388,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Redirection logic
             const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-            const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+            const dashboardViews = ['student-dashboard', 'teacher-dashboard', 'admin-dashboard', 'super-admin-dashboard'];
+            const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth' || dashboardViews.includes(currentHash);
             const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
 
             if (redirectTarget && setCurrentView) {
@@ -366,7 +414,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           const err = fetchError as any;
           const isAuthErr = err && (err.status === 401 || err.message?.toLowerCase().includes('jwt') || err.message?.toLowerCase().includes('unauthorized') || err.code === 'PGRST301');
-          if (isAuthErr) {
+          if (isAuthErr && activeGenId === authGenRef.current) {
             console.warn('Session is invalid or expired. Signing out automatically.');
             await supabase.auth.signOut().catch(() => {});
             try {
@@ -377,12 +425,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
               }
             } catch (e) {}
-          } else {
+          } else if (!isAuthErr) {
             addToast('Authentication profile record not found. Please register or contact system administrator.', 'error');
           }
           
-          setUser(null);
-          setRoleState('visitor');
+          if (activeGenId === authGenRef.current) {
+            setUser(null);
+            setRoleState('visitor');
+          }
           return null;
         }
 
@@ -390,13 +440,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profileData.isSuspended || profileData.status === 'suspended') {
           addToast('Your account has been suspended. Please contact platform support.', 'error');
           // Sign out
-          const supabase = getSupabase();
-          if (supabase) {
-            supabase.auth.signOut().catch(() => {});
+          if (activeGenId === authGenRef.current) {
+            const supabase = getSupabase();
+            if (supabase) {
+              supabase.auth.signOut().catch(() => {});
+            }
+            setUser(null);
+            setRoleState('visitor');
+            if (setCurrentView) setCurrentView('auth');
           }
-          setUser(null);
-          setRoleState('visitor');
-          setCurrentView('auth');
           console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
           return null;
         }
@@ -409,13 +461,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!rawRole || !validRoles.includes(rawRole)) {
           console.error(`[DEBUG] INVALID ROLE - The role '${rawRole}' is not recognized by the application.`);
           if (addToast) addToast(`Invalid role detected: ${rawRole}. Authentication aborted.`, 'error');
-          const supabase = getSupabase();
-          if (supabase) {
-            await supabase.auth.signOut().catch(() => {});
+          if (activeGenId === authGenRef.current) {
+            const supabase = getSupabase();
+            if (supabase) {
+              await supabase.auth.signOut().catch(() => {});
+            }
+            setUser(null);
+            setRoleState('visitor');
+            if (setCurrentView) setCurrentView('auth');
           }
-          setUser(null);
-          setRoleState('visitor');
-          if (setCurrentView) setCurrentView('auth');
           console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
           return null;
         }
@@ -439,16 +493,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           district: profileData.district || null
         };
 
+        if (activeGenId !== authGenRef.current) {
+          console.log(`[${new Date().toISOString()}] syncUserProfile DISCARDED due to state generation mismatch`);
+          return null;
+        }
         setUser(userProfile);
         setRoleState(userProfile.role);
 
+        console.log(`[${new Date().toISOString()}] PROFILE UPDATED`, userProfile);
+        console.log(`[${new Date().toISOString()}] ROLE UPDATED`, userProfile.role);
         console.log(`[${new Date().toISOString()}] LOGIN SUCCESS`, { userId: userProfile.id, email: userProfile.email });
         console.log(`[${new Date().toISOString()}] RBAC PASSED`, { role: userProfile.role });
         console.log(`[${new Date().toISOString()}] PROFILE FETCH END`);
 
         // Transition router safely if not already on a deep link or specific view
         const currentHash = typeof window !== 'undefined' ? window.location.hash.substring(1) : '';
-        const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth';
+        const dashboardViews = ['student-dashboard', 'teacher-dashboard', 'admin-dashboard', 'super-admin-dashboard'];
+        const isOnDefaultPage = !currentHash || currentHash === 'home' || currentHash === 'auth' || dashboardViews.includes(currentHash);
         const redirectTarget = typeof window !== 'undefined' ? sessionStorage.getItem('auth_redirect_target') : null;
 
         if (redirectTarget && setCurrentView) {
@@ -493,6 +554,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginAs = (targetRole: UserRole, addToast: any, setCurrentView: any) => {
+    authGenRef.current += 1;
+    const currentGenId = authGenRef.current;
+    console.log(`[${new Date().toISOString()}] loginAs CALLED (Gen ID: ${currentGenId})`);
+    
     setRoleState(targetRole);
     if (targetRole === 'visitor') {
       setUser(null);
@@ -564,7 +629,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async (addToast: any, setCurrentView: any, setBreadcrumbs: any) => {
-    console.log("REMOTE LOGOUT START");
+    authGenRef.current += 1;
+    const currentGenId = authGenRef.current;
+    console.log(`[${new Date().toISOString()}] REMOTE LOGOUT START (Gen ID: ${currentGenId})`);
+    console.log(`[${new Date().toISOString()}] SIGNED_OUT`);
+
     const supabase = getSupabase();
     
     if (supabase) {
@@ -587,6 +656,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem(key);
           }
         }
+        console.log(`[${new Date().toISOString()}] CACHE CLEARED`);
         console.log("SUPABASE STORAGE CLEARED");
       } catch (e) {
         console.error('Error clearing localStorage:', e);
@@ -598,9 +668,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Reset all React state and cached variables
-    syncedUserIdRef.current = null;
-    setUser(null);
-    setRoleState('visitor');
+    if (currentGenId === authGenRef.current) {
+      syncedUserIdRef.current = null;
+      setUser(null);
+      setRoleState('visitor');
+    }
     console.log("LOCAL SESSION DESTROYED");
 
     // Consolidate client reset
@@ -640,9 +712,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     console.log("LOGOUT COMPLETE");
 
-    setCurrentView('auth');
-    setBreadcrumbs([{ label: 'Home', view: 'home' }, { label: 'Authentication Suite', view: 'auth' }]);
-    addToast('Logged out successfully', 'success');
+    if (currentGenId === authGenRef.current) {
+      setCurrentView('auth');
+      setBreadcrumbs([{ label: 'Home', view: 'home' }, { label: 'Authentication Suite', view: 'auth' }]);
+      addToast('Logged out successfully', 'success');
+    }
   };
 
     return (

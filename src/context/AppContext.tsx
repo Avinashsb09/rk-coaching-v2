@@ -189,7 +189,15 @@ function AppSyncController({
       // Guest trying to enter protected views
       if (protectedViews.includes(currentView)) {
         addToast('Please login or register to access this study resource.', 'warning');
-        sessionStorage.setItem('auth_redirect_target', currentView);
+        const isDashboardView = currentView.endsWith('-dashboard') || currentView === 'teacher-content' || currentView === 'admin-controls';
+        if (!isDashboardView) {
+          console.log(`[${new Date().toISOString()}] REDIRECT TARGET STORED: ${currentView}`);
+          sessionStorage.setItem('auth_redirect_target', currentView);
+        } else {
+          console.log(`[${new Date().toISOString()}] BYPASS REDIRECT TARGET FOR DASHBOARD VIEW: ${currentView}`);
+          sessionStorage.removeItem('auth_redirect_target');
+        }
+        console.log(`[${new Date().toISOString()}] ROUTE DECISION - GUEST REDIRECTED TO AUTH FROM: ${currentView}`);
         setCurrentView('auth');
       }
     } else {
@@ -197,13 +205,18 @@ function AppSyncController({
       if (currentView === 'auth' || currentView === 'auth-signup' || currentView === 'home' || currentView === 'catalog') {
         const redirectTarget = sessionStorage.getItem('auth_redirect_target');
         if (redirectTarget && redirectTarget !== 'auth' && redirectTarget !== 'auth-signup' && redirectTarget !== 'home' && redirectTarget !== 'catalog') {
+          console.log(`[${new Date().toISOString()}] ROUTE DECISION - REDIRECT TARGET RESTORED: ${redirectTarget}`);
           sessionStorage.removeItem('auth_redirect_target');
           setCurrentView(redirectTarget);
         } else {
-          if (role === 'student') setCurrentView('student-dashboard');
-          else if (role === 'teacher') setCurrentView('teacher-dashboard');
-          else if (role === 'admin') setCurrentView('admin-dashboard');
-          else if (role === 'super_admin') setCurrentView('super-admin-dashboard');
+          let target = 'student-dashboard';
+          if (role === 'student') target = 'student-dashboard';
+          else if (role === 'teacher') target = 'teacher-dashboard';
+          else if (role === 'admin') target = 'admin-dashboard';
+          else if (role === 'super_admin') target = 'super-admin-dashboard';
+          
+          console.log(`[${new Date().toISOString()}] ROUTE DECISION - ROUTING ROLE '${role}' TO DEFAULT VIEW: ${target}`);
+          setCurrentView(target);
         }
       }
     }
