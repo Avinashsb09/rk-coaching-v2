@@ -205,6 +205,7 @@ function AppSyncController({
           if (role === 'student') setCurrentView('student-dashboard');
           else if (role === 'teacher') setCurrentView('teacher-dashboard');
           else if (role === 'admin') setCurrentView('admin-dashboard');
+          else if (role === 'super_admin') setCurrentView('super-admin-dashboard');
         }
       }
     }

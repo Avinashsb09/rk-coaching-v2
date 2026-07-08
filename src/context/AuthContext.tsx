@@ -148,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                    if (userProfile.role === 'student') setCurrentView('student-dashboard');
                    else if (userProfile.role === 'teacher') setCurrentView('teacher-dashboard');
                    else if (userProfile.role === 'admin') setCurrentView('admin-dashboard');
+                   else if (userProfile.role === 'super_admin') setCurrentView('super-admin-dashboard');
                  } else {
                    setCurrentView(currentHash);
                  }
@@ -218,6 +219,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setCurrentView('teacher-dashboard');
           } else if (userProfile.role === 'admin') {
             setCurrentView('admin-dashboard');
+          } else if (userProfile.role === 'super_admin') {
+            setCurrentView('super-admin-dashboard');
           }
         } else {
           // Keeps user exactly on their current deep-linked view

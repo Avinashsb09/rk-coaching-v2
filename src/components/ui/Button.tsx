@@ -18,6 +18,7 @@ export interface ButtonProps {
   onClick?: (e: any) => void;
   type?: 'button' | 'submit' | 'reset';
   title?: string;
+  id?: string;
 }
 
 export function Button({

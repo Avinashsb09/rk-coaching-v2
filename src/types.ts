@@ -27,6 +27,9 @@ export interface AcademicClass {
   name: string;
   slug: string;
   priority: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AcademicSubject {
@@ -35,6 +38,12 @@ export interface AcademicSubject {
   name: string;
   icon: string;
   description: string;
+  displayOrder?: number;
+  isActive?: boolean;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AcademicChapter {
@@ -43,6 +52,11 @@ export interface AcademicChapter {
   name: string;
   description: string;
   orderIndex: number;
+  isActive?: boolean;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Course {

@@ -79,7 +79,9 @@ export default function AuthPage() {
         // Fallback demo mode
         addToast('No Supabase credentials. Simulating authentic verification...', 'info');
         // Match simulated user role based on email or selections
-        if (email.includes('teacher')) {
+        if (email.includes('super')) {
+          loginAs('super_admin');
+        } else if (email.includes('teacher')) {
           loginAs('teacher');
         } else if (email.includes('admin')) {
           loginAs('admin');

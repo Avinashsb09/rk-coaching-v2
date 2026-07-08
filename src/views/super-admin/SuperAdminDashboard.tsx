@@ -48,6 +48,7 @@ import {
   LogOut,
   Bell,
 } from 'lucide-react';
+import AcademicManagement from './modules/academic/AcademicManagement';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Navigation Config
@@ -526,6 +527,16 @@ export default function SuperAdminDashboard() {
           </section>
         </div>
       );
+    }
+    
+    if (activeView === 'sa-academic-standards') {
+      return <AcademicManagement initialTab="standards" />;
+    }
+    if (activeView === 'sa-subjects') {
+      return <AcademicManagement initialTab="subjects" />;
+    }
+    if (activeView === 'sa-chapters') {
+      return <AcademicManagement initialTab="chapters" />;
     }
 
     return <ModulePlaceholder id={activeView} label={activeLabel} />;
