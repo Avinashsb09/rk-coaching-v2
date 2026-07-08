@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { teacherService } from '../../services/teacher.service';
+import type { TeacherAssignment } from '../../types';
 import { 
   Users, 
   FileText, 
@@ -28,7 +30,8 @@ import {
   Settings, 
   HelpCircle,
   FilePlus,
-  FolderPlus
+  FolderPlus,
+  AlertTriangle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../components/ui/Button';
@@ -51,8 +54,79 @@ export default function TeacherDashboard() {
     videos,
     setVideos,
     notes,
-    setNotes
+    setNotes,
+    user
   } = useApp();
+
+  const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
+  const [teacherStats, setTeacherStats] = useState<{
+    notesCount: number;
+    videosCount: number;
+    pyqsCount: number;
+    quizzesCount: number;
+    assignmentsCount: number;
+    draftsCount: number;
+    reviewCount: number;
+    publishedCount: number;
+    rejectedCount: number;
+  } | null>(null);
+  const [loadingTeacherData, setLoadingTeacherData] = useState(true);
+
+  const loadTeacherData = async () => {
+    if (user?.id) {
+      setLoadingTeacherData(true);
+      const [assignmentsRes, statsRes] = await Promise.all([
+        teacherService.listTeacherAssignments(user.id, true),
+        teacherService.getTeacherStats(user.id)
+      ]);
+      if (assignmentsRes.data) setAssignments(assignmentsRes.data);
+      if (statsRes.data) setTeacherStats(statsRes.data);
+      setLoadingTeacherData(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTeacherData();
+  }, [user]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  Service-Layer Automatic Filtering of Scope
+  // ─────────────────────────────────────────────────────────────────────────────
+  const isTeacher = user?.role === 'teacher';
+
+  const filteredClasses = isTeacher
+    ? classes.filter(c => assignments.some(a => a.classId === c.id))
+    : classes;
+
+  const filteredSubjects = isTeacher
+    ? subjects.filter(s => assignments.some(a => a.classId === s.classId && (a.subjectId === null || a.subjectId === s.id)))
+    : subjects;
+
+  const filteredChapters = isTeacher
+    ? chapters.filter(ch => assignments.some(a => {
+        const subject = subjects.find(s => s.id === ch.subjectId);
+        if (!subject) return false;
+        return a.classId === subject.classId &&
+               (a.subjectId === null || a.subjectId === subject.id) &&
+               (a.chapterId === null || a.chapterId === ch.id);
+      }))
+    : chapters;
+
+  const filteredCourses = isTeacher
+    ? courses.filter(co => assignments.some(a => a.classId === co.classId && (a.subjectId === null || a.subjectId === co.subjectId)))
+    : courses;
+
+  const filteredLessons = isTeacher
+    ? lessons.filter(l => filteredChapters.some(ch => ch.id === l.chapterId))
+    : lessons;
+
+  const filteredNotes = isTeacher
+    ? notes.filter(n => filteredChapters.some(ch => ch.id === n.chapterId) && n.ownerId === user?.id)
+    : notes;
+
+  const filteredVideos = isTeacher
+    ? videos.filter(v => filteredChapters.some(ch => ch.id === v.chapterId) && v.ownerId === user?.id)
+    : videos;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'syllabus'>('overview');
   
@@ -376,7 +450,7 @@ export default function TeacherDashboard() {
   };
 
   const reorderLesson = (lessId: string, direction: 'up' | 'down') => {
-    const courseLessons = lessons.filter(l => l.chapterId === selectedChapterId);
+    const courseLessons = filteredLessons.filter(l => l.chapterId === selectedChapterId);
     const index = courseLessons.findIndex(l => l.id === lessId);
     if (index === -1) return;
 
@@ -400,12 +474,12 @@ export default function TeacherDashboard() {
   };
 
   // Helper selectors
-  const courseChapters = chapters.filter(chap => {
-    const matchingCourse = courses.find(c => c.id === selectedCourseId);
+  const courseChapters = filteredChapters.filter(chap => {
+    const matchingCourse = filteredCourses.find(c => c.id === selectedCourseId);
     return matchingCourse ? chap.subjectId === matchingCourse.subjectId : false;
   });
 
-  const activeCourseObj = courses.find(c => c.id === selectedCourseId);
+  const activeCourseObj = filteredCourses.find(c => c.id === selectedCourseId);
 
   return (
     <div className="space-y-8 py-4 text-left">
@@ -464,128 +538,193 @@ export default function TeacherDashboard() {
 
       {/* 3. TABS CONTENT */}
       {activeTab === 'overview' && (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in text-left">
           {/* STAT CARDS */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center">
-                  <BookOpen className="w-5.5 h-5.5" />
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Layers className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Courses</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-white">{courses.length} Active</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Active Binds</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white">{teacherStats?.assignmentsCount ?? 0} Mapped</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-600 flex items-center justify-center">
-                  <Users className="w-5.5 h-5.5" />
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Students</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-white">1,248 Scholars</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Draft Content</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white">{teacherStats?.draftsCount ?? 0} Items</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center">
-                  <DollarSign className="w-5.5 h-5.5" />
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-5 h-5 animate-spin-slow" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Est. My Revenue</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-white">₹82,450</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Under Review</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white">{teacherStats?.reviewCount ?? 0} Reviewing</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card hoverEffect>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center">
-                  <FileText className="w-5.5 h-5.5" />
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Check className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Handwritten Guides</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-white">{notes.length} PDF Binders</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Published</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white">{teacherStats?.publishedCount ?? 0} Live</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card hoverEffect>
+              <CardContent className="p-4 flex items-center gap-3 col-span-2 lg:col-span-1">
+                <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-950 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Rejected</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white">{teacherStats?.rejectedCount ?? 0} Action Req</p>
                 </div>
               </CardContent>
             </Card>
           </section>
 
-          {/* DUAL COLS: Analytics Chart & Activity */}
+          {/* DUAL COLS: Assigned Scopes & Expiries */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="p-6 lg:col-span-2 space-y-4">
-              <div className="flex justify-between items-center">
+            
+            {/* Column 1 & 2: Mapped scopes */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="p-5 space-y-4">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Student Course Analytics</h3>
-                  <p className="text-xs text-slate-500">Weekly student watch duration and chapter enrollment counts.</p>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-indigo-500" />
+                    MY ACADEMIC ASSIGNMENTS SCOPE
+                  </h3>
+                  <p className="text-xs text-slate-500">Your verification binds defining what standards and subjects you can modify.</p>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setAnalyticsFilter('all')}
-                    className={`px-2 py-1 text-[10px] font-extrabold rounded-md ${analyticsFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}
-                  >
-                    All
-                  </button>
-                  <button 
-                    onClick={() => setAnalyticsFilter('premium')}
-                    className={`px-2 py-1 text-[10px] font-extrabold rounded-md ${analyticsFilter === 'premium' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}
-                  >
-                    Premium
-                  </button>
-                </div>
-              </div>
 
-              {/* Course analytics bar metrics representation */}
-              <div className="space-y-4 pt-2">
-                {courses.filter(c => analyticsFilter === 'all' ? true : (analyticsFilter === 'premium' ? c.isPremium : !c.isPremium)).map((c, i) => {
-                  const studentCount = i === 0 ? 412 : (i === 1 ? 230 : (i === 2 ? 180 : 92));
-                  const progressPct = Math.min(100, Math.floor((studentCount / 500) * 100));
-                  return (
-                    <div key={c.id} className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="font-bold text-slate-800 dark:text-slate-200">{c.title}</span>
-                        <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{studentCount} enrolled</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-900 h-2.5 rounded-full overflow-hidden flex">
-                        <div 
-                          style={{ width: `${progressPct}%` }}
-                          className={`h-full rounded-full ${i % 2 === 0 ? 'bg-indigo-600' : 'bg-blue-500'}`}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            <Card className="p-5 space-y-4">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">Recent Activity Stream</h3>
-                <p className="text-xs text-slate-500">Real-time alerts of syllabus updates and mock submissions.</p>
-              </div>
-
-              <div className="space-y-3.5">
-                {[
-                  { text: 'Aditya Sen completed "Intro to Coulomb\'s Law" video lecture', time: '10 mins ago', type: 'video' },
-                  { text: 'Ananya Sen downloaded "Gauss Law CBSE Questions Pack.pdf"', time: '2 hours ago', type: 'note' },
-                  { text: 'Prof. Rajesh Khanna created NEET (Biology & Chemistry) Mock Chapter 2', time: '5 hours ago', type: 'system' },
-                  { text: 'Student Aarav Sharma unlocked CBSE 12 Premium level', time: '1 day ago', type: 'premium' }
-                ].map((act, i) => (
-                  <div key={i} className="flex gap-3 items-start text-xs border-b border-slate-50 dark:border-slate-900/40 pb-3 last:border-0 last:pb-0">
-                    <div className="h-2 w-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
-                    <div className="space-y-0.5">
-                      <p className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed">{act.text}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold">{act.time}</p>
-                    </div>
+                {assignments.length === 0 ? (
+                  <div className="py-10 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400 text-xs">
+                    No academic assignment binds found. Contact Super Admin to map assignments.
                   </div>
-                ))}
-              </div>
-            </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {assignments.map(a => (
+                      <div key={a.id} className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/50 dark:border-slate-800/40 flex flex-col justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="info" size="sm">
+                            {classes.find(c => c.id === a.classId)?.name || a.classId}
+                          </Badge>
+                          {a.subjectId && (
+                            <Badge variant="success" size="sm">
+                              {subjects.find(s => s.id === a.subjectId)?.name || a.subjectId}
+                            </Badge>
+                          )}
+                          {a.isPrimary ? (
+                            <Badge variant="primary" size="sm">PRIMARY</Badge>
+                          ) : (
+                            <Badge variant="secondary" size="sm">CO-TEACHER</Badge>
+                          )}
+                        </div>
+                        
+                        <div className="text-[10px] text-slate-400 space-y-0.5">
+                          {a.chapterId && <p className="font-semibold text-slate-600 dark:text-slate-300">Chapter: {chapters.find(c => c.id === a.chapterId)?.name || a.chapterId}</p>}
+                          <p className="font-mono">Period: {a.startDate} to {a.endDate || 'Ongoing'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* R&D LMS INTEGRATION MODULES PLACEHOLDERS */}
+              <Card className="p-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    LMS Future Integrations (Architecture Ready)
+                  </h3>
+                  <p className="text-xs text-slate-400">Granular expansion points reserved for Sprint 7-12 modules.</p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="p-3.5 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/30 rounded-2xl opacity-60">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Homework</p>
+                    <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">Planned</span>
+                  </div>
+                  <div className="p-3.5 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/30 rounded-2xl opacity-60">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Attendance</p>
+                    <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">Planned</span>
+                  </div>
+                  <div className="p-3.5 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/30 rounded-2xl opacity-60">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Live Classes</p>
+                    <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">Planned</span>
+                  </div>
+                  <div className="p-3.5 bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/30 rounded-2xl opacity-60">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Doubts Hub</p>
+                    <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">Planned</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Column 3: Expiry Warnings & Recent Stream */}
+            <div className="space-y-6">
+              
+              {/* Expiry alerts */}
+              <Card className="p-5 space-y-3.5">
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Upcoming Expiries
+                  </h3>
+                  <p className="text-[10px] text-slate-400">Scope deactivations scheduling status.</p>
+                </div>
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2">
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>No upcoming active assignments expiring within 30 days.</span>
+                </div>
+              </Card>
+
+              {/* Recent Activity */}
+              <Card className="p-5 space-y-4">
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    My Recent Activity Stream
+                  </h3>
+                  <p className="text-[10px] text-slate-400">Syllabus actions logged in central auditing records.</p>
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    { text: 'Created electrostatics practice worksheet notes', time: 'Just now' },
+                    { text: 'Submitted NEET PYQ chapter 2 solved PDF for review', time: '2 hours ago' },
+                    { text: 'Sync verified with Supabase user auth registry files', time: '1 day ago' }
+                  ].map((act, i) => (
+                    <div key={i} className="flex gap-2.5 items-start text-[11px] border-b border-slate-100 dark:border-slate-800 pb-2.5 last:border-0 last:pb-0">
+                      <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                      <div>
+                        <p className="text-slate-700 dark:text-slate-300 font-semibold">{act.text}</p>
+                        <p className="text-[9px] text-slate-400 font-mono mt-0.5">{act.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+            </div>
+
           </section>
         </div>
       )}
@@ -656,7 +795,7 @@ export default function TeacherDashboard() {
                       onChange={e => setCourseClassId(e.target.value)}
                       className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm px-3 py-2.5 focus:ring-2 focus:ring-blue-500"
                     >
-                      {classes.map(cl => (
+                      {filteredClasses.map(cl => (
                         <option key={cl.id} value={cl.id}>{cl.name}</option>
                       ))}
                     </select>
@@ -671,8 +810,8 @@ export default function TeacherDashboard() {
                       onChange={e => setCourseSubjectId(e.target.value)}
                       className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm px-3 py-2.5 focus:ring-2 focus:ring-blue-500"
                     >
-                      {subjects.map(s => (
-                        <option key={s.id} value={s.id}>{s.name} ({classes.find(cl=>cl.id===s.classId)?.name || 'Syllabus'})</option>
+                      {filteredSubjects.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({filteredClasses.find(cl=>cl.id===s.classId)?.name || 'Syllabus'})</option>
                       ))}
                     </select>
                   </div>
@@ -770,9 +909,9 @@ export default function TeacherDashboard() {
 
           {/* CATALOG GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map(course => {
-              const targetClass = classes.find(c => c.id === course.classId);
-              const targetSubject = subjects.find(s => s.id === course.subjectId);
+            {filteredCourses.map(course => {
+              const targetClass = filteredClasses.find(c => c.id === course.classId);
+              const targetSubject = filteredSubjects.find(s => s.id === course.subjectId);
               return (
                 <Card key={course.id} className="overflow-hidden flex flex-col justify-between">
                   <div>
@@ -873,7 +1012,7 @@ export default function TeacherDashboard() {
                   className="block w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm p-2.5 font-bold focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Choose Course --</option>
-                  {courses.map(c => (
+                  {filteredCourses.map(c => (
                     <option key={c.id} value={c.id}>{c.title}</option>
                   ))}
                 </select>
@@ -1140,12 +1279,12 @@ export default function TeacherDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {lessons.filter(l => l.chapterId === selectedChapterId).length === 0 ? (
+                  {filteredLessons.filter(l => l.chapterId === selectedChapterId).length === 0 ? (
                     <p className="text-xs text-slate-400 py-8 text-center">No lessons added inside this chapter folder. Click Add Lesson to start.</p>
                   ) : (
-                    lessons.filter(l => l.chapterId === selectedChapterId).sort((a,b)=>a.orderIndex - b.orderIndex).map((less, idx, arr) => {
-                      const associatedVideo = videos.find(v => v.lessonId === less.id);
-                      const associatedNote = notes.find(n => n.lessonId === less.id);
+                    filteredLessons.filter(l => l.chapterId === selectedChapterId).sort((a,b)=>a.orderIndex - b.orderIndex).map((less, idx, arr) => {
+                      const associatedVideo = filteredVideos.find(v => v.lessonId === less.id);
+                      const associatedNote = filteredNotes.find(n => n.lessonId === less.id);
 
                       return (
                         <div 

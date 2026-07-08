@@ -105,6 +105,8 @@ export interface Video {
   description?: string;
   createdBy?: string | null;
   updatedBy?: string | null;
+  ownerId?: string | null;
+  publishedBy?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -128,6 +130,8 @@ export interface Note {
   solvedStatus?: 'solved' | 'unsolved';
   createdBy?: string | null;
   updatedBy?: string | null;
+  ownerId?: string | null;
+  publishedBy?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -145,6 +149,8 @@ export interface Quiz {
   status?: 'draft' | 'review' | 'published' | 'archived';
   createdBy?: string | null;
   updatedBy?: string | null;
+  ownerId?: string | null;
+  publishedBy?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -276,6 +282,15 @@ export interface PaymentSettings {
   supportPhone: string;
   successMessage: string;
   failureMessage: string;
+}
+
+export interface TeacherAssignment {
+  id: string;
+  teacherId: string;
+  classId: string;
+  subjectId?: string | null;
+  chapterId?: string | null;
+  createdAt?: string;
 }
 
 

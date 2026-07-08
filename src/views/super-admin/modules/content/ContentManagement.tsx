@@ -24,8 +24,10 @@ import {
   Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
   FileText, PlayCircle, Award, HelpCircle, Search,
   RefreshCw, GripVertical, AlertTriangle, X, Check,
-  ChevronDown, ArrowUp, ArrowDown, Eye, PlusCircle, CheckCircle2
+  ChevronDown, ArrowUp, ArrowDown, Eye, PlusCircle, CheckCircle2,
+  XCircle
 } from 'lucide-react';
+import { teacherService } from '../../../../services/teacher.service';
 
 type CMSTab = 'notes' | 'videos' | 'pyq' | 'quiz';
 type ContentStatus = 'draft' | 'review' | 'published' | 'archived';
@@ -44,6 +46,63 @@ function StatusBadge({ status }: { status?: ContentStatus }) {
     <Badge variant={status === 'published' ? 'success' : status === 'review' ? 'warning' : status === 'archived' ? 'danger' : 'secondary'} size="sm">
       {status ? status.toUpperCase() : 'DRAFT'}
     </Badge>
+  );
+}
+
+interface RejectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (reason: string, comment: string) => void;
+  loading?: boolean;
+}
+
+function RejectionModal({ isOpen, onClose, onSubmit, loading }: RejectionModalProps) {
+  const [reason, setReason] = useState('Incorrect Answers');
+  const [comment, setComment] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(reason, comment);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Reject & Return for Correction" size="md">
+      <form onSubmit={handleSubmit} className="space-y-4 text-left">
+        <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs leading-relaxed">
+          <strong>Content Rejection:</strong> Returning this item will mark it as "Draft" and send the feedback comments back to the teacher's workspace dashboard.
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Rejection Reason *</label>
+          <select
+            value={reason}
+            onChange={e => setReason(e.target.value)}
+            className="w-full py-2.5 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none"
+            required
+          >
+            <option value="Incorrect Answers">Incorrect Answers / Solved Keys</option>
+            <option value="Poor Audio Quality">Poor Audio / Video Quality</option>
+            <option value="Incomplete Syllabus">Incomplete Syllabus coverage</option>
+            <option value="Typographical Errors">Typographical / Formatting Errors</option>
+            <option value="Incorrect Categorization">Incorrect Standard/Subject/Chapter Bind</option>
+            <option value="Other">Other (Specify in comments)</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Detailed Comment / Corrective Feedback *</label>
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder="Please detail what corrections are required so the instructor can adjust the materials..."
+            className="w-full min-h-[100px] py-2.5 px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+            required
+          />
+        </div>
+        <div className="flex gap-3 justify-end pt-2">
+          <Button variant="ghost" size="sm" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="danger" size="sm" type="submit" isLoading={loading}>Reject & Return</Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

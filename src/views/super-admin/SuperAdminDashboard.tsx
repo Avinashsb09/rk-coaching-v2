@@ -51,6 +51,7 @@ import {
 import AcademicManagement from './modules/academic/AcademicManagement';
 import ContentManagement from './modules/content/ContentManagement';
 import UserManagement from './modules/user/UserManagement';
+import TeacherManagement from './modules/teacher/TeacherManagement';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Navigation Config
@@ -559,7 +560,7 @@ export default function SuperAdminDashboard() {
       return <UserManagement initialRoleFilter="student" initialPremiumFilter="premium" />;
     }
     if (activeView === 'sa-teachers') {
-      return <UserManagement initialRoleFilter="teacher" />;
+      return <TeacherManagement />;
     }
     if (activeView === 'sa-admins') {
       return <UserManagement initialRoleFilter="admin" />;
