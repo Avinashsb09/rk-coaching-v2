@@ -36,14 +36,16 @@ export function getSupabase() {
   
   if (!supabaseInstance) {
     try {
-      supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      const options = {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true,
           storage: window.localStorage,
         },
-      });
+      };
+      console.log(`[${new Date().toISOString()}] SUPABASE CLIENT OPTIONS:`, options.auth);
+      supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, options);
       console.log(`[${new Date().toISOString()}] SUPABASE INITIALIZED`);
     } catch (err) {
       console.error('Failed to initialize Supabase client:', err);
@@ -203,3 +205,7 @@ export async function resolveSecureDownloadUrl(url: string, expiresIn: number = 
   }
 }
 
+export function resetSupabaseInstance() {
+  supabaseInstance = null;
+  console.log(`[${new Date().toISOString()}] SUPABASE CLIENT INSTANCE RESET`);
+}
