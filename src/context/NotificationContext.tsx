@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Notification } from '../types';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -33,6 +33,8 @@ export const NotificationContext = createContext<NotificationContextType | undef
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const lastLoadedUserIdRef = useRef<string | null>(null);
+  const loadingUserIdRef = useRef<string | null>(null);
 
   const addToast = (message: string, type: ToastMessage['type'] = 'success', duration = 3000) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -51,6 +53,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   const loadNotifications = async (userId: string) => {
+    if (!userId) {
+      lastLoadedUserIdRef.current = null;
+      loadingUserIdRef.current = null;
+      setNotifications([]);
+      return;
+    }
+    if (lastLoadedUserIdRef.current === userId || loadingUserIdRef.current === userId) {
+      return;
+    }
+    loadingUserIdRef.current = userId;
+
     if (isSupabaseConfigured() && getSupabase() && isUuid(userId)) {
       const supabase = getSupabase()!;
       try {
@@ -63,18 +76,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         if (error) {
           console.warn('Failed to load notifications from DB:', error.message);
           fallbackToLocal(userId);
+          lastLoadedUserIdRef.current = userId;
           return;
         }
 
         if (data) {
           setNotifications(data as any);
         }
+        lastLoadedUserIdRef.current = userId;
       } catch (err) {
         console.warn('Failed to load notifications:', err);
         fallbackToLocal(userId);
+        lastLoadedUserIdRef.current = userId;
+      } finally {
+        loadingUserIdRef.current = null;
       }
     } else {
       fallbackToLocal(userId);
+      lastLoadedUserIdRef.current = userId;
+      loadingUserIdRef.current = null;
     }
   };
 

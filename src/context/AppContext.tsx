@@ -157,6 +157,8 @@ function AppSyncController({
   const { loadPaymentData, setOrders, setPayments } = usePayments();
   const { loadEnrollments, setEnrolledCourseIds, loadSubjectNotesPurchases, setUnlockedSubjectNoteIds } = useCourses();
   const { addToast } = useNotifications();
+  const lastLoadedUserIdRef = useRef<string | null>(null);
+  const loadingUserIdRef = useRef<string | null>(null);
 
   // Centralized Route Guards and Access Protection
   useEffect(() => {
@@ -228,6 +230,11 @@ function AppSyncController({
 
   useEffect(() => {
     if (user) {
+      if (lastLoadedUserIdRef.current === user.id || loadingUserIdRef.current === user.id) {
+        return;
+      }
+      loadingUserIdRef.current = user.id;
+
       (async () => {
         try {
           await Promise.all([
@@ -238,13 +245,18 @@ function AppSyncController({
             loadEnrollments(user.id),
             loadSubjectNotesPurchases(user.id)
           ]);
+          lastLoadedUserIdRef.current = user.id;
           console.log(`[${new Date().toISOString()}] PAYMENT INITIALIZED`);
           console.log(`[${new Date().toISOString()}] APPLICATION READY`);
         } catch (e) {
           console.error("Relational data loading failed, continuing application startup:", e);
+        } finally {
+          loadingUserIdRef.current = null;
         }
       })();
     } else {
+      lastLoadedUserIdRef.current = null;
+      loadingUserIdRef.current = null;
       setBookmarksList([]);
       setProgressList([]);
       setNotifications([]);

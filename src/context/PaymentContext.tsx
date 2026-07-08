@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { Order, Payment, PaymentSettings, PurchaseRecord, SubjectPricing } from '../types';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 import { PaymentService } from '../services/payment.service';
@@ -33,6 +33,8 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseRecord[]>([]);
   const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
+  const lastLoadedUserIdRef = useRef<string | null>(null);
+  const loadingUserIdRef = useRef<string | null>(null);
 
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(() => {
     if (typeof window !== 'undefined') {
@@ -63,6 +65,20 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
   }, [paymentSettings]);
 
   const loadPaymentData = async (userId: string) => {
+    if (!userId) {
+      lastLoadedUserIdRef.current = null;
+      loadingUserIdRef.current = null;
+      setActiveStudentId(null);
+      setOrders([]);
+      setPayments([]);
+      setPurchaseHistory([]);
+      return;
+    }
+    if (lastLoadedUserIdRef.current === userId || loadingUserIdRef.current === userId) {
+      return;
+    }
+    loadingUserIdRef.current = userId;
+
     setActiveStudentId(userId);
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
@@ -82,9 +98,17 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       setPayments(savedPayments ? JSON.parse(savedPayments) : []);
     }
     
-    // Load new Enterprise Purchases
-    const history = await PaymentService.getPurchaseHistory(userId);
-    setPurchaseHistory(history);
+    try {
+      // Load new Enterprise Purchases
+      const history = await PaymentService.getPurchaseHistory(userId);
+      setPurchaseHistory(history);
+      lastLoadedUserIdRef.current = userId;
+    } catch (err) {
+      console.error('Failed to load purchase history:', err);
+      lastLoadedUserIdRef.current = userId;
+    } finally {
+      loadingUserIdRef.current = null;
+    }
   };
 
   const hasSubjectAccess = useCallback((subjectId: string) => {
