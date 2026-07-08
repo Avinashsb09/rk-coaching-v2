@@ -509,9 +509,9 @@ export const teacherService = {
 
         // Fetch counts parallel
         const [notesRes, videosRes, quizzesRes, assignmentsRes] = await Promise.all([
-          supabase.from('notes').select('id, status', { count: 'exact' }).eq('ownerId', teacherId),
-          supabase.from('videos').select('id, status', { count: 'exact' }).eq('ownerId', teacherId),
-          supabase.from('quizzes').select('id, status', { count: 'exact' }).eq('ownerId', teacherId),
+          supabase.from('notes').select('id, status', { count: 'exact' }).eq('createdBy', teacherId),
+          supabase.from('videos').select('id, status', { count: 'exact' }).eq('createdBy', teacherId),
+          supabase.from('quizzes').select('id, status', { count: 'exact' }).eq('createdBy', teacherId),
           supabase.from('teacher_assignments').select('id', { count: 'exact' }).eq('teacherId', teacherId).eq('status', 'active')
         ]);
 

@@ -204,7 +204,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           })(),
           (async () => {
             try {
-              return await s.from('leaderboards').select('*');
+              return await s.from('leaderboard').select('*');
             } catch {
               return { data: null };
             }
