@@ -15,6 +15,7 @@ export default function PyqDashboard() {
     classes, 
     subjects, 
     chapters, 
+    notes,
     setCurrentView,
     addToast,
     user
@@ -194,15 +195,62 @@ export default function PyqDashboard() {
           )}
         </div>
 
-        {/* Selection Summary */}
-        {chapterId && (
-          <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-2 font-semibold animate-fade-in">
-            <p className="font-bold text-sm text-indigo-600 dark:text-indigo-400">✅ Selection Complete!</p>
-            <p>
-              You have selected: <strong>{filteredClasses.find(c => c.id === classId)?.name}</strong> &gt; <strong>{subjects.find(s => s.id === subjectId)?.name}</strong> &gt; <strong>{activeChapters.find(c => c.id === chapterId)?.name}</strong>
-            </p>
-          </div>
-        )}
+        {/* Selection Summary & PYQ List */}
+        {chapterId && (() => {
+          const chapterPyqs = notes.filter(
+            n => n.type === 'pyq' && n.chapterId === chapterId && (n.status === 'published' || !n.status)
+          );
+
+          const handleStartPyq = (pyq: any) => {
+            sessionStorage.setItem('active_pyq_id', pyq.id);
+            sessionStorage.setItem('active_pyq_title', pyq.title);
+            sessionStorage.setItem('active_pyq_class_id', pyq.classId || '');
+            sessionStorage.setItem('active_pyq_subject_id', pyq.subjectId || '');
+            sessionStorage.setItem('active_pyq_chapter_id', pyq.chapterId || '');
+            sessionStorage.setItem('active_pyq_duration', '45');
+            setCurrentView('pyq-play');
+            addToast(`Launching CBT test for ${pyq.title}...`, 'success');
+          };
+
+          return (
+            <div className="space-y-4 animate-fade-in text-left">
+              <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1.5 font-semibold">
+                <p className="font-bold text-indigo-600 dark:text-indigo-400">Selected Scope:</p>
+                <p>
+                  <strong>{filteredClasses.find(c => c.id === classId)?.name}</strong> &gt; <strong>{subjects.find(s => s.id === subjectId)?.name}</strong> &gt; <strong>{activeChapters.find(c => c.id === chapterId)?.name}</strong>
+                </p>
+              </div>
+
+              {chapterPyqs.length === 0 ? (
+                <div className="p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-slate-400 text-xs text-center">
+                  No previous year papers have been published for this chapter yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Available Board Papers ({chapterPyqs.length})</p>
+                  {chapterPyqs.map(pyq => (
+                    <div key={pyq.id} className="p-4 bg-white/60 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{pyq.title}</h4>
+                        {pyq.examName && (
+                          <p className="text-[10px] text-slate-400 mt-1">Exam: {pyq.examName} | Year: {pyq.year || 'N/A'}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleStartPyq(pyq)}
+                        className="w-full sm:w-auto text-xs font-bold rounded-xl"
+                      >
+                        Start CBT Test
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
       </Card>
     </div>

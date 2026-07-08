@@ -417,7 +417,7 @@ export default function QuizDashboard() {
                   <div className="space-y-1.5">
                     <p className="text-sm font-black text-slate-700 dark:text-slate-300">No Questions Posted Yet</p>
                     <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed font-medium">
-                      The teacher hasn't published any quiz questions for this chapter yet. Check back soon!
+                      No questions have been posted yet. Please ask your teacher to publish questions and visit again.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 pt-1">

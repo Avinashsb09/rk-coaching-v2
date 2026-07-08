@@ -236,7 +236,10 @@ export default function TeacherDashboard() {
           thumbnailUrl: courseThumbnail,
           isPremium: courseIsPremium,
           price: Number(coursePrice) || 0,
-          discountPrice: courseDiscount ? Number(courseDiscount) : undefined
+          discountPrice: courseDiscount ? Number(courseDiscount) : undefined,
+          ownerId: user?.id,
+          createdBy: user?.id,
+          status: 'draft'
         }
       ]);
       addToast(`Course "${courseTitle}" created successfully!`, 'success');
@@ -360,7 +363,10 @@ export default function TeacherDashboard() {
             title: `Lecture: ${lessonTitle}`,
             provider: lessonVideoProvider,
             videoIdOrUrl: lessonVideoUrl,
-            durationSeconds: 1200
+            durationSeconds: 1200,
+            ownerId: user?.id,
+            createdBy: user?.id,
+            status: 'draft'
           }];
         }
         return prev;
@@ -382,8 +388,11 @@ export default function TeacherDashboard() {
             lessonId: targetLessonId,
             title: lessonPdfTitle || `Notes for ${lessonTitle}.pdf`,
             pdfUrl: lessonPdfUrl,
-            sizeBytes: 250000,
-            isPremium: lessonIsPremium
+            sizeBytes: 250050,
+            isPremium: lessonIsPremium,
+            ownerId: user?.id,
+            createdBy: user?.id,
+            status: 'draft'
           }];
         }
         return prev;
@@ -415,7 +424,10 @@ export default function TeacherDashboard() {
             title: `Lecture: ${lessonTitle}`,
             provider: lessonVideoProvider,
             videoIdOrUrl: lessonVideoUrl,
-            durationSeconds: 1500
+            durationSeconds: 1500,
+            ownerId: user?.id,
+            createdBy: user?.id,
+            status: 'draft'
           }
         ]);
       }
@@ -430,7 +442,10 @@ export default function TeacherDashboard() {
             title: lessonPdfTitle || `Handwritten Notes: ${lessonTitle}.pdf`,
             pdfUrl: lessonPdfUrl,
             sizeBytes: 310000,
-            isPremium: lessonIsPremium
+            isPremium: lessonIsPremium,
+            ownerId: user?.id,
+            createdBy: user?.id,
+            status: 'draft'
           }
         ]);
       }
@@ -446,6 +461,28 @@ export default function TeacherDashboard() {
       setVideos(prev => prev.filter(v => v.lessonId !== lessId));
       setNotes(prev => prev.filter(n => n.lessonId !== lessId));
       addToast('Lesson materials deleted', 'warning');
+    }
+  };
+
+  const handleSubmitNoteForReview = async (noteId: string) => {
+    const { error } = await teacherService.submitForReview('notes', noteId, user?.id || '');
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Handwritten Notes submitted for review!', 'success');
+      setNotes(prev => prev.map(n => n.id === noteId ? { ...n, status: 'review', rejectionReason: undefined, rejectionComment: undefined } : n));
+      loadTeacherData();
+    }
+  };
+
+  const handleSubmitVideoForReview = async (videoId: string) => {
+    const { error } = await teacherService.submitForReview('videos', videoId, user?.id || '');
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Video lecture submitted for review!', 'success');
+      setVideos(prev => prev.map(v => v.id === videoId ? { ...v, status: 'review', rejectionReason: undefined, rejectionComment: undefined } : v));
+      loadTeacherData();
     }
   };
 
@@ -1337,10 +1374,10 @@ export default function TeacherDashboard() {
                             </div>
                           </div>
 
-                          {/* Media Links Details */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-50 dark:border-slate-900/40">
+                           {/* Media Links Details */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-50 dark:border-slate-900/40 text-left">
                             {/* Video detail card */}
-                            <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-between">
+                            <div className="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2 overflow-hidden">
                                 <Video className="w-4 h-4 text-indigo-500 shrink-0" />
                                 <div className="text-[10px] overflow-hidden">
@@ -1352,13 +1389,42 @@ export default function TeacherDashboard() {
                                   </p>
                                 </div>
                               </div>
-                              {associatedVideo && (
-                                <Badge variant="secondary" size="sm">Active</Badge>
-                              )}
+                              {associatedVideo && (() => {
+                                const status = associatedVideo.status || 'draft';
+                                const isDraft = status === 'draft';
+                                const isReview = status === 'review';
+                                const isPublished = status === 'published';
+                                const hasRejection = !!associatedVideo.rejectionReason;
+
+                                return (
+                                  <div className="flex flex-col gap-1 items-end shrink-0">
+                                    <div className="flex items-center gap-1.5">
+                                      {hasRejection ? (
+                                        <Badge variant="danger" size="sm">Correction Required</Badge>
+                                      ) : isPublished ? (
+                                        <Badge variant="success" size="sm">Published</Badge>
+                                      ) : isReview ? (
+                                        <Badge variant="info" size="sm">Pending Review</Badge>
+                                      ) : (
+                                        <Badge variant="secondary" size="sm">Draft</Badge>
+                                      )}
+
+                                      {isDraft && (
+                                        <button
+                                          onClick={() => handleSubmitVideoForReview(associatedVideo.id)}
+                                          className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[9px] font-bold hover:bg-indigo-700 transition-colors"
+                                        >
+                                          Submit Review
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
 
                             {/* PDF detail card */}
-                            <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-between">
+                            <div className="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2 overflow-hidden">
                                 <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
                                 <div className="text-[10px] overflow-hidden">
@@ -1370,10 +1436,53 @@ export default function TeacherDashboard() {
                                   </p>
                                 </div>
                               </div>
-                              {associatedNote && (
-                                <Badge variant="success" size="sm">Linked</Badge>
-                              )}
+                              {associatedNote && (() => {
+                                const status = associatedNote.status || 'draft';
+                                const isDraft = status === 'draft';
+                                const isReview = status === 'review';
+                                const isPublished = status === 'published';
+                                const hasRejection = !!associatedNote.rejectionReason;
+
+                                return (
+                                  <div className="flex flex-col gap-1 items-end shrink-0">
+                                    <div className="flex items-center gap-1.5">
+                                      {hasRejection ? (
+                                        <Badge variant="danger" size="sm">Correction Required</Badge>
+                                      ) : isPublished ? (
+                                        <Badge variant="success" size="sm">Published</Badge>
+                                      ) : isReview ? (
+                                        <Badge variant="info" size="sm">Pending Review</Badge>
+                                      ) : (
+                                        <Badge variant="secondary" size="sm">Draft</Badge>
+                                      )}
+
+                                      {isDraft && (
+                                        <button
+                                          onClick={() => handleSubmitNoteForReview(associatedNote.id)}
+                                          className="px-2 py-0.5 bg-indigo-650 text-white rounded text-[9px] font-bold hover:bg-indigo-700 transition-colors"
+                                        >
+                                          Submit Review
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
+
+                            {/* Video correction comments card */}
+                            {associatedVideo?.rejectionReason && (
+                              <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-650 dark:text-red-400 rounded-xl text-[10px]">
+                                <strong>Correction Note (Video):</strong> {associatedVideo.rejectionComment || associatedVideo.rejectionReason}
+                              </div>
+                            )}
+
+                            {/* Note correction comments card */}
+                            {associatedNote?.rejectionReason && (
+                              <div className="p-2 bg-red-500/10 border border-red-500/20 text-red-650 dark:text-red-400 rounded-xl text-[10px]">
+                                <strong>Correction Note (Notes):</strong> {associatedNote.rejectionComment || associatedNote.rejectionReason}
+                              </div>
+                            )}
                           </div>
 
                           {/* Interactive preview pane for added content */}

@@ -143,6 +143,34 @@ function NotesPanel() {
   // Archive state
   const [archiveItem, setArchiveItem] = useState<Note | null>(null);
 
+  // Rejection states
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectionLoading, setRejectionLoading] = useState(false);
+
+  const handleApprove = async (itemId: string) => {
+    const { error } = await teacherService.approveContent('notes', itemId, user?.id || '');
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Study Note approved & published successfully!', 'success');
+      load();
+    }
+  };
+
+  const handleRejectSubmit = async (reason: string, comment: string) => {
+    if (!rejectTargetId) return;
+    setRejectionLoading(true);
+    const { error } = await teacherService.rejectContent('notes', rejectTargetId, reason, comment, user?.id || '');
+    setRejectionLoading(false);
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Study Note rejected and returned to draft.', 'success');
+      setRejectTargetId(null);
+      load();
+    }
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await contentService.notes.list();
@@ -397,6 +425,24 @@ function NotesPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
+                      {item.status === 'review' && (
+                        <div className="flex items-center gap-1.5 border-r border-slate-150 dark:border-slate-800 pr-2 mr-0.5">
+                          <button
+                            onClick={() => handleApprove(item.id)}
+                            title="Approve & Publish"
+                            className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/35 transition-all"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setRejectTargetId(item.id)}
+                            title="Reject & Request Correction"
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/35 transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <PermissionGuard permission="content:write">
                         <button onClick={() => openEdit(item)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all">
@@ -524,6 +570,13 @@ function NotesPanel() {
           </div>
         </div>
       </Modal>
+
+      <RejectionModal
+        isOpen={!!rejectTargetId}
+        onClose={() => setRejectTargetId(null)}
+        onSubmit={handleRejectSubmit}
+        loading={rejectionLoading}
+      />
     </div>
   );
 }
@@ -562,6 +615,34 @@ function VideosPanel() {
 
   // Archive state
   const [archiveItem, setArchiveItem] = useState<Video | null>(null);
+
+  // Rejection states
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectionLoading, setRejectionLoading] = useState(false);
+
+  const handleApprove = async (itemId: string) => {
+    const { error } = await teacherService.approveContent('videos', itemId, user?.id || '');
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Video lecture approved & published successfully!', 'success');
+      load();
+    }
+  };
+
+  const handleRejectSubmit = async (reason: string, comment: string) => {
+    if (!rejectTargetId) return;
+    setRejectionLoading(true);
+    const { error } = await teacherService.rejectContent('videos', rejectTargetId, reason, comment, user?.id || '');
+    setRejectionLoading(false);
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Video lecture rejected and returned to draft.', 'success');
+      setRejectTargetId(null);
+      load();
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -807,6 +888,24 @@ function VideosPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
+                      {item.status === 'review' && (
+                        <div className="flex items-center gap-1.5 border-r border-slate-150 dark:border-slate-800 pr-2 mr-0.5">
+                          <button
+                            onClick={() => handleApprove(item.id)}
+                            title="Approve & Publish"
+                            className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/35 transition-all"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setRejectTargetId(item.id)}
+                            title="Reject & Request Correction"
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/35 transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <PermissionGuard permission="content:write">
                         <button onClick={() => openEdit(item)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all">
@@ -913,6 +1012,13 @@ function VideosPanel() {
           </div>
         </div>
       </Modal>
+
+      <RejectionModal
+        isOpen={!!rejectTargetId}
+        onClose={() => setRejectTargetId(null)}
+        onSubmit={handleRejectSubmit}
+        loading={rejectionLoading}
+      />
     </div>
   );
 }
@@ -953,6 +1059,34 @@ function PYQPanel() {
 
   // Archive state
   const [archiveItem, setArchiveItem] = useState<Note | null>(null);
+
+  // Rejection states
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectionLoading, setRejectionLoading] = useState(false);
+
+  const handleApprove = async (itemId: string) => {
+    const { error } = await teacherService.approveContent('notes', itemId, user?.id || '');
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('PYQ board paper approved & published successfully!', 'success');
+      load();
+    }
+  };
+
+  const handleRejectSubmit = async (reason: string, comment: string) => {
+    if (!rejectTargetId) return;
+    setRejectionLoading(true);
+    const { error } = await teacherService.rejectContent('notes', rejectTargetId, reason, comment, user?.id || '');
+    setRejectionLoading(false);
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('PYQ board paper rejected and returned to draft.', 'success');
+      setRejectTargetId(null);
+      load();
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1206,6 +1340,24 @@ function PYQPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
+                      {item.status === 'review' && (
+                        <div className="flex items-center gap-1.5 border-r border-slate-150 dark:border-slate-800 pr-2 mr-0.5">
+                          <button
+                            onClick={() => handleApprove(item.id)}
+                            title="Approve & Publish"
+                            className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/35 transition-all"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setRejectTargetId(item.id)}
+                            title="Reject & Request Correction"
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/35 transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <PermissionGuard permission="content:write">
                         <button onClick={() => openEdit(item)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all">
@@ -1334,6 +1486,13 @@ function PYQPanel() {
           </div>
         </div>
       </Modal>
+
+      <RejectionModal
+        isOpen={!!rejectTargetId}
+        onClose={() => setRejectTargetId(null)}
+        onSubmit={handleRejectSubmit}
+        loading={rejectionLoading}
+      />
     </div>
   );
 }
@@ -1386,6 +1545,34 @@ function QuizPanel() {
 
   // Archive state
   const [archiveItem, setArchiveItem] = useState<Quiz | null>(null);
+
+  // Rejection states
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectionLoading, setRejectionLoading] = useState(false);
+
+  const handleApprove = async (itemId: string) => {
+    const { error } = await teacherService.approveContent('quizzes', itemId, user?.id || '');
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Quiz approved & published successfully!', 'success');
+      load();
+    }
+  };
+
+  const handleRejectSubmit = async (reason: string, comment: string) => {
+    if (!rejectTargetId) return;
+    setRejectionLoading(true);
+    const { error } = await teacherService.rejectContent('quizzes', rejectTargetId, reason, comment, user?.id || '');
+    setRejectionLoading(false);
+    if (error) {
+      addToast(error, 'error');
+    } else {
+      addToast('Quiz rejected and returned to draft.', 'success');
+      setRejectTargetId(null);
+      load();
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1660,6 +1847,24 @@ function QuizPanel() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
+                      {item.status === 'review' && (
+                        <div className="flex items-center gap-1.5 border-r border-slate-150 dark:border-slate-800 pr-2 mr-0.5">
+                          <button
+                            onClick={() => handleApprove(item.id)}
+                            title="Approve & Publish"
+                            className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/35 transition-all"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setRejectTargetId(item.id)}
+                            title="Reject & Request Correction"
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/35 transition-all"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <PermissionGuard permission="content:write">
                         <button onClick={() => openEdit(item)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all">
@@ -1845,6 +2050,13 @@ function QuizPanel() {
           </div>
         </form>
       </Modal>
+
+      <RejectionModal
+        isOpen={!!rejectTargetId}
+        onClose={() => setRejectTargetId(null)}
+        onSubmit={handleRejectSubmit}
+        loading={rejectionLoading}
+      />
     </div>
   );
 }
