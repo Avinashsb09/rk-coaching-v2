@@ -564,51 +564,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async (addToast: any, setCurrentView: any, setBreadcrumbs: any) => {
-    console.log(`[${new Date().toISOString()}] LOGOUT START`);
-    
-    // Step 9: Record browser storage before logout
-    if (typeof window !== 'undefined') {
-      try {
-        console.log("localStorage keys before logout:", Object.keys(localStorage));
-        console.log("sessionStorage keys before logout:", Object.keys(sessionStorage));
-      } catch (e) {}
-    }
-
+    console.log("REMOTE LOGOUT START");
     const supabase = getSupabase();
     
     if (supabase) {
       try {
-        // Step 2: Session check before signOut
-        const checkBefore = await supabase.auth.getSession();
-        console.log("SESSION BEFORE SIGNOUT", checkBefore);
-        if (checkBefore.data.session) {
-          console.log("Session exists before signOut");
-        } else {
-          console.log("No active session exists before signOut");
-        }
-
-        console.log(`[${new Date().toISOString()}] SUPABASE SIGNOUT START`);
-        
-        // Step 3: signOut with global scope and log the returned error
         const { error: signOutError } = await supabase.auth.signOut({ scope: "global" });
         if (signOutError) {
-          console.error("Supabase signOut error:", signOutError);
-        } else {
-          console.log(`[${new Date().toISOString()}] SUPABASE SIGNOUT SUCCESS`);
-        }
-
-        // Step 4: Immediately after signOut check session
-        const checkAfter = await supabase.auth.getSession();
-        console.log("SESSION AFTER SIGNOUT", checkAfter);
-        console.log(`[${new Date().toISOString()}] GETSESSION AFTER LOGOUT = ${checkAfter.data.session ? 'NOT_NULL' : 'NULL'}`);
-        
-        if (checkAfter.data.session) {
-          console.error("STOP: Session still exists after signOut! Reason: Supabase client local session was not cleared.");
-          addToast('Logout failed: Session still active', 'error');
-          return;
+          console.warn("REMOTE LOGOUT FAILED", signOutError);
         }
       } catch (err) {
-        console.error('Exception during Supabase signOut:', err);
+        console.warn("REMOTE LOGOUT FAILED", err);
       }
     }
 
@@ -621,34 +587,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem(key);
           }
         }
-        console.log(`[${new Date().toISOString()}] LOCAL STORAGE CLEARED`);
+        console.log("SUPABASE STORAGE CLEARED");
       } catch (e) {
         console.error('Error clearing localStorage:', e);
       }
 
       try {
         sessionStorage.removeItem('auth_redirect_target');
-        console.log(`[${new Date().toISOString()}] SESSION STORAGE CLEARED`);
-      } catch (e) {}
-
-      try {
-        console.log("localStorage keys after logout:", Object.keys(localStorage));
-        console.log("sessionStorage keys after logout:", Object.keys(sessionStorage));
       } catch (e) {}
     }
 
-    // Reset all React state (Step 2 of the prompt)
+    // Reset all React state and cached variables
     syncedUserIdRef.current = null;
     setUser(null);
     setRoleState('visitor');
-    console.log(`[${new Date().toISOString()}] SESSION CLEARED`);
-    console.log(`[${new Date().toISOString()}] PROFILE CLEARED`);
-    console.log(`[${new Date().toISOString()}] AUTH STATE RESET`);
+    console.log("LOCAL SESSION DESTROYED");
 
     // Consolidate client reset
     resetSupabaseInstance();
+    console.log("SUPABASE CLIENT RECREATED");
 
-    console.log(`[${new Date().toISOString()}] REDIRECT LOGIN`);
+    // Immediately verify that getSession returns null on new client instance
+    const newSupabase = getSupabase();
+    if (newSupabase) {
+      try {
+        const checkAfter = await newSupabase.auth.getSession();
+        console.log("GETSESSION AFTER LOCAL RESET", checkAfter);
+        if (!checkAfter.data.session) {
+          console.log("LOCAL SESSION = NULL");
+        } else {
+          // Force clear storage and reload client if session somehow persisted
+          if (typeof window !== 'undefined') {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+              const key = localStorage.key(i);
+              if (key && (key.startsWith('sb-') || key.includes('supabase.auth'))) {
+                localStorage.removeItem(key);
+              }
+            }
+          }
+          resetSupabaseInstance();
+          const checkAfterDouble = await getSupabase()?.auth.getSession();
+          if (!checkAfterDouble?.data.session) {
+            console.log("LOCAL SESSION = NULL");
+          }
+        }
+      } catch (e) {
+        console.error("Error verifying local session reset:", e);
+      }
+    } else {
+      console.log("LOCAL SESSION = NULL");
+    }
+
+    console.log("LOGOUT COMPLETE");
+
     setCurrentView('auth');
     setBreadcrumbs([{ label: 'Home', view: 'home' }, { label: 'Authentication Suite', view: 'auth' }]);
     addToast('Logged out successfully', 'success');
