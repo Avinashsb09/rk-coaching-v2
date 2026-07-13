@@ -44,6 +44,65 @@ export default function QuizDashboard() {
 
   // Auto-detect registered standard on mount/load
   useEffect(() => {
+    console.info(
+      '[QUIZ_AVAILABILITY_RUNTIME_VERSION]',
+      'chapter1-network-forensic-v1'
+    );
+
+    const runDirectDiagnostic = async () => {
+      if (isSupabaseConfigured()) {
+        const supabase = getSupabase();
+        if (supabase) {
+          const diagnosticLessonIds = [
+            'less_neet_biology_free',
+            'less_neet_biology_premium'
+          ];
+          try {
+            const result = await supabase
+              .from('quizzes')
+              .select('id, lessonId')
+              .in('lessonId', diagnosticLessonIds);
+
+            console.info(
+              '[QUIZ_DIRECT_QUERY_DIAGNOSTIC]',
+              {
+                data: result.data,
+                error: result.error,
+                status: result.status,
+                statusText: result.statusText
+              }
+            );
+
+            // Also test deduplicated direct query
+            const quizRequestKey = `quiz-availability:quizzes:diagnostic-test`;
+            const dedupResult = await deduplicateRequest(quizRequestKey, async () => {
+              return await supabase
+                .from('quizzes')
+                .select('id, lessonId')
+                .in('lessonId', diagnosticLessonIds);
+            });
+            console.info(
+              '[QUIZ_DEDUP_QUERY_DIAGNOSTIC]',
+              {
+                data: (dedupResult as any).data,
+                error: (dedupResult as any).error,
+                status: (dedupResult as any).status,
+                statusText: (dedupResult as any).statusText
+              }
+            );
+
+          } catch (err: any) {
+            console.error('[QUIZ_DIRECT_QUERY_DIAGNOSTIC] failed with exception:', err);
+          }
+        } else {
+          console.warn('[QUIZ_DIRECT_QUERY_DIAGNOSTIC] Supabase client is null');
+        }
+      } else {
+        console.info('[QUIZ_DIRECT_QUERY_DIAGNOSTIC] Supabase not configured');
+      }
+    };
+    runDirectDiagnostic();
+
     if (user?.classId) {
       const matched = classes.find(c => c.id === user.classId || c.slug === user.classId);
       if (matched && allowedClassIds.includes(matched.id)) {
