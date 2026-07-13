@@ -9,7 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { BrainCircuit, ChevronRight, AlertTriangle, PlayCircle, RotateCcw, BookOpen } from 'lucide-react';
-import { getSupabase, isSupabaseConfigured } from '../../lib/supabase';
+import { getSupabase, isSupabaseConfigured, deduplicateRequest } from '../../lib/supabase';
 
 /** Quiz question availability states */
 type QuizCheckState = 'idle' | 'checking' | 'ready' | 'empty' | 'error';
@@ -110,6 +110,7 @@ export default function QuizDashboard() {
 
     let resolvedLessonIds: string[] = [];
     let resolvedQuizIds: string[] = [];
+    const selectedChapterName = chapters.find(c => c.id === chapterId)?.name || 'Unknown';
 
     try {
       // Step C: Resolve lessons for the selected chapter
@@ -120,6 +121,21 @@ export default function QuizDashboard() {
       // Resolve lessons using the actual chapter relationship column (chapterId)
       const chapterLessons = lessons.filter(l => l.chapterId === chapterId);
       resolvedLessonIds = chapterLessons.map(l => l.id);
+
+      // --- PHASE 1 TRACE LOGGING ---
+      console.group('[QuizDashboard] Availability Trace');
+      console.log({
+        selectedStandardId: classId,
+        selectedSubjectId: subjectId,
+        selectedChapterId: chapterId,
+        selectedChapterName,
+        matchingLessons: chapterLessons,
+        resolvedLessonIds
+      });
+      chapterLessons.forEach((l, idx) => {
+        console.log(`Lesson [${idx}] ID:`, l.id, `Type:`, typeof l.id, `IsPremium:`, l.isPremium);
+      });
+      console.groupEnd();
 
       if (resolvedLessonIds.length === 0) {
         if (currentVersion !== checkRequestVersionRef.current) return;
@@ -134,31 +150,62 @@ export default function QuizDashboard() {
         const supabase = getSupabase();
         if (!supabase) throw new Error('Supabase not available');
 
-        const { data: rawQuizData, error: quizErr } = await supabase
-          .from('quizzes')
-          .select('id, lessonId')
-          .in('lessonId', resolvedLessonIds);
+        // PHASE 4: NORMALIZE LESSON IDS
+        const normalizedLessonIds = [
+          ...new Set(
+            resolvedLessonIds
+              .filter((id): id is string => typeof id === 'string')
+              .map(id => id.trim())
+              .filter(Boolean)
+          )
+        ];
+
+        if (normalizedLessonIds.length === 0) {
+          setQuestionCount(0);
+          setActiveQuizId(null);
+          setQuizCheckState('empty');
+          return;
+        }
+
+        // PHASE 3: DEDUPLICATION KEY
+        const sortedLessonIds = [...normalizedLessonIds].sort();
+        const quizRequestKey = `quiz-availability:quizzes:${sortedLessonIds.join(',')}`;
+
+        // Step D: Query quizzes using deduplicateRequest
+        const { data: rawQuizData, error: quizErr } = await deduplicateRequest(quizRequestKey, async () => {
+          const res = await supabase
+            .from('quizzes')
+            .select('id, lessonId')
+            .in('lessonId', normalizedLessonIds);
+          return res;
+        });
         const quizData = rawQuizData as any[] | null;
 
         // Step F: Request version protection
         if (currentVersion !== checkRequestVersionRef.current) return;
 
         if (quizErr) {
-          console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR: quizzes fetch failed:', {
-            code: quizErr.code,
-            message: quizErr.message,
-            details: quizErr.details,
-            selectedAcademicStandardId: classId,
-            selectedSubjectId: subjectId,
+          // PHASE 1 ERROR LOGGING
+          console.error('[QuizDashboard] QUIZZES_QUERY_FAILED', {
             selectedChapterId: chapterId,
-            lessonIds: resolvedLessonIds
+            selectedChapterName,
+            resolvedLessonIds: normalizedLessonIds,
+            error: {
+              name: quizErr.name,
+              message: quizErr.message,
+              code: quizErr.code,
+              details: quizErr.details,
+              hint: quizErr.hint,
+              status: (quizErr as any).status
+            }
           });
           setQuizCheckState('error');
           return;
         }
 
+        // PHASE 5: VERIFY EMPTY QUERY RESULTS
         if (!quizData || quizData.length === 0) {
-          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Zero quiz rows returned', { lessonIds: resolvedLessonIds });
+          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Zero quiz rows returned', { lessonIds: normalizedLessonIds });
           setQuizCheckState('empty');
           setQuestionCount(0);
           setActiveQuizId(null);
@@ -166,7 +213,14 @@ export default function QuizDashboard() {
         }
 
         // Step E: Query quiz questions
-        resolvedQuizIds = quizData.map((q: any) => q.id);
+        resolvedQuizIds = [
+          ...new Set(
+            quizData
+              .map(row => row.id)
+              .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+              .map(id => id.trim())
+          )
+        ];
         
         // Empty array guard
         if (resolvedQuizIds.length === 0) {
@@ -176,24 +230,34 @@ export default function QuizDashboard() {
           return;
         }
 
-        const { data: qData, error: qErr } = await supabase
-          .from('quiz_questions')
-          .select('id, quizId')
-          .in('quizId', resolvedQuizIds);
+        const sortedQuizIds = [...resolvedQuizIds].sort();
+        const questionsRequestKey = `quiz-availability:questions:${sortedQuizIds.join(',')}`;
+
+        const { data: qData, error: qErr } = await deduplicateRequest(questionsRequestKey, async () => {
+          const res = await supabase
+            .from('quiz_questions')
+            .select('id, quizId')
+            .in('quizId', resolvedQuizIds);
+          return res;
+        });
 
         // Step F: Request version protection
         if (currentVersion !== checkRequestVersionRef.current) return;
 
         if (qErr) {
-          console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR: quiz_questions fetch failed:', {
-            code: qErr.code,
-            message: qErr.message,
-            details: qErr.details,
-            selectedAcademicStandardId: classId,
-            selectedSubjectId: subjectId,
+          console.error('[QuizDashboard] QUIZ_QUESTIONS_QUERY_FAILED', {
             selectedChapterId: chapterId,
-            lessonIds: resolvedLessonIds,
-            quizIds: resolvedQuizIds
+            selectedChapterName,
+            resolvedLessonIds: normalizedLessonIds,
+            resolvedQuizIds,
+            error: {
+              name: qErr.name,
+              message: qErr.message,
+              code: qErr.code,
+              details: qErr.details,
+              hint: qErr.hint,
+              status: (qErr as any).status
+            }
           });
           setQuizCheckState('error');
           return;
