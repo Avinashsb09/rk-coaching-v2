@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -36,6 +36,7 @@ export default function QuizDashboard() {
   const [quizCheckState, setQuizCheckState] = useState<QuizCheckState>('idle');
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
+  const checkRequestVersionRef = useRef<number>(0);
 
   const allowedClassIds = ['c6', 'c7', 'c8', 'c9', 'c10', 'c11s', 'c12s', 'neet', 'bpharma', 'nursing'];
   const filteredClasses = classes.filter(c => allowedClassIds.includes(c.id));
@@ -52,6 +53,7 @@ export default function QuizDashboard() {
 
   // Reset selections when parent fields change
   const handleClassChange = (val: string) => {
+    checkRequestVersionRef.current++;
     setClassId(val);
     setSubjectId('');
     setChapterId('');
@@ -60,6 +62,7 @@ export default function QuizDashboard() {
   };
 
   const handleSubjectChange = (val: string) => {
+    checkRequestVersionRef.current++;
     setSubjectId(val);
     setChapterId('');
     setQuizCheckState('idle');
@@ -67,6 +70,7 @@ export default function QuizDashboard() {
   };
 
   const handleChapterChange = (val: string) => {
+    checkRequestVersionRef.current++;
     setChapterId(val);
     setQuizCheckState('idle');
     setActiveQuizId(null);
@@ -90,6 +94,8 @@ export default function QuizDashboard() {
   const checkQuizAvailability = useCallback(async () => {
     if (!chapterId) return;
 
+    const currentVersion = ++checkRequestVersionRef.current;
+
     setQuizCheckState('checking');
     setQuestionCount(0);
     setActiveQuizId(null);
@@ -100,7 +106,8 @@ export default function QuizDashboard() {
       const lessonIds = chapterLessons.map(l => l.id);
 
       if (lessonIds.length === 0) {
-        // No lessons exist for this chapter → no quizzes possible
+        if (currentVersion !== checkRequestVersionRef.current) return;
+        console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: No lessons found for chapter', chapterId);
         setQuizCheckState('empty');
         return;
       }
@@ -122,6 +129,8 @@ export default function QuizDashboard() {
 
           if (error) throw error;
 
+          if (currentVersion !== checkRequestVersionRef.current) return;
+
           const count = data?.length ?? 0;
           setQuestionCount(count);
 
@@ -133,6 +142,7 @@ export default function QuizDashboard() {
             setActiveQuizId(firstQuizWithQs?.id ?? contextQuizzes[0].id);
             setQuizCheckState('ready');
           } else {
+            console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Quiz exists but has zero questions', { quizIds });
             setQuizCheckState('empty');
           }
         } else {
@@ -144,7 +154,10 @@ export default function QuizDashboard() {
 
           if (quizErr) throw quizErr;
 
+          if (currentVersion !== checkRequestVersionRef.current) return;
+
           if (!quizData || quizData.length === 0) {
+            console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: No quizzes found for lessons', { lessonIds });
             setQuizCheckState('empty');
             return;
           }
@@ -157,6 +170,8 @@ export default function QuizDashboard() {
 
           if (qErr) throw qErr;
 
+          if (currentVersion !== checkRequestVersionRef.current) return;
+
           const count = qData?.length ?? 0;
           setQuestionCount(count);
 
@@ -167,10 +182,13 @@ export default function QuizDashboard() {
             setActiveQuizId(firstQuizWithQs ?? dbQuizIds[0]);
             setQuizCheckState('ready');
           } else {
+            console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Quizzes found but have zero questions', { dbQuizIds });
             setQuizCheckState('empty');
           }
         }
       } else {
+        if (currentVersion !== checkRequestVersionRef.current) return;
+
         // Supabase not configured — use context data
         const contextQIds = contextQuizzes.map(q => q.id);
         const contextQCount = quizQuestions.filter(qq => contextQIds.includes(qq.quizId)).length;
@@ -184,13 +202,23 @@ export default function QuizDashboard() {
           setActiveQuizId(firstQuiz?.id ?? contextQuizzes[0].id);
           setQuizCheckState('ready');
         } else {
+          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY (mock data): Zero questions');
           setQuizCheckState('empty');
         }
       }
     } catch (err: any) {
-      console.error('[QuizDashboard] Quiz availability check error:', err);
+      if (currentVersion !== checkRequestVersionRef.current) return;
+      console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR:', {
+        table: 'quiz_questions',
+        classId,
+        subjectId,
+        chapterId,
+        code: err?.code,
+        message: err?.message,
+        details: err?.details
+      });
       setQuizCheckState('error');
-      addToast('Failed to check question availability. Please try again.', 'error');
+      addToast('Unable to check question availability. Please try again.', 'error');
     }
   }, [chapterId, lessons, quizzes, quizQuestions, addToast]);
 
@@ -415,9 +443,9 @@ export default function QuizDashboard() {
                     <BookOpen className="w-7 h-7 text-slate-400" />
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-sm font-black text-slate-700 dark:text-slate-300">No Questions Posted Yet</p>
+                    <p className="text-sm font-black text-slate-700 dark:text-slate-300">No questions posted yet</p>
                     <p className="text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed font-medium">
-                      No questions have been posted yet. Please ask your teacher to publish questions and visit again.
+                      Let your teacher post the questions and check again later.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -448,7 +476,7 @@ export default function QuizDashboard() {
               <div className="animate-fade-in space-y-3">
                 <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center gap-3">
                   <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-                  <p className="text-xs font-bold text-red-500">Failed to check availability. Please try again.</p>
+                  <p className="text-xs font-bold text-red-500">Unable to check question availability. Please try again.</p>
                 </div>
                 <Button
                   variant="outline"

@@ -134,55 +134,7 @@ export default function SubjectView() {
     setSelectedChapterId(null);
   }, [selectedSubjectId]);
 
-  // Sync / load dynamic chapters and lessons from Supabase if available
-  useEffect(() => {
-    const fetchSubjectDetails = async () => {
-      if (!selectedSubjectId) return;
-      
-      if (isSupabaseConfigured() && getSupabase()) {
-        const supabase = getSupabase()!;
-        setIsLoading(true);
-        try {
-          const { data: dbChapters } = await supabase
-            .from('chapters')
-            .select('*')
-            .eq('subjectId', selectedSubjectId)
-            .order('orderIndex', { ascending: true });
-          
-          if (dbChapters && dbChapters.length > 0) {
-            setChaptersList(dbChapters as any);
-          }
 
-          const { data: dbLessons } = await supabase
-            .from('lessons')
-            .select('*');
-          if (dbLessons && dbLessons.length > 0) {
-            setLessonsList(dbLessons as any);
-          }
-
-          const { data: dbVideos } = await supabase
-            .from('videos')
-            .select('*');
-          if (dbVideos && dbVideos.length > 0) {
-            setVideosList(dbVideos as any);
-          }
-
-          const { data: dbNotes } = await supabase
-            .from('notes')
-            .select('*');
-          if (dbNotes && dbNotes.length > 0) {
-            setNotesList(dbNotes as any);
-          }
-        } catch (err) {
-          console.error('Failed to load subject detail tables from Supabase:', err);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchSubjectDetails();
-  }, [selectedSubjectId]);
 
   // Sync breadcrumbs
   useEffect(() => {

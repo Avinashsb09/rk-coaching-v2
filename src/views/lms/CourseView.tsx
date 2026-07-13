@@ -65,44 +65,7 @@ export default function CourseView() {
   const courseObj = courses.find(c => c.id === selectedCourseId);
   const isEnrolled = courseObj ? enrolledCourseIds.includes(courseObj.id) : false;
 
-  // Load course details
-  useEffect(() => {
-    const fetchCourseMeta = async () => {
-      if (!selectedCourseId) return;
 
-      if (isSupabaseConfigured() && getSupabase()) {
-        const supabase = getSupabase()!;
-        setIsSyncing(true);
-        try {
-          // Fetch chapters
-          const { data: dbChapters } = await supabase
-            .from('chapters')
-            .select('*');
-          if (dbChapters && dbChapters.length > 0) setChaptersList(dbChapters as any);
-
-          // Fetch lessons
-          const { data: dbLessons } = await supabase
-            .from('lessons')
-            .select('*')
-            .eq('courseId', selectedCourseId);
-          if (dbLessons && dbLessons.length > 0) setLessonsList(dbLessons as any);
-
-          // Fetch notes & videos
-          const { data: dbNotes } = await supabase.from('notes').select('*');
-          if (dbNotes && dbNotes.length > 0) setNotesList(dbNotes as any);
-
-          const { data: dbVideos } = await supabase.from('videos').select('*');
-          if (dbVideos && dbVideos.length > 0) setVideosList(dbVideos as any);
-        } catch (err) {
-          console.error('Failed to sync course meta from Supabase:', err);
-        } finally {
-          setIsSyncing(false);
-        }
-      }
-    };
-
-    fetchCourseMeta();
-  }, [selectedCourseId, user]);
 
   // Set breadcrumbs
   useEffect(() => {

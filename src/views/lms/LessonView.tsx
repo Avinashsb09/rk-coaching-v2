@@ -82,30 +82,7 @@ export default function LessonView() {
   const lessonObj = lessonsList.find(l => l.id === selectedLessonId);
   const courseObj = courses.find(c => c.id === selectedCourseId);
 
-  // Load all context lists
-  useEffect(() => {
-    const fetchLessonAssets = async () => {
-      if (isSupabaseConfigured() && getSupabase()) {
-        const supabase = getSupabase()!;
-        try {
-          const { data: dbChapters } = await supabase.from('chapters').select('*');
-          if (dbChapters) setChaptersList(dbChapters as any);
 
-          const { data: dbLessons } = await supabase.from('lessons').select('*');
-          if (dbLessons) setLessonsList(dbLessons as any);
-
-          const { data: dbVideos } = await supabase.from('videos').select('*');
-          if (dbVideos) setVideosList(dbVideos as any);
-
-          const { data: dbNotes } = await supabase.from('notes').select('*');
-          if (dbNotes) setNotesList(dbNotes as any);
-        } catch (err) {
-          console.error('Failed to sync lesson assets:', err);
-        }
-      }
-    };
-    fetchLessonAssets();
-  }, []);
 
   // Start Study Tracker Timer
   useEffect(() => {
