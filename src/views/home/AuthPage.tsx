@@ -498,6 +498,60 @@ export default function AuthPage() {
 
         </CardContent>
       </Card>
+
+      {/* QUICK PRESET DEMO LOGIN CARD (Only shown in dev/local mode or when Supabase is not active) */}
+      {!configured && (
+        <Card className="p-5 border-dashed border-amber-500/30 bg-amber-500/5 rounded-3xl" glassmorphism>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-amber-500 shrink-0" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-amber-400">
+                Frontend Development Demo Mode
+              </h3>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">
+              Supabase database is isolated. You can sign in using any password. Use these quick presets to switch dashboards instantly:
+            </p>
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => triggerQuickLogin('student')}
+                className="p-3 text-[11px] font-black uppercase text-left rounded-2xl border border-blue-500/20 bg-blue-500/8 text-blue-600 dark:text-blue-400 hover:bg-blue-500/15 transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <span>Student</span>
+                <span className="text-[9px] font-semibold text-slate-400 mt-1 lowercase">student@rkcoaching.com</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => triggerQuickLogin('teacher')}
+                className="p-3 text-[11px] font-black uppercase text-left rounded-2xl border border-amber-500/20 bg-amber-500/8 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15 transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <span>Teacher</span>
+                <span className="text-[9px] font-semibold text-slate-400 mt-1 lowercase">teacher@rkcoaching.com</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => triggerQuickLogin('admin')}
+                className="p-3 text-[11px] font-black uppercase text-left rounded-2xl border border-emerald-500/20 bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15 transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <span>Admin</span>
+                <span className="text-[9px] font-semibold text-slate-400 mt-1 lowercase">admin@rkcoaching.com</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addToast("Entering via Quick Demo Preset: SUPER_ADMIN", "info");
+                  loginAs("super_admin");
+                }}
+                className="p-3 text-[11px] font-black uppercase text-left rounded-2xl border border-purple-500/20 bg-purple-500/8 text-purple-600 dark:text-purple-400 hover:bg-purple-500/15 transition-all cursor-pointer flex flex-col justify-between"
+              >
+                <span>Super Admin</span>
+                <span className="text-[9px] font-semibold text-slate-400 mt-1 lowercase">superadmin@rkcoaching.com</span>
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

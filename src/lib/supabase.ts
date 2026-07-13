@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { APP_DATA_MODE } from '../config/dataMode';
 
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || '';
@@ -12,6 +13,9 @@ const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || '';
  * Checks if Supabase credentials are validly defined.
  */
 export function isSupabaseConfigured(): boolean {
+  if (APP_DATA_MODE !== 'supabase') {
+    return false;
+  }
   return (
     typeof supabaseUrl === 'string' &&
     supabaseUrl.length > 0 &&

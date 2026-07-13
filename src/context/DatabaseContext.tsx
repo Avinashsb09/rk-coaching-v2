@@ -328,6 +328,11 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       setVideos(mockVideos);
       setNotes(mockNotes);
       setAnnouncements(mockAnnouncements);
+      setQuizzes(initialQuizzes);
+      setQuizQuestions(initialQuestions);
+      setQuizOptions(initialOptions);
+      setQuizAttempts(initialAttempts);
+      setLeaderboardEntries(initialLeaderboards);
       setFaqs([
         {
           id: 'faq_1',
@@ -384,6 +389,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         }
       ]);
     }
+    setLoadingCatalog(false);
     console.log(`[${new Date().toISOString()}] CATALOG INITIALIZED`);
   };
 

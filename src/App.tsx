@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { UserRole } from './types';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
@@ -14,30 +14,30 @@ import { ToastContainer } from './components/shared/ToastContainer';
 import { ErrorState } from './components/shared/ErrorState';
 import { RefreshCw } from 'lucide-react';
 
-// Secondary views imported dynamically or direct for compiling speed
-import LandingPage from './views/home/LandingPage';
-import StudentDashboard from './views/student/Dashboard';
-import TeacherDashboard from './views/teacher/Dashboard';
-import AdminDashboard from './views/admin/Dashboard';
-import FAQPage from './views/home/FAQPage';
-import ContactPage from './views/home/ContactPage';
-import AuthPage from './views/home/AuthPage';
+// Secondary views loaded dynamically via React.lazy
+const LandingPage = lazy(() => import('./views/home/LandingPage'));
+const StudentDashboard = lazy(() => import('./views/student/Dashboard'));
+const TeacherDashboard = lazy(() => import('./views/teacher/Dashboard'));
+const AdminDashboard = lazy(() => import('./views/admin/Dashboard'));
+const FAQPage = lazy(() => import('./views/home/FAQPage'));
+const ContactPage = lazy(() => import('./views/home/ContactPage'));
+const AuthPage = lazy(() => import('./views/home/AuthPage'));
 
 // Complete Student Learning Experience Views
-import ClassView from './views/lms/ClassView';
-import SubjectView from './views/lms/SubjectView';
-import CourseView from './views/lms/CourseView';
-import LessonView from './views/lms/LessonView';
-import PurchasesInvoices from './views/student/PurchasesInvoices';
-import PyqView from './views/lms/PyqView';
-import QuizDashboard from './views/student/QuizDashboard';
-import QuizPlay from './views/student/QuizPlay';
-import QuizResult from './views/student/QuizResult';
-import PyqDashboard from './views/student/PyqDashboard';
-import PyqPlay from './views/student/PyqPlay';
-import PyqResult from './views/student/PyqResult';
-import UpdateProfile from './views/student/UpdateProfile';
-import SuperAdminDashboard from './views/super-admin/SuperAdminDashboard';
+const ClassView = lazy(() => import('./views/lms/ClassView'));
+const SubjectView = lazy(() => import('./views/lms/SubjectView'));
+const CourseView = lazy(() => import('./views/lms/CourseView'));
+const LessonView = lazy(() => import('./views/lms/LessonView'));
+const PurchasesInvoices = lazy(() => import('./views/student/PurchasesInvoices'));
+const PyqView = lazy(() => import('./views/lms/PyqView'));
+const QuizDashboard = lazy(() => import('./views/student/QuizDashboard'));
+const QuizPlay = lazy(() => import('./views/student/QuizPlay'));
+const QuizResult = lazy(() => import('./views/student/QuizResult'));
+const PyqDashboard = lazy(() => import('./views/student/PyqDashboard'));
+const PyqPlay = lazy(() => import('./views/student/PyqPlay'));
+const PyqResult = lazy(() => import('./views/student/PyqResult'));
+const UpdateProfile = lazy(() => import('./views/student/UpdateProfile'));
+const SuperAdminDashboard = lazy(() => import('./views/super-admin/SuperAdminDashboard'));
 
 function MainAppShell() {
   const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast, initializing, profileSyncing } = useApp();
@@ -402,7 +402,14 @@ function MainAppShell() {
           {/* Core viewport stage */}
           <div className="flex-1 p-4 sm:p-6 lg:p-8">
             <div className="mx-auto max-w-5xl">
-              {renderActiveView()}
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center space-y-4 py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500" />
+                  <p className="text-xs text-slate-500 font-semibold">Loading viewport...</p>
+                </div>
+              }>
+                {renderActiveView()}
+              </Suspense>
             </div>
           </div>
 
