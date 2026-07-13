@@ -24,7 +24,8 @@ export default function QuizDashboard() {
     quizQuestions,
     setCurrentView,
     addToast,
-    user
+    user,
+    loadingCatalog
   } = useApp();
 
   // Selection states
@@ -92,107 +93,145 @@ export default function QuizDashboard() {
    * Falls back to context data when Supabase not configured.
    */
   const checkQuizAvailability = useCallback(async () => {
-    if (!chapterId) return;
+    // Step A: Validate selection
+    if (!classId || !subjectId || !chapterId) {
+      setQuizCheckState('idle');
+      setQuestionCount(0);
+      setActiveQuizId(null);
+      return;
+    }
 
+    // Step B: Start request
     const currentVersion = ++checkRequestVersionRef.current;
 
     setQuizCheckState('checking');
     setQuestionCount(0);
     setActiveQuizId(null);
 
-    try {
-      // --- Get lessons for selected chapter ---
-      const chapterLessons = lessons.filter(l => l.chapterId === chapterId);
-      const lessonIds = chapterLessons.map(l => l.id);
+    let resolvedLessonIds: string[] = [];
+    let resolvedQuizIds: string[] = [];
 
-      if (lessonIds.length === 0) {
-        if (currentVersion !== checkRequestVersionRef.current) return;
-        console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: No lessons found for chapter', chapterId);
-        setQuizCheckState('empty');
+    try {
+      // Step C: Resolve lessons for the selected chapter
+      if (loadingCatalog) {
         return;
       }
 
-      // --- Find quizzes for those lessons (from context first) ---
-      const contextQuizzes = quizzes.filter(q => lessonIds.includes(q.lessonId));
+      // Resolve lessons using the actual chapter relationship column (chapterId)
+      const chapterLessons = lessons.filter(l => l.chapterId === chapterId);
+      resolvedLessonIds = chapterLessons.map(l => l.id);
+
+      if (resolvedLessonIds.length === 0) {
+        if (currentVersion !== checkRequestVersionRef.current) return;
+        console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Zero lessons for chapter', chapterId);
+        setQuizCheckState('empty');
+        setQuestionCount(0);
+        setActiveQuizId(null);
+        return;
+      }
 
       if (isSupabaseConfigured()) {
         const supabase = getSupabase();
         if (!supabase) throw new Error('Supabase not available');
 
-        // Query quiz_questions via supabase for these quizzes
-        if (contextQuizzes.length > 0) {
-          const quizIds = contextQuizzes.map(q => q.id);
-          const { data, error } = await supabase
-            .from('quiz_questions')
-            .select('id, quizId', { count: 'exact' })
-            .in('quizId', quizIds);
+        const { data: rawQuizData, error: quizErr } = await supabase
+          .from('quizzes')
+          .select('id, lessonId')
+          .in('lessonId', resolvedLessonIds);
+        const quizData = rawQuizData as any[] | null;
 
-          if (error) throw error;
+        // Step F: Request version protection
+        if (currentVersion !== checkRequestVersionRef.current) return;
 
-          if (currentVersion !== checkRequestVersionRef.current) return;
-
-          const count = data?.length ?? 0;
-          setQuestionCount(count);
-
-          if (count > 0) {
-            // Pick first quiz that has questions
-            const firstQuizWithQs = contextQuizzes.find(q =>
-              data?.some((row: any) => row.quizId === q.id)
-            );
-            setActiveQuizId(firstQuizWithQs?.id ?? contextQuizzes[0].id);
-            setQuizCheckState('ready');
-          } else {
-            console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Quiz exists but has zero questions', { quizIds });
-            setQuizCheckState('empty');
-          }
-        } else {
-          // No quizzes in context — query supabase directly via lesson ids
-          const { data: quizData, error: quizErr } = await supabase
-            .from('quizzes')
-            .select('id')
-            .in('lessonId', lessonIds);
-
-          if (quizErr) throw quizErr;
-
-          if (currentVersion !== checkRequestVersionRef.current) return;
-
-          if (!quizData || quizData.length === 0) {
-            console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: No quizzes found for lessons', { lessonIds });
-            setQuizCheckState('empty');
-            return;
-          }
-
-          const dbQuizIds = quizData.map((q: any) => q.id);
-          const { data: qData, error: qErr } = await supabase
-            .from('quiz_questions')
-            .select('id, quizId', { count: 'exact' })
-            .in('quizId', dbQuizIds);
-
-          if (qErr) throw qErr;
-
-          if (currentVersion !== checkRequestVersionRef.current) return;
-
-          const count = qData?.length ?? 0;
-          setQuestionCount(count);
-
-          if (count > 0) {
-            const firstQuizWithQs = dbQuizIds.find((id: string) =>
-              qData?.some((row: any) => row.quizId === id)
-            );
-            setActiveQuizId(firstQuizWithQs ?? dbQuizIds[0]);
-            setQuizCheckState('ready');
-          } else {
-            console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Quizzes found but have zero questions', { dbQuizIds });
-            setQuizCheckState('empty');
-          }
+        if (quizErr) {
+          console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR: quizzes fetch failed:', {
+            code: quizErr.code,
+            message: quizErr.message,
+            details: quizErr.details,
+            selectedAcademicStandardId: classId,
+            selectedSubjectId: subjectId,
+            selectedChapterId: chapterId,
+            lessonIds: resolvedLessonIds
+          });
+          setQuizCheckState('error');
+          return;
         }
+
+        if (!quizData || quizData.length === 0) {
+          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Zero quiz rows returned', { lessonIds: resolvedLessonIds });
+          setQuizCheckState('empty');
+          setQuestionCount(0);
+          setActiveQuizId(null);
+          return;
+        }
+
+        // Step E: Query quiz questions
+        resolvedQuizIds = quizData.map((q: any) => q.id);
+        
+        // Empty array guard
+        if (resolvedQuizIds.length === 0) {
+          setQuizCheckState('empty');
+          setQuestionCount(0);
+          setActiveQuizId(null);
+          return;
+        }
+
+        const { data: qData, error: qErr } = await supabase
+          .from('quiz_questions')
+          .select('id, quizId')
+          .in('quizId', resolvedQuizIds);
+
+        // Step F: Request version protection
+        if (currentVersion !== checkRequestVersionRef.current) return;
+
+        if (qErr) {
+          console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR: quiz_questions fetch failed:', {
+            code: qErr.code,
+            message: qErr.message,
+            details: qErr.details,
+            selectedAcademicStandardId: classId,
+            selectedSubjectId: subjectId,
+            selectedChapterId: chapterId,
+            lessonIds: resolvedLessonIds,
+            quizIds: resolvedQuizIds
+          });
+          setQuizCheckState('error');
+          return;
+        }
+
+        const count = qData?.length ?? 0;
+        setQuestionCount(count);
+
+        if (count === 0) {
+          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY: Zero quiz_questions returned', { quizIds: resolvedQuizIds });
+          setQuizCheckState('empty');
+          setActiveQuizId(null);
+          return;
+        }
+
+        // Pick first quiz that has questions
+        const firstQuizWithQs = quizData.find((q: any) =>
+          qData?.some((row: any) => row.quizId === q.id)
+        );
+        setActiveQuizId(firstQuizWithQs?.id ?? resolvedQuizIds[0]);
+        setQuizCheckState('ready');
+
       } else {
         if (currentVersion !== checkRequestVersionRef.current) return;
 
         // Supabase not configured — use context data
-        const contextQIds = contextQuizzes.map(q => q.id);
-        const contextQCount = quizQuestions.filter(qq => contextQIds.includes(qq.quizId)).length;
+        const contextQuizzes = quizzes.filter(q => resolvedLessonIds.includes(q.lessonId));
+        resolvedQuizIds = contextQuizzes.map(q => q.id);
 
+        if (resolvedQuizIds.length === 0) {
+          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY (mock): No quizzes found');
+          setQuestionCount(0);
+          setQuizCheckState('empty');
+          setActiveQuizId(null);
+          return;
+        }
+
+        const contextQCount = quizQuestions.filter(qq => resolvedQuizIds.includes(qq.quizId)).length;
         setQuestionCount(contextQCount);
 
         if (contextQCount > 0 && contextQuizzes.length > 0) {
@@ -202,25 +241,29 @@ export default function QuizDashboard() {
           setActiveQuizId(firstQuiz?.id ?? contextQuizzes[0].id);
           setQuizCheckState('ready');
         } else {
-          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY (mock data): Zero questions');
+          console.log('[QuizDashboard] QUIZ_AVAILABILITY_EMPTY (mock): Zero questions');
           setQuizCheckState('empty');
+          setActiveQuizId(null);
         }
       }
+
     } catch (err: any) {
       if (currentVersion !== checkRequestVersionRef.current) return;
-      console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR:', {
-        table: 'quiz_questions',
-        classId,
-        subjectId,
-        chapterId,
-        code: err?.code,
+      
+      console.error('[QuizDashboard] QUIZ_AVAILABILITY_ERROR unexpected failure:', {
+        name: err?.name,
         message: err?.message,
-        details: err?.details
+        stack: err?.stack,
+        selectedAcademicStandardId: classId,
+        selectedSubjectId: subjectId,
+        selectedChapterId: chapterId,
+        lessonIds: resolvedLessonIds,
+        quizIds: resolvedQuizIds
       });
       setQuizCheckState('error');
       addToast('Unable to check question availability. Please try again.', 'error');
     }
-  }, [chapterId, lessons, quizzes, quizQuestions, addToast]);
+  }, [classId, subjectId, chapterId, lessons, quizzes, quizQuestions, loadingCatalog, addToast]);
 
   /** Launch the CBT quiz session */
   const handleStartQuiz = () => {
@@ -233,7 +276,7 @@ export default function QuizDashboard() {
   };
 
   // Loading state check
-  if (classes.length === 0 || subjects.length === 0 || chapters.length === 0) {
+  if (loadingCatalog || classes.length === 0 || subjects.length === 0 || chapters.length === 0) {
     return (
       <div className="space-y-8 py-4 max-w-4xl mx-auto text-left">
         <Card glassmorphism className="p-8 border-slate-200/40 dark:border-slate-800/40">

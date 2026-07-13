@@ -65,6 +65,7 @@ interface AppContextType {
   dismissToast: (id: string) => void;
 
   // Mock Global Database
+  loadingCatalog: boolean;
   classes: AcademicClass[];
   setClasses: React.Dispatch<React.SetStateAction<AcademicClass[]>>;
   subjects: AcademicSubject[];
@@ -361,7 +362,8 @@ function AppContextInjector({
     users, setUsers, homepageConfig, setHomepageConfig,
     quizzes, setQuizzes, quizQuestions, setQuizQuestions, 
     quizOptions, setQuizOptions, quizAttempts, setQuizAttempts, 
-    leaderboardEntries, setLeaderboardEntries 
+    leaderboardEntries, setLeaderboardEntries,
+    loadingCatalog
   } = useDatabase();
   const { bookmarksList, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const { progressList, saveProgress, getLessonProgress } = useProgress();
@@ -482,6 +484,7 @@ function AppContextInjector({
     toasts,
     addToast,
     dismissToast,
+    loadingCatalog,
     classes: (role === 'admin' || role === 'super_admin' || role === 'teacher')
       ? classes
       : classes.filter(c => c.isActive !== false),
