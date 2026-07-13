@@ -57,6 +57,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       return;
     }
     courseLoadingNotesUserId = userId;
+    courseLastNotesLoadedUserId = userId; // Set immediately to prevent loops on state changes
 
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;
@@ -173,6 +174,7 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       return;
     }
     courseLoadingEnrollmentsUserId = userId;
+    courseLastEnrollmentsLoadedUserId = userId; // Set immediately to prevent loops on state changes
 
     if (isSupabaseConfigured() && getSupabase()) {
       const supabase = getSupabase()!;

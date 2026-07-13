@@ -38,6 +38,7 @@ export default function QuizDashboard() {
   const [questionCount, setQuestionCount] = useState<number>(0);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
   const checkRequestVersionRef = useRef<number>(0);
+  const lastAvailabilityKeyRef = useRef<string | null>(null);
 
   const allowedClassIds = ['c6', 'c7', 'c8', 'c9', 'c10', 'c11s', 'c12s', 'neet', 'bpharma', 'nursing'];
   const filteredClasses = classes.filter(c => allowedClassIds.includes(c.id));
@@ -48,60 +49,6 @@ export default function QuizDashboard() {
       '[QUIZ_AVAILABILITY_RUNTIME_VERSION]',
       'chapter1-network-forensic-v1'
     );
-
-    const runDirectDiagnostic = async () => {
-      if (isSupabaseConfigured()) {
-        const supabase = getSupabase();
-        if (supabase) {
-          const diagnosticLessonIds = [
-            'less_neet_biology_free',
-            'less_neet_biology_premium'
-          ];
-          try {
-            const result = await supabase
-              .from('quizzes')
-              .select('id, lessonId')
-              .in('lessonId', diagnosticLessonIds);
-
-            console.info(
-              '[QUIZ_DIRECT_QUERY_DIAGNOSTIC]',
-              {
-                data: result.data,
-                error: result.error,
-                status: result.status,
-                statusText: result.statusText
-              }
-            );
-
-            // Also test deduplicated direct query
-            const quizRequestKey = `quiz-availability:quizzes:diagnostic-test`;
-            const dedupResult = await deduplicateRequest(quizRequestKey, async () => {
-              return await supabase
-                .from('quizzes')
-                .select('id, lessonId')
-                .in('lessonId', diagnosticLessonIds);
-            });
-            console.info(
-              '[QUIZ_DEDUP_QUERY_DIAGNOSTIC]',
-              {
-                data: (dedupResult as any).data,
-                error: (dedupResult as any).error,
-                status: (dedupResult as any).status,
-                statusText: (dedupResult as any).statusText
-              }
-            );
-
-          } catch (err: any) {
-            console.error('[QUIZ_DIRECT_QUERY_DIAGNOSTIC] failed with exception:', err);
-          }
-        } else {
-          console.warn('[QUIZ_DIRECT_QUERY_DIAGNOSTIC] Supabase client is null');
-        }
-      } else {
-        console.info('[QUIZ_DIRECT_QUERY_DIAGNOSTIC] Supabase not configured');
-      }
-    };
-    runDirectDiagnostic();
 
     if (user?.classId) {
       const matched = classes.find(c => c.id === user.classId || c.slug === user.classId);
@@ -114,6 +61,7 @@ export default function QuizDashboard() {
   // Reset selections when parent fields change
   const handleClassChange = (val: string) => {
     checkRequestVersionRef.current++;
+    lastAvailabilityKeyRef.current = null;
     setClassId(val);
     setSubjectId('');
     setChapterId('');
@@ -123,6 +71,7 @@ export default function QuizDashboard() {
 
   const handleSubjectChange = (val: string) => {
     checkRequestVersionRef.current++;
+    lastAvailabilityKeyRef.current = null;
     setSubjectId(val);
     setChapterId('');
     setQuizCheckState('idle');
@@ -131,6 +80,7 @@ export default function QuizDashboard() {
 
   const handleChapterChange = (val: string) => {
     checkRequestVersionRef.current++;
+    lastAvailabilityKeyRef.current = null;
     setChapterId(val);
     setQuizCheckState('idle');
     setActiveQuizId(null);
@@ -180,6 +130,19 @@ export default function QuizDashboard() {
       // Resolve lessons using the actual chapter relationship column (chapterId)
       const chapterLessons = lessons.filter(l => l.chapterId === chapterId);
       resolvedLessonIds = chapterLessons.map(l => l.id);
+
+      const availabilityKey = [
+        classId,
+        subjectId,
+        chapterId,
+        [...resolvedLessonIds].sort().join(',')
+      ].join('|');
+
+      if (lastAvailabilityKeyRef.current === availabilityKey) {
+        console.log('[QuizDashboard] checkQuizAvailability: duplicate request bypassed for key:', availabilityKey);
+        return;
+      }
+      lastAvailabilityKeyRef.current = availabilityKey;
 
       // --- PHASE 1 TRACE LOGGING ---
       console.group('[QuizDashboard] Availability Trace');
@@ -258,6 +221,7 @@ export default function QuizDashboard() {
               status: (quizErr as any).status
             }
           });
+          lastAvailabilityKeyRef.current = null;
           setQuizCheckState('error');
           return;
         }
@@ -318,6 +282,7 @@ export default function QuizDashboard() {
               status: (qErr as any).status
             }
           });
+          lastAvailabilityKeyRef.current = null;
           setQuizCheckState('error');
           return;
         }
@@ -383,6 +348,7 @@ export default function QuizDashboard() {
         lessonIds: resolvedLessonIds,
         quizIds: resolvedQuizIds
       });
+      lastAvailabilityKeyRef.current = null;
       setQuizCheckState('error');
       addToast('Unable to check question availability. Please try again.', 'error');
     }

@@ -64,6 +64,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       return;
     }
     notifyLoadingUserId = userId;
+    notifyLastLoadedUserId = userId; // Set immediately to prevent loops on state changes
 
     if (isSupabaseConfigured() && getSupabase() && isUuid(userId)) {
       const supabase = getSupabase()!;

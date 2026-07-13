@@ -236,6 +236,7 @@ function AppSyncController({
         return;
       }
       appLoadingUserId = user.id;
+      appLastLoadedUserId = user.id; // Set immediately to prevent any loop if state updates render concurrently
 
       (async () => {
         try {
@@ -247,7 +248,6 @@ function AppSyncController({
             loadEnrollments(user.id),
             loadSubjectNotesPurchases(user.id)
           ]);
-          appLastLoadedUserId = user.id;
           console.log(`[${new Date().toISOString()}] PAYMENT INITIALIZED`);
           console.log(`[${new Date().toISOString()}] APPLICATION READY`);
         } catch (e) {

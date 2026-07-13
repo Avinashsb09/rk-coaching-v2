@@ -79,6 +79,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
       return;
     }
     payLoadingUserId = userId;
+    payLastLoadedUserId = userId; // Set immediately to prevent loops on state changes
 
     setActiveStudentId(userId);
     if (isSupabaseConfigured() && getSupabase()) {
