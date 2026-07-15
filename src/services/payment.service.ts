@@ -6,6 +6,7 @@
 import { getSupabase, isSupabaseConfigured, deduplicateRequest } from '../lib/supabase';
 import { SubjectPricing, PurchaseRecord } from '../types';
 import { mockSubjectPricing } from '../lib/mockData';
+import { DEMO_STUDENT_ID } from '../config/dataMode';
 
 export class PaymentService {
   /**
@@ -78,7 +79,44 @@ export class PaymentService {
     }
 
     const saved = localStorage.getItem(`rk_purchase_history_${studentId}`);
-    return saved ? JSON.parse(saved) : [];
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+
+    if (studentId === DEMO_STUDENT_ID) {
+      const demoRecords: PurchaseRecord[] = [
+        {
+          id: 'pr_demo_1',
+          studentId,
+          subjectId: 'sub_neet_biology',
+          purchaseType: 'Lifetime',
+          purchaseDate: new Date(Date.now() - 10 * 86400000).toISOString(),
+          transactionId: 'pay_demo_1',
+          status: 'success',
+          provider: 'Razorpay'
+        },
+        {
+          id: 'pr_demo_2',
+          studentId,
+          subjectId: 'sub_neet_chemistry',
+          purchaseType: 'Lifetime',
+          purchaseDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+          transactionId: 'pay_demo_2',
+          status: 'success',
+          provider: 'Razorpay'
+        }
+      ];
+      localStorage.setItem(`rk_purchase_history_${studentId}`, JSON.stringify(demoRecords));
+
+      const savedPurchases = localStorage.getItem(`rk_subject_purchases_${studentId}`);
+      if (savedPurchases === null) {
+        localStorage.setItem(`rk_subject_purchases_${studentId}`, JSON.stringify(['sub_neet_biology', 'sub_neet_chemistry']));
+      }
+
+      return demoRecords;
+    }
+
+    return [];
   }
 
   /**

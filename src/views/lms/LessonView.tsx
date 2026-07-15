@@ -52,7 +52,9 @@ export default function LessonView() {
     lessons,
     videos,
     notes,
-    subjects
+    subjects,
+    breadcrumbSource,
+    lessonActiveTab
   } = useApp();
 
   const { hasSubjectAccess } = usePayments();
@@ -68,7 +70,7 @@ export default function LessonView() {
   useEffect(() => { setVideosList(videos); }, [videos]);
   useEffect(() => { setNotesList(notes); }, [notes]);
 
-  const [activeTab, setActiveTab] = useState<'video' | 'notes'>('video');
+  const [activeTab, setActiveTab] = useState<'video' | 'notes'>(lessonActiveTab || 'video');
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [studyTime, setStudyTime] = useState(0); // in seconds
@@ -77,7 +79,28 @@ export default function LessonView() {
   const [premiumComingSoonOpen, setPremiumComingSoonOpen] = useState(false);
 
   const videoRef = useRef<HTMLDivElement>(null);
+  const videoCardRef = useRef<HTMLDivElement>(null);
+  const notesCardRef = useRef<HTMLDivElement>(null);
   const studyTrackerInterval = useRef<any>(null);
+
+  useEffect(() => {
+    if (lessonActiveTab) {
+      setActiveTab(lessonActiveTab);
+    }
+  }, [lessonActiveTab]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const timer = setTimeout(() => {
+        if (lessonActiveTab === 'notes' && notesCardRef.current) {
+          notesCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (lessonActiveTab === 'video' && videoCardRef.current) {
+          videoCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [lessonActiveTab, selectedLessonId]);
 
   const lessonObj = lessonsList.find(l => l.id === selectedLessonId);
   const courseObj = courses.find(c => c.id === selectedCourseId);
@@ -146,13 +169,24 @@ export default function LessonView() {
   // Sync breadcrumbs
   useEffect(() => {
     if (lessonObj && subjectObj) {
-      setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'catalog' },
-        { label: subjectObj.name, view: 'subject-view' },
-        { label: lessonObj.title }
-      ]);
+      if (breadcrumbSource === 'premium') {
+        setBreadcrumbs([
+          { label: 'My Premium Materials', view: 'premium-materials' },
+          { label: lessonActiveTab === 'notes' ? 'Notes' : 'Videos' },
+          { label: subjectObj.name },
+          { label: chapterObj?.name || 'Chapter' },
+          { label: lessonObj.title }
+        ]);
+      } else {
+        setBreadcrumbs([
+          { label: 'All Courses', view: 'catalog' },
+          { label: subjectObj.name, view: 'subject-view' },
+          { label: chapterObj?.name || 'Chapter', view: 'course-view' },
+          { label: lessonObj.title }
+        ]);
+      }
     }
-  }, [lessonObj, subjectObj, setBreadcrumbs]);
+  }, [lessonObj, subjectObj, chapterObj, breadcrumbSource, lessonActiveTab, setBreadcrumbs]);
 
   // Filter video & notes
   const activeVideo = videosList.find(v => v.lessonId === lessonObj.id);
@@ -294,69 +328,72 @@ export default function LessonView() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         
         {/* DECK A: Responsive Video Player Frame */}
-        <Card className="border-slate-100 dark:border-slate-800 flex flex-col justify-between overflow-hidden shadow-md">
-          <div className="bg-slate-900 aspect-video relative flex items-center justify-center text-white">
-            {activeVideo ? (
-              <iframe 
-                src={getVideoEmbedUrl()} 
-                title={activeVideo.title}
-                className="w-full h-full"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <div className="p-8 text-center space-y-3">
-                <Tv className="w-12 h-12 text-slate-500 mx-auto" />
-                <p className="text-sm font-semibold text-slate-400">Video tutorial not found for this lesson.</p>
-                <p className="text-xs text-slate-600">Please review the downloadable study notes on the right deck.</p>
-              </div>
-            )}
-          </div>
-
-          <CardContent className="p-5 space-y-3 flex-1 text-left">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md">
-                Active Lecture
-              </span>
-              {activeVideo && (
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> {Math.round(activeVideo.durationSeconds / 60)} Mins
-                </span>
+        <div ref={videoCardRef} className="flex flex-col">
+          <Card className="border-slate-100 dark:border-slate-800 flex flex-col justify-between overflow-hidden shadow-md flex-1">
+            <div className="bg-slate-900 aspect-video relative flex items-center justify-center text-white">
+              {activeVideo ? (
+                <iframe 
+                  src={getVideoEmbedUrl()} 
+                  title={activeVideo.title}
+                  className="w-full h-full"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="p-8 text-center space-y-3">
+                  <Tv className="w-12 h-12 text-slate-500 mx-auto" />
+                  <p className="text-sm font-semibold text-slate-400">Video tutorial not found for this lesson.</p>
+                  <p className="text-xs text-slate-600">Please review the downloadable study notes on the right deck.</p>
+                </div>
               )}
             </div>
-            <h2 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-              {lessonObj.title}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              {lessonObj.description}
-            </p>
 
-            {/* Simulated Playback Speed controllers */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-50 dark:border-slate-800/80 mt-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Speed:</span>
-              {[1, 1.25, 1.5, 2].map((sp) => (
-                <button
-                  key={sp}
-                  onClick={() => {
-                    setPlaybackSpeed(sp);
-                    setIsPlaying(true);
-                    addToast(`Speed toggled to ${sp}x`, 'info');
-                  }}
-                  className={`text-xs px-2.5 py-1 rounded-md font-bold transition-all ${
-                    playbackSpeed === sp 
-                      ? 'bg-blue-600 text-white shadow-sm' 
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                  }`}
-                >
-                  {sp}x
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            <CardContent className="p-5 space-y-3 flex-1 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md">
+                  Active Lecture
+                </span>
+                {activeVideo && (
+                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> {Math.round(activeVideo.durationSeconds / 60)} Mins
+                  </span>
+                )}
+              </div>
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+                {lessonObj.title}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                {lessonObj.description}
+              </p>
+
+              {/* Simulated Playback Speed controllers */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-50 dark:border-slate-800/80 mt-4">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Speed:</span>
+                {[1, 1.25, 1.5, 2].map((sp) => (
+                  <button
+                    key={sp}
+                    onClick={() => {
+                      setPlaybackSpeed(sp);
+                      setIsPlaying(true);
+                      addToast(`Speed toggled to ${sp}x`, 'info');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded-md font-bold transition-all ${
+                      playbackSpeed === sp 
+                        ? 'bg-blue-600 text-white shadow-sm' 
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    {sp}x
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* DECK B: Dynamic Study Notes Split-Screen Panel */}
-        <Card className="border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden shadow-md">
+        <div ref={notesCardRef} className="flex flex-col">
+          <Card className="border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden shadow-md flex-1">
           {/* Header Panel */}
           <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between gap-4">
@@ -441,6 +478,7 @@ export default function LessonView() {
             <span className="font-bold">Alignment: CBSE Board 2026</span>
           </div>
         </Card>
+        </div>
 
       </div>
 

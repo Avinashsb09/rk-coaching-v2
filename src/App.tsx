@@ -38,6 +38,24 @@ const PyqPlay = lazy(() => import('./views/student/PyqPlay'));
 const PyqResult = lazy(() => import('./views/student/PyqResult'));
 const UpdateProfile = lazy(() => import('./views/student/UpdateProfile'));
 const SuperAdminDashboard = lazy(() => import('./views/super-admin/SuperAdminDashboard'));
+const PremiumMaterials = lazy(() => import('./views/student/PremiumMaterials'));
+
+const STUDENT_STATIC_BREADCRUMBS: Record<string, { label: string; view?: string }[]> = {
+  'student-dashboard': [{ label: 'Dashboard' }],
+  'premium-materials': [{ label: 'My Premium Materials' }],
+  'update-profile': [{ label: 'Update Profile' }],
+  'quiz-dashboard': [
+    { label: 'Gamified Center', view: 'student-dashboard' },
+    { label: 'Quiz Arena' }
+  ],
+  'pyq-dashboard': [
+    { label: 'Gamified Center', view: 'student-dashboard' },
+    { label: 'PYQ Arena' }
+  ],
+  'catalog': [{ label: 'All Courses' }],
+  'purchases-invoices': [{ label: 'My Invoices' }],
+  'faq': [{ label: 'Syllabus Help' }]
+};
 
 function MainAppShell() {
   const { role, currentView, setCurrentView, breadcrumbs, setBreadcrumbs, addToast, initializing, profileSyncing } = useApp();
@@ -93,18 +111,14 @@ function MainAppShell() {
 
   // Sync breadcrumbs automatically depending on view transitions
   useEffect(() => {
+    if (role === 'student' && STUDENT_STATIC_BREADCRUMBS[currentView]) {
+      setBreadcrumbs(STUDENT_STATIC_BREADCRUMBS[currentView]);
+      return;
+    }
+
     switch (currentView) {
       case 'home':
         setBreadcrumbs([]);
-        break;
-      case 'catalog':
-        setBreadcrumbs([{ label: 'Syllabus Catalog', view: 'catalog' }]);
-        break;
-      case 'student-dashboard':
-        setBreadcrumbs([
-          { label: 'Student Suite', view: 'student-dashboard' },
-          { label: 'My Learning Board' }
-        ]);
         break;
       case 'teacher-dashboard':
         setBreadcrumbs([
@@ -146,12 +160,6 @@ function MainAppShell() {
       case 'auth-signup':
         setBreadcrumbs([{ label: 'Authentication Suite', view: 'auth' }]);
         break;
-      case 'quiz-dashboard':
-        setBreadcrumbs([
-          { label: 'Gamified Center', view: 'student-dashboard' },
-          { label: 'Quiz Arena' }
-        ]);
-        break;
       case 'quiz-play':
         setBreadcrumbs([
           { label: 'Quiz Arena', view: 'quiz-dashboard' },
@@ -164,22 +172,26 @@ function MainAppShell() {
           { label: 'Quiz Result Scorecard' }
         ]);
         break;
-      case 'purchases-invoices':
+      case 'pyq-play':
         setBreadcrumbs([
-          { label: 'Student Suite', view: 'student-dashboard' },
-          { label: 'Purchases & Invoices' }
+          { label: 'PYQ Arena', view: 'pyq-dashboard' },
+          { label: 'Board Test Live' }
         ]);
         break;
-      case 'update-profile':
+      case 'pyq-result':
         setBreadcrumbs([
-          { label: 'Student Dashboard', view: 'student-dashboard' },
-          { label: 'Update Profile' }
+          { label: 'PYQ Arena', view: 'pyq-dashboard' },
+          { label: 'PYQ Result' }
         ]);
         break;
       default:
-        setBreadcrumbs([{ label: 'Home', view: 'home' }]);
+        // Skip updating breadcrumbs for catalog dynamic views that handle their own breadcrumbs
+        const dynamicViews = ['class-view', 'subject-view', 'course-view', 'lesson-view', 'pyq-view'];
+        if (!dynamicViews.includes(currentView)) {
+          setBreadcrumbs([{ label: 'Home', view: 'home' }]);
+        }
     }
-  }, [currentView, setBreadcrumbs]);
+  }, [currentView, role, setBreadcrumbs]);
 
   // Handle mobile drawer close on navigation change
   useEffect(() => {
@@ -190,6 +202,7 @@ function MainAppShell() {
     // 1. Role-based view protection mapping
     const VIEW_ROLES: Record<string, UserRole[]> = {
       'student-dashboard': ['student', 'admin'],
+      'premium-materials': ['student', 'admin'],
       'teacher-dashboard': ['teacher', 'admin'],
       'teacher-content': ['teacher', 'admin'],
       'admin-dashboard': ['admin', 'super_admin'],
@@ -328,6 +341,9 @@ function MainAppShell() {
       
       case 'purchases-invoices':
         return <PurchasesInvoices />;
+      
+      case 'premium-materials':
+        return <PremiumMaterials />;
       
       default:
         return (

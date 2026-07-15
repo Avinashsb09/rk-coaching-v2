@@ -140,7 +140,7 @@ export default function SubjectView() {
   useEffect(() => {
     if (subjectObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'catalog' },
+        { label: 'All Courses', view: 'catalog' },
         { label: subjectObj.name }
       ]);
     }

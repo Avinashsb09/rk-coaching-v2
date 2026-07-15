@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Settings
+  Settings,
+  FolderLock
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -37,6 +38,11 @@ export function Sidebar({ isOpen, onToggleCollapse, isCollapsed, onClose }: Side
             id: 'student-dashboard',
             label: 'Dashboard',
             icon: <LayoutDashboard className="w-5 h-5" />
+          },
+          {
+            id: 'premium-materials',
+            label: 'My Premium Materials',
+            icon: <FolderLock className="w-5 h-5 text-indigo-500" />
           },
           {
             id: 'update-profile',

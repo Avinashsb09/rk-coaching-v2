@@ -34,7 +34,7 @@ export default function PyqView() {
   useEffect(() => {
     if (subjectObj && classObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'catalog' },
+        { label: 'All Courses', view: 'catalog' },
         { label: classObj.name, view: 'class-view' },
         { label: `${subjectObj.name} PYQ Dashboard` }
       ]);

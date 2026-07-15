@@ -7,10 +7,22 @@ import { ChevronRight, Home } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export function Breadcrumbs() {
-  const { breadcrumbs, setCurrentView } = useApp();
+  const { breadcrumbs, setCurrentView, role } = useApp();
 
   const handleCrumbsClick = (view?: string, index?: number) => {
-    if (view) {
+    if (view === 'home' || !view) {
+      if (role === 'student') {
+        setCurrentView('student-dashboard');
+      } else if (role === 'teacher') {
+        setCurrentView('teacher-dashboard');
+      } else if (role === 'admin') {
+        setCurrentView('admin-dashboard');
+      } else if (role === 'super_admin') {
+        setCurrentView('super-admin-dashboard');
+      } else {
+        setCurrentView('home');
+      }
+    } else {
       setCurrentView(view);
     }
   };
@@ -39,7 +51,10 @@ export function Breadcrumbs() {
                   {crumb.label}
                 </button>
               ) : (
-                <span className="text-slate-400 dark:text-slate-600 capitalize cursor-default">
+                <span 
+                  className="text-slate-400 dark:text-slate-600 capitalize cursor-default"
+                  aria-current="page"
+                >
                   {crumb.label}
                 </span>
               )}

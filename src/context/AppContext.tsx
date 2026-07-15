@@ -33,6 +33,10 @@ interface AppContextType {
   setCurrentView: (view: string) => void;
   breadcrumbs: { label: string; view?: string }[];
   setBreadcrumbs: (crumbs: { label: string; view?: string }[]) => void;
+  breadcrumbSource: 'catalog' | 'premium';
+  setBreadcrumbSource: (source: 'catalog' | 'premium') => void;
+  lessonActiveTab: 'video' | 'notes';
+  setLessonActiveTab: (tab: 'video' | 'notes') => void;
 
   // Selected LMS Routing IDs
   selectedClassSlug: string | null;
@@ -169,6 +173,7 @@ function AppSyncController({
 
     const protectedViews = [
       'student-dashboard',
+      'premium-materials',
       'teacher-dashboard',
       'teacher-content',
       'admin-dashboard',
@@ -287,6 +292,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [breadcrumbs, setBreadcrumbs] = useState<{ label: string; view?: string }[]>([
     { label: 'Home', view: 'home' }
   ]);
+  const [breadcrumbSource, setBreadcrumbSource] = useState<'catalog' | 'premium'>('catalog');
+  const [lessonActiveTab, setLessonActiveTab] = useState<'video' | 'notes'>('video');
 
   // Synchronize state changes to URL hash
   useEffect(() => {
@@ -326,6 +333,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       setCurrentView={setCurrentView}
                       breadcrumbs={breadcrumbs}
                       setBreadcrumbs={setBreadcrumbs}
+                      breadcrumbSource={breadcrumbSource}
+                      setBreadcrumbSource={setBreadcrumbSource}
+                      lessonActiveTab={lessonActiveTab}
+                      setLessonActiveTab={setLessonActiveTab}
                     >
                       {children}
                     </AppContextInjector>
@@ -345,13 +356,21 @@ function AppContextInjector({
   currentView,
   setCurrentView,
   breadcrumbs,
-  setBreadcrumbs
+  setBreadcrumbs,
+  breadcrumbSource,
+  setBreadcrumbSource,
+  lessonActiveTab,
+  setLessonActiveTab
 }: {
   children: ReactNode;
   currentView: string;
   setCurrentView: (view: string) => void;
   breadcrumbs: { label: string; view?: string }[];
   setBreadcrumbs: (crumbs: { label: string; view?: string }[]) => void;
+  breadcrumbSource: 'catalog' | 'premium';
+  setBreadcrumbSource: (source: 'catalog' | 'premium') => void;
+  lessonActiveTab: 'video' | 'notes';
+  setLessonActiveTab: (tab: 'video' | 'notes') => void;
 }) {
   const { darkMode, setDarkMode } = useTheme();
   const { toasts, addToast, dismissToast, notifications, setNotifications, unreadNotificationsCount, addNotification, markNotificationRead, markAllNotificationsRead, deleteNotification } = useNotifications();
@@ -395,10 +414,12 @@ function AppContextInjector({
   };
 
   const handleLoginAs = (targetRole: UserRole) => {
+    setBreadcrumbSource('catalog');
     loginAs(targetRole, addToast, setCurrentView);
   };
 
   const handleLogout = () => {
+    setBreadcrumbSource('catalog');
     logout(addToast, setCurrentView, setBreadcrumbs);
   };
 
@@ -464,6 +485,10 @@ function AppContextInjector({
     setCurrentView,
     breadcrumbs,
     setBreadcrumbs,
+    breadcrumbSource,
+    setBreadcrumbSource,
+    lessonActiveTab,
+    setLessonActiveTab,
     selectedClassSlug,
     setSelectedClassSlug,
     selectedSubjectId,

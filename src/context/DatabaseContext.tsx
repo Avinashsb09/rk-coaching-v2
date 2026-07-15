@@ -12,6 +12,7 @@ import {
   initialQuizzes, initialQuestions, initialOptions, initialAttempts, initialLeaderboards 
 } from '../lib/quizMockData';
 import { useAuth } from './AuthContext';
+import { DEMO_STUDENT_ID } from '../config/dataMode';
 
 export interface DatabaseContextType {
   classes: AcademicClass[];
@@ -358,7 +359,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       ]);
       setUsers([
         {
-          id: '00000000-0000-0000-0000-000000000001',
+          id: DEMO_STUDENT_ID,
           email: 'student@rkcoaching.com',
           fullName: 'Aarav Sharma',
           role: 'student',

@@ -71,7 +71,7 @@ export default function CourseView() {
   useEffect(() => {
     if (courseObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'catalog' },
+        { label: 'All Courses', view: 'catalog' },
         { label: courseObj.title }
       ]);
     }

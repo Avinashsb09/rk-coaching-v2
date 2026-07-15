@@ -179,7 +179,7 @@ export default function ClassView() {
   useEffect(() => {
     if (classObj) {
       setBreadcrumbs([
-        { label: 'Syllabus Catalog', view: 'catalog' },
+        { label: 'All Courses', view: 'catalog' },
         { label: classObj.name }
       ]);
     }

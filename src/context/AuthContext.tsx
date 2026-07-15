@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserRole, UserProfile } from '../types';
 import { getSupabase, isSupabaseConfigured, resetSupabaseInstance, deduplicateRequest } from '../lib/supabase';
+import { DEMO_STUDENT_ID } from '../config/dataMode';
 
 import { useNotifications } from './NotificationContext';
 
@@ -589,7 +590,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const mockProfiles: Record<Exclude<UserRole, 'visitor'>, UserProfile> = {
       student: {
-        id: '00000000-0000-0000-0000-000000000001',
+        id: DEMO_STUDENT_ID,
         email: 'student@rkcoaching.com',
         fullName: 'Aarav Sharma',
         role: 'student',
