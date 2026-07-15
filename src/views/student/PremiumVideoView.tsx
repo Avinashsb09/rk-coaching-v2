@@ -156,9 +156,15 @@ export default function PremiumVideoView() {
 
   // Check if video source is known to be broken
   const isBrokenSource = useMemo(() => {
-    if (!videoObj) return true;
+    if (!videoObj || !videoObj.videoIdOrUrl) return true;
+    const url = videoObj.videoIdOrUrl.trim();
+    if (url === '' || url === '#' || url === '/') return true;
+    
+    // Known broken ids or URLs containing them
     const brokenIds = ['sfSId8A98y8', 'h7gh96X69Gs'];
-    return brokenIds.includes(videoObj.videoIdOrUrl) || !videoObj.videoIdOrUrl;
+    if (brokenIds.some(id => url.includes(id))) return true;
+
+    return false;
   }, [videoObj]);
 
   // Video embed url generator

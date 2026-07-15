@@ -330,7 +330,7 @@ mockClasses.forEach((cls) => {
           lessonId: lessonPremiumId,
           title: `High-Yield Revision Guide for ${sub.name}`,
           provider: 'youtube',
-          videoIdOrUrl: 'sfSId8A98y8',
+          videoIdOrUrl: 'https://www.youtube.com/embed/EccdirKAxG8',
           durationSeconds: 1200,
           isPremium: true
         });
