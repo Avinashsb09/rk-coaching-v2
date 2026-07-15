@@ -39,6 +39,9 @@ const PyqResult = lazy(() => import('./views/student/PyqResult'));
 const UpdateProfile = lazy(() => import('./views/student/UpdateProfile'));
 const SuperAdminDashboard = lazy(() => import('./views/super-admin/SuperAdminDashboard'));
 const PremiumMaterials = lazy(() => import('./views/student/PremiumMaterials'));
+const PremiumContentList = lazy(() => import('./views/student/PremiumContentList'));
+const PremiumNoteView = lazy(() => import('./views/student/PremiumNoteView'));
+const PremiumVideoView = lazy(() => import('./views/student/PremiumVideoView'));
 
 const STUDENT_STATIC_BREADCRUMBS: Record<string, { label: string; view?: string }[]> = {
   'student-dashboard': [{ label: 'Dashboard' }],
@@ -186,7 +189,10 @@ function MainAppShell() {
         break;
       default:
         // Skip updating breadcrumbs for catalog dynamic views that handle their own breadcrumbs
-        const dynamicViews = ['class-view', 'subject-view', 'course-view', 'lesson-view', 'pyq-view'];
+        const dynamicViews = [
+          'class-view', 'subject-view', 'course-view', 'lesson-view', 'pyq-view',
+          'premium-content-list', 'premium-note-view', 'premium-video-view'
+        ];
         if (!dynamicViews.includes(currentView)) {
           setBreadcrumbs([{ label: 'Home', view: 'home' }]);
         }
@@ -203,6 +209,9 @@ function MainAppShell() {
     const VIEW_ROLES: Record<string, UserRole[]> = {
       'student-dashboard': ['student', 'admin'],
       'premium-materials': ['student', 'admin'],
+      'premium-content-list': ['student', 'admin'],
+      'premium-note-view': ['student', 'admin'],
+      'premium-video-view': ['student', 'admin'],
       'teacher-dashboard': ['teacher', 'admin'],
       'teacher-content': ['teacher', 'admin'],
       'admin-dashboard': ['admin', 'super_admin'],
@@ -344,6 +353,15 @@ function MainAppShell() {
       
       case 'premium-materials':
         return <PremiumMaterials />;
+
+      case 'premium-content-list':
+        return <PremiumContentList />;
+
+      case 'premium-note-view':
+        return <PremiumNoteView />;
+
+      case 'premium-video-view':
+        return <PremiumVideoView />;
       
       default:
         return (

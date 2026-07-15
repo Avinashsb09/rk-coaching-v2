@@ -113,6 +113,11 @@ export class PaymentService {
         localStorage.setItem(`rk_subject_purchases_${studentId}`, JSON.stringify(['sub_neet_biology', 'sub_neet_chemistry']));
       }
 
+      const savedNotes = localStorage.getItem(`rk_subject_notes_${studentId}`);
+      if (savedNotes === null) {
+        localStorage.setItem(`rk_subject_notes_${studentId}`, JSON.stringify(['sub_neet_biology', 'sub_neet_chemistry']));
+      }
+
       return demoRecords;
     }
 

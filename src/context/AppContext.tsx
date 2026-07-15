@@ -38,6 +38,14 @@ interface AppContextType {
   lessonActiveTab: 'video' | 'notes';
   setLessonActiveTab: (tab: 'video' | 'notes') => void;
 
+  // Premium Routing States
+  selectedPremiumSubjectId: string | null;
+  setSelectedPremiumSubjectId: (id: string | null) => void;
+  selectedPremiumContentType: 'notes' | 'videos' | null;
+  setSelectedPremiumContentType: (type: 'notes' | 'videos' | null) => void;
+  selectedPremiumContentId: string | null;
+  setSelectedPremiumContentId: (id: string | null) => void;
+
   // Selected LMS Routing IDs
   selectedClassSlug: string | null;
   setSelectedClassSlug: (slug: string | null) => void;
@@ -174,6 +182,9 @@ function AppSyncController({
     const protectedViews = [
       'student-dashboard',
       'premium-materials',
+      'premium-content-list',
+      'premium-note-view',
+      'premium-video-view',
       'teacher-dashboard',
       'teacher-content',
       'admin-dashboard',
@@ -294,6 +305,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ]);
   const [breadcrumbSource, setBreadcrumbSource] = useState<'catalog' | 'premium'>('catalog');
   const [lessonActiveTab, setLessonActiveTab] = useState<'video' | 'notes'>('video');
+  const [selectedPremiumSubjectId, setSelectedPremiumSubjectId] = useState<string | null>(null);
+  const [selectedPremiumContentType, setSelectedPremiumContentType] = useState<'notes' | 'videos' | null>(null);
+  const [selectedPremiumContentId, setSelectedPremiumContentId] = useState<string | null>(null);
 
   // Synchronize state changes to URL hash
   useEffect(() => {
@@ -302,6 +316,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (currentView && currentView !== currentHash) {
         window.location.hash = currentView;
       }
+    }
+  }, [currentView]);
+
+  // Reset premium state when navigating away from the complete premium flow
+  useEffect(() => {
+    const premiumViews = ['premium-materials', 'premium-content-list', 'premium-note-view', 'premium-video-view'];
+    if (!premiumViews.includes(currentView)) {
+      setSelectedPremiumSubjectId(null);
+      setSelectedPremiumContentType(null);
+      setSelectedPremiumContentId(null);
     }
   }, [currentView]);
 
@@ -328,7 +352,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 <CourseProvider>
                   <PaymentProvider>
                     <AppSyncController currentView={currentView} setCurrentView={setCurrentView} />
-                    <AppContextInjector
+                     <AppContextInjector
                       currentView={currentView}
                       setCurrentView={setCurrentView}
                       breadcrumbs={breadcrumbs}
@@ -337,6 +361,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                       setBreadcrumbSource={setBreadcrumbSource}
                       lessonActiveTab={lessonActiveTab}
                       setLessonActiveTab={setLessonActiveTab}
+                      selectedPremiumSubjectId={selectedPremiumSubjectId}
+                      setSelectedPremiumSubjectId={setSelectedPremiumSubjectId}
+                      selectedPremiumContentType={selectedPremiumContentType}
+                      setSelectedPremiumContentType={setSelectedPremiumContentType}
+                      selectedPremiumContentId={selectedPremiumContentId}
+                      setSelectedPremiumContentId={setSelectedPremiumContentId}
                     >
                       {children}
                     </AppContextInjector>
@@ -360,7 +390,13 @@ function AppContextInjector({
   breadcrumbSource,
   setBreadcrumbSource,
   lessonActiveTab,
-  setLessonActiveTab
+  setLessonActiveTab,
+  selectedPremiumSubjectId,
+  setSelectedPremiumSubjectId,
+  selectedPremiumContentType,
+  setSelectedPremiumContentType,
+  selectedPremiumContentId,
+  setSelectedPremiumContentId
 }: {
   children: ReactNode;
   currentView: string;
@@ -371,6 +407,12 @@ function AppContextInjector({
   setBreadcrumbSource: (source: 'catalog' | 'premium') => void;
   lessonActiveTab: 'video' | 'notes';
   setLessonActiveTab: (tab: 'video' | 'notes') => void;
+  selectedPremiumSubjectId: string | null;
+  setSelectedPremiumSubjectId: (id: string | null) => void;
+  selectedPremiumContentType: 'notes' | 'videos' | null;
+  setSelectedPremiumContentType: (type: 'notes' | 'videos' | null) => void;
+  selectedPremiumContentId: string | null;
+  setSelectedPremiumContentId: (id: string | null) => void;
 }) {
   const { darkMode, setDarkMode } = useTheme();
   const { toasts, addToast, dismissToast, notifications, setNotifications, unreadNotificationsCount, addNotification, markNotificationRead, markAllNotificationsRead, deleteNotification } = useNotifications();
@@ -415,11 +457,17 @@ function AppContextInjector({
 
   const handleLoginAs = (targetRole: UserRole) => {
     setBreadcrumbSource('catalog');
+    setSelectedPremiumSubjectId(null);
+    setSelectedPremiumContentType(null);
+    setSelectedPremiumContentId(null);
     loginAs(targetRole, addToast, setCurrentView);
   };
 
   const handleLogout = () => {
     setBreadcrumbSource('catalog');
+    setSelectedPremiumSubjectId(null);
+    setSelectedPremiumContentType(null);
+    setSelectedPremiumContentId(null);
     logout(addToast, setCurrentView, setBreadcrumbs);
   };
 
@@ -489,6 +537,12 @@ function AppContextInjector({
     setBreadcrumbSource,
     lessonActiveTab,
     setLessonActiveTab,
+    selectedPremiumSubjectId,
+    setSelectedPremiumSubjectId,
+    selectedPremiumContentType,
+    setSelectedPremiumContentType,
+    selectedPremiumContentId,
+    setSelectedPremiumContentId,
     selectedClassSlug,
     setSelectedClassSlug,
     selectedSubjectId,
